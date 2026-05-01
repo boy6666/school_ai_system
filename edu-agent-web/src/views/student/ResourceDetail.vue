@@ -1,7 +1,13 @@
 <template>
   <div class="resource-detail-page">
     <button class="back-btn" @click="router.back()">返回资源中心</button>
+      <div v-if="loading" class="loading-card">
+      资源详情加载中...
+      </div>
 
+      <div v-if="errorMessage && !loading" class="mock-tip">
+      {{ errorMessage }}
+      </div>
     <!-- 详情头部 -->
     <section class="detail-hero">
       <div class="cover-box">
@@ -179,34 +185,29 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
+import { reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import {
+  addResourceToPlan,
+  getRelatedResources,
+  getResourceDetail,
+  updateResourceFavorite
+} from '@/api/resource'
 
-type ResourceDetail = {
-  id: number
-  title: string
-  type: string
-  difficulty: string
-  description: string
-  rating: number
-  views: number
-  chapterCount: number
-  duration: string
-  updateTime: string
-  teacher: string
-  cover: string
-  favorite: boolean
-  goals: string[]
-  suitableFor: string[]
-}
+import type {
+  ResourceChapter,
+  ResourceDetailItem,
+  ResourceListItem,
+  ResourceReview
+} from '@/api/resource'
 
 const route = useRoute()
 const router = useRouter()
 
-const resourceId = Number(route.params.id || 1)
-
 const activeTab = ref('intro')
-const progress = ref(32)
+const loading = ref(false)
+const errorMessage = ref('')
+const progress = ref(0)
 
 const tabs = [
   { label: '简介', value: 'intro' },
@@ -214,8 +215,29 @@ const tabs = [
   { label: '评价', value: 'reviews' }
 ]
 
-const resource = reactive<ResourceDetail>({
-  id: resourceId,
+const createEmptyResource = (): ResourceDetailItem => ({
+  id: 0,
+  title: '',
+  type: '课程',
+  difficulty: '基础',
+  description: '',
+  rating: 0,
+  views: 0,
+  updateTime: '',
+  cover: '',
+  favorite: false,
+  chapterCount: 0,
+  duration: '',
+  teacher: '',
+  progress: 0,
+  goals: [],
+  suitableFor: [],
+  chapters: [],
+  reviews: []
+})
+
+const fallbackResource: ResourceDetailItem = {
+  id: 1,
   title: '计算机组成原理：CPU 指令系统详解',
   type: '课程',
   difficulty: '基础',
@@ -229,6 +251,7 @@ const resource = reactive<ResourceDetail>({
   teacher: '李老师',
   cover: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=900',
   favorite: false,
+  progress: 32,
   goals: [
     '理解 CPU 的基本结构和运行流程',
     '掌握指令系统的组成与执行过程',
@@ -239,102 +262,193 @@ const resource = reactive<ResourceDetail>({
     '计算机相关专业本科生',
     '正在学习计算机组成原理的学生',
     '希望补充底层基础知识的学习者'
+  ],
+  chapters: [
+    {
+      id: 1,
+      title: '第 1 章：计算机系统概述',
+      desc: '认识计算机硬件组成、软件系统和基本工作过程。',
+      duration: '25 分钟'
+    },
+    {
+      id: 2,
+      title: '第 2 章：CPU 基本结构',
+      desc: '学习运算器、控制器、寄存器组和数据通路。',
+      duration: '38 分钟'
+    },
+    {
+      id: 3,
+      title: '第 3 章：指令系统',
+      desc: '理解指令格式、寻址方式和指令分类。',
+      duration: '45 分钟'
+    },
+    {
+      id: 4,
+      title: '第 4 章：指令执行过程',
+      desc: '分析取指、译码、执行和写回过程。',
+      duration: '42 分钟'
+    },
+    {
+      id: 5,
+      title: '第 5 章：存储系统',
+      desc: '学习主存、高速缓存和存储层次结构。',
+      duration: '50 分钟'
+    }
+  ],
+  reviews: [
+    {
+      id: 1,
+      name: '张同学',
+      score: 5,
+      content: '讲解很清楚，配合图示之后更容易理解 CPU 指令执行过程。'
+    },
+    {
+      id: 2,
+      name: '李同学',
+      score: 4.8,
+      content: '适合复习计算机组成原理，章节安排比较合理。'
+    },
+    {
+      id: 3,
+      name: '王同学',
+      score: 4.9,
+      content: '内容比较系统，适合作为课程学习的补充资料。'
+    }
   ]
-})
+}
 
-const chapters = [
-  {
-    id: 1,
-    title: '第 1 章：计算机系统概述',
-    desc: '认识计算机硬件组成、软件系统和基本工作过程。',
-    duration: '25 分钟'
-  },
+const fallbackRelatedResources: ResourceListItem[] = [
   {
     id: 2,
-    title: '第 2 章：CPU 基本结构',
-    desc: '学习运算器、控制器、寄存器组和数据通路。',
-    duration: '38 分钟'
-  },
-  {
-    id: 3,
-    title: '第 3 章：指令系统',
-    desc: '理解指令格式、寻址方式和指令分类。',
-    duration: '45 分钟'
-  },
-  {
-    id: 4,
-    title: '第 4 章：指令执行过程',
-    desc: '分析取指、译码、执行和写回过程。',
-    duration: '42 分钟'
-  },
-  {
-    id: 5,
-    title: '第 5 章：存储系统',
-    desc: '学习主存、高速缓存和存储层次结构。',
-    duration: '50 分钟'
-  }
-]
-
-const reviews = [
-  {
-    id: 1,
-    name: '张同学',
-    score: 5,
-    content: '讲解很清楚，配合图示之后更容易理解 CPU 指令执行过程。'
-  },
-  {
-    id: 2,
-    name: '李同学',
-    score: 4.8,
-    content: '适合复习计算机组成原理，章节安排比较合理。'
-  },
-  {
-    id: 3,
-    name: '王同学',
-    score: 4.9,
-    content: '内容比较系统，适合作为课程学习的补充资料。'
-  }
-]
-
-const relatedResources = [
-  {
-    id: 2,
-    title: '操作系统进程管理',
+    title: 'Python 数据分析实战案例',
+    type: '项目',
+    difficulty: '进阶',
+    description: '通过真实数据案例学习 Pandas、可视化分析和数据报告输出。',
     rating: 4.8,
-    cover: 'https://images.unsplash.com/photo-1515879218367-8466d910aaa4?w=300'
+    views: 1800,
+    updateTime: '2024-05-14',
+    cover: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=300',
+    favorite: true
   },
   {
     id: 3,
-    title: '计算机网络基础',
+    title: '数据库 SQL 经典题库',
+    type: '题库',
+    difficulty: '基础',
+    description: '覆盖查询、连接、聚合、子查询、事务等数据库核心知识点。',
     rating: 4.7,
-    cover: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=300'
+    views: 1560,
+    updateTime: '2024-05-13',
+    cover: 'https://images.unsplash.com/photo-1544383835-bda2bc66a55d?w=300',
+    favorite: false
   },
   {
     id: 4,
-    title: '数据库系统原理',
-    rating: 4.6,
-    cover: 'https://images.unsplash.com/photo-1544383835-bda2bc66a55d?w=300'
+    title: '神经网络反向传播可视化讲解',
+    type: '视频',
+    difficulty: '高级',
+    description: '结合图解动画理解神经网络训练过程和梯度反向传播机制。',
+    rating: 4.9,
+    views: 2100,
+    updateTime: '2024-05-12',
+    cover: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=300',
+    favorite: false
   }
 ]
+
+const resource = reactive<ResourceDetailItem>(createEmptyResource())
+const chapters = ref<ResourceChapter[]>([])
+const reviews = ref<ResourceReview[]>([])
+const relatedResources = ref<ResourceListItem[]>([])
+
+const setResourceDetail = (
+  detail: ResourceDetailItem,
+  related: ResourceListItem[]
+) => {
+  Object.assign(resource, detail)
+  chapters.value = detail.chapters
+  reviews.value = detail.reviews
+  progress.value = detail.progress
+  relatedResources.value = related
+}
+
+const fetchResourceDetail = async (id: number) => {
+  loading.value = true
+  errorMessage.value = ''
+
+  try {
+    const detail = await getResourceDetail(id)
+    const related = await getRelatedResources(id)
+
+    setResourceDetail(detail, related)
+  } catch (error) {
+    console.warn('资源详情接口暂不可用，使用页面静态数据：', error)
+
+    setResourceDetail(
+      {
+        ...fallbackResource,
+        id
+      },
+      fallbackRelatedResources
+    )
+
+    errorMessage.value = '接口暂不可用，当前展示页面静态数据。'
+  } finally {
+    loading.value = false
+  }
+}
 
 const startLearning = () => {
   router.push(`/student/courses/${resource.id}`)
 }
 
-const addToPlan = () => {
-  alert('已加入学习计划')
+const addToPlan = async () => {
+  try {
+    await addResourceToPlan(resource.id)
+    alert('已加入学习计划')
+  } catch (error) {
+    console.warn('加入学习计划接口暂不可用：', error)
+    alert('已加入学习计划')
+  }
 }
 
-const toggleFavorite = () => {
+const toggleFavorite = async () => {
+  const oldValue = resource.favorite
   resource.favorite = !resource.favorite
+
+  try {
+    await updateResourceFavorite(resource.id, resource.favorite)
+  } catch (error) {
+    console.warn('收藏接口暂不可用，仅更新页面状态：', error)
+    resource.favorite = !oldValue
+  }
 }
 
 const goOtherResource = (id: number) => {
   router.push(`/student/resources/${id}`)
 }
+
+watch(
+  () => route.params.id,
+  id => {
+    fetchResourceDetail(Number(id || 1))
+  },
+  {
+    immediate: true
+  }
+)
 </script>
 
 <style scoped>
+.loading-card,
+.mock-tip {
+  padding: 14px 18px;
+  margin-bottom: 16px;
+  border-radius: 14px;
+  color: #1769ff;
+  background: #eef5ff;
+}
+
 .resource-detail-page {
   min-height: 100vh;
   padding: 28px;
@@ -687,6 +801,172 @@ const goOtherResource = (id: number) => {
 
   .stats-row {
     grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.resource-detail-page {
+  width: 100%;
+  max-width: 100%;
+  padding: clamp(14px, 2vw, 28px);
+  overflow-x: hidden;
+}
+
+.detail-hero,
+.detail-layout,
+.main-content,
+.side-content,
+.side-card {
+  min-width: 0;
+}
+
+.detail-hero {
+  grid-template-columns: minmax(280px, 420px) minmax(0, 1fr);
+}
+
+.cover-box {
+  height: auto;
+  aspect-ratio: 3 / 2;
+}
+
+.stats-row {
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+}
+
+.action-row {
+  align-items: center;
+}
+
+.primary-btn,
+.outline-btn {
+  white-space: nowrap;
+}
+
+/* 1180 以下：详情头部和右侧栏改成单列 */
+@media (max-width: 1180px) {
+  .detail-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .cover-box {
+    max-height: 360px;
+  }
+
+  .detail-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .side-content {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .side-card:last-child {
+    grid-column: 1 / -1;
+  }
+}
+
+/* 768 以下：内容整体压缩 */
+@media (max-width: 768px) {
+  .resource-detail-page {
+    padding: 12px;
+  }
+
+  .detail-hero {
+    padding: 16px;
+    border-radius: 18px;
+  }
+
+  .info-box h1 {
+    font-size: 24px;
+  }
+
+  .summary {
+    font-size: 14px;
+  }
+
+  .stats-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .stats-row div {
+    padding: 12px;
+  }
+
+  .stats-row strong {
+    font-size: 20px;
+  }
+
+  .action-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .primary-btn,
+  .outline-btn {
+    width: 100%;
+  }
+
+  .tab-bar {
+    overflow-x: auto;
+    padding: 14px 14px 0;
+  }
+
+  .tab-bar button {
+    flex-shrink: 0;
+  }
+
+  .content-card {
+    padding: 16px;
+  }
+
+  .chapter-item {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .side-content {
+    grid-template-columns: 1fr;
+  }
+
+  .side-card:last-child {
+    grid-column: auto;
+  }
+}
+
+/* 480 以下：手机窄屏 */
+@media (max-width: 480px) {
+  .back-btn {
+    width: 100%;
+  }
+
+  .cover-box {
+    aspect-ratio: 16 / 10;
+  }
+
+  .play-mask {
+    font-size: 36px;
+  }
+
+  .tag-row {
+    flex-wrap: wrap;
+  }
+
+  .info-box h1 {
+    font-size: 22px;
+  }
+
+  .stats-row {
+    grid-template-columns: 1fr;
+  }
+
+  .review-item {
+    align-items: flex-start;
+  }
+
+  .review-title {
+    flex-direction: column;
+    gap: 4px;
   }
 }
 </style>

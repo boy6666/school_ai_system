@@ -59,8 +59,16 @@
     <main class="content-layout">
       <!-- 资源列表 -->
       <section class="resource-list">
+        <div v-if="loading" class="empty-state">
+        资源加载中...
+        </div>
+
+        <div v-if="errorMessage && !loading" class="empty-state">
+          {{ errorMessage }}
+        </div>
         <div
           v-for="resource in filteredResources"
+          v-show="!loading"
           :key="resource.id"
           class="resource-card"
           @click="goDetail(resource.id)"
@@ -89,7 +97,7 @@
           </div>
         </div>
 
-        <div v-if="filteredResources.length === 0" class="empty-state">
+        <div v-if="!loading && filteredResources.length === 0" class="empty-state">
           暂无匹配资源，请调整搜索条件。
         </div>
       </section>
@@ -131,28 +139,27 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import {
+  getResourceList,
+  updateResourceFavorite
+} from '@/api/resource'
 
-type ResourceItem = {
-  id: number
-  title: string
-  type: string
-  difficulty: string
-  description: string
-  rating: number
-  views: number
-  updateTime: string
-  cover: string
-  favorite: boolean
-}
+import type {
+  ResourceListItem,
+  ResourceSortType
+} from '@/api/resource'
 
 const router = useRouter()
 
 const keyword = ref('')
 const activeType = ref('all')
 const difficulty = ref('')
-const sortType = ref('hot')
+const sortType = ref<ResourceSortType>('hot')
+const loading = ref(false)
+const errorMessage = ref('')
+const total = ref(0)
 
 const resourceTypes = [
   { label: '全部', value: 'all' },
@@ -164,7 +171,7 @@ const resourceTypes = [
   { label: '工具', value: '工具' }
 ]
 
-const resources = ref<ResourceItem[]>([
+const fallbackResources: ResourceListItem[] = [
   {
     id: 1,
     title: '计算机组成原理：CPU 指令系统详解',
@@ -237,57 +244,107 @@ const resources = ref<ResourceItem[]>([
     cover: 'https://images.unsplash.com/photo-1629654297299-c8506221ca97?w=600',
     favorite: false
   }
-])
+]
 
-const hotTags = ['Python', '机器学习', '操作系统', '计算机网络', '数据库', '算法', '深度学习', '前端开发']
+const resources = ref<ResourceListItem[]>([])
+const recommendedResources = ref<ResourceListItem[]>([])
+const hotTags = ref<string[]>([])
 
-const filteredResources = computed(() => {
-  let list = resources.value.filter(item => {
-    const matchKeyword =
-      item.title.includes(keyword.value) ||
-      item.description.includes(keyword.value)
+const filteredResources = computed(() => resources.value)
 
-    const matchType =
-      activeType.value === 'all' || item.type === activeType.value
+const fetchResources = async () => {
+  loading.value = true
+  errorMessage.value = ''
 
-    const matchDifficulty =
-      difficulty.value === '' || item.difficulty === difficulty.value
-
-    return matchKeyword && matchType && matchDifficulty
-  })
-
-  if (sortType.value === 'score') {
-    list = [...list].sort((a, b) => b.rating - a.rating)
+  const query = {
+    keyword: keyword.value,
+    type: activeType.value,
+    difficulty: difficulty.value,
+    sort: sortType.value,
+    page: 1,
+    pageSize: 12
   }
 
-  if (sortType.value === 'hot') {
-    list = [...list].sort((a, b) => b.views - a.views)
+  try {
+    const result = await getResourceList(query)
+
+    resources.value = result.list
+    recommendedResources.value = result.recommended
+    hotTags.value = result.hotTags
+    total.value = result.total
+  } catch (error) {
+    console.warn('资源列表接口暂不可用，使用页面静态数据：', error)
+
+    let list = [...fallbackResources]
+
+    if (keyword.value) {
+      list = list.filter(item => {
+        return (
+          item.title.includes(keyword.value) ||
+          item.description.includes(keyword.value)
+        )
+      })
+    }
+
+    if (activeType.value !== 'all') {
+      list = list.filter(item => item.type === activeType.value)
+    }
+
+    if (difficulty.value) {
+      list = list.filter(item => item.difficulty === difficulty.value)
+    }
+
+    if (sortType.value === 'score') {
+      list.sort((a, b) => b.rating - a.rating)
+    }
+
+    if (sortType.value === 'hot') {
+      list.sort((a, b) => b.views - a.views)
+    }
+
+    if (sortType.value === 'new') {
+      list.sort(
+        (a, b) => new Date(b.updateTime).getTime() - new Date(a.updateTime).getTime()
+      )
+    }
+
+    resources.value = list
+    recommendedResources.value = fallbackResources.slice(0, 4)
+    hotTags.value = ['Python', '机器学习', '操作系统', '计算机网络', '数据库', '算法', '深度学习', '前端开发']
+    total.value = list.length
+    errorMessage.value = '接口暂不可用，当前展示页面静态数据。'
+  } finally {
+    loading.value = false
   }
-
-  if (sortType.value === 'new') {
-    list = [...list].sort(
-      (a, b) => new Date(b.updateTime).getTime() - new Date(a.updateTime).getTime()
-    )
-  }
-
-  return list
-})
-
-const recommendedResources = computed(() => {
-  return resources.value.slice(0, 4)
-})
-
-const handleSearch = () => {
-  console.log('搜索关键词：', keyword.value)
 }
 
-const toggleFavorite = (resource: ResourceItem) => {
+const handleSearch = () => {
+  fetchResources()
+}
+
+const toggleFavorite = async (resource: ResourceListItem) => {
+  const oldValue = resource.favorite
   resource.favorite = !resource.favorite
+
+  try {
+    await updateResourceFavorite(resource.id, resource.favorite)
+  } catch (error) {
+    console.warn('收藏接口暂不可用，仅更新页面状态：', error)
+    resource.favorite = !oldValue
+  }
 }
 
 const goDetail = (id: number) => {
   router.push(`/student/resources/${id}`)
 }
+
+watch([activeType, difficulty, sortType], () => {
+  fetchResources()
+})
+
+onMounted(() => {
+  fetchResources()
+})
 </script>
 
 <style scoped>
@@ -592,17 +649,154 @@ const goDetail = (id: number) => {
   background: #ffffff;
 }
 
-@media (max-width: 1080px) {
+/* 大屏到中屏：资源卡片自动适配 */
+.resource-center-page {
+  width: 100%;
+  max-width: 100%;
+  padding: clamp(14px, 2vw, 28px);
+  overflow-x: hidden;
+}
+
+.page-hero,
+.filter-panel,
+.content-layout,
+.resource-list,
+.side-panel {
+  min-width: 0;
+}
+
+.resource-list {
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+.cover {
+  height: auto;
+  aspect-ratio: 16 / 9;
+}
+
+.search-box input {
+  min-width: 0;
+}
+
+/* 1200 以下：右侧推荐栏下移 */
+@media (max-width: 1200px) {
   .content-layout {
     grid-template-columns: 1fr;
+  }
+
+  .side-panel {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* 900 以下：首页头部纵向排列 */
+@media (max-width: 900px) {
+  .page-hero {
+    flex-direction: column;
+    padding: 24px;
+  }
+
+  .hero-card {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .filter-row {
+    flex-wrap: wrap;
+  }
+
+  .filter-row select {
+    flex: 1;
+    min-width: 150px;
+  }
+
+  .side-panel {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* 640 以下：搜索栏和卡片适配手机 */
+@media (max-width: 640px) {
+  .resource-center-page {
+    padding: 12px;
+  }
+
+  .page-hero {
+    padding: 20px;
+    border-radius: 18px;
+  }
+
+  .page-hero h1 {
+    font-size: 26px;
+  }
+
+  .subtitle {
+    font-size: 14px;
+  }
+
+  .filter-panel {
+    padding: 14px;
+    border-radius: 16px;
+  }
+
+  .search-box {
+    flex-direction: column;
+  }
+
+  .search-box button {
+    width: 100%;
+    height: 40px;
+  }
+
+  .tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+
+  .tabs button {
+    flex-shrink: 0;
   }
 
   .resource-list {
     grid-template-columns: 1fr;
   }
 
-  .page-hero {
+  .card-title-row {
     flex-direction: column;
+  }
+
+  .favorite {
+    width: fit-content;
+  }
+
+  .meta-row {
+    gap: 8px;
+    font-size: 12px;
+  }
+
+  .panel-card {
+    padding: 14px;
+  }
+}
+
+/* 420 以下：进一步压缩间距 */
+@media (max-width: 420px) {
+  .page-hero h1 {
+    font-size: 24px;
+  }
+
+  .card-body {
+    padding: 14px;
+  }
+
+  .card-title-row h3 {
+    font-size: 16px;
+  }
+
+  .description {
+    font-size: 14px;
   }
 }
 </style>

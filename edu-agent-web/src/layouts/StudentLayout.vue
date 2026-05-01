@@ -312,4 +312,137 @@
     width: 260px;
   }
 }
+
+/* 中等屏幕：侧边栏缩窄 */
+@media (max-width: 1100px) {
+  .sidebar {
+    width: 84px;
+    padding: 18px 10px;
+  }
+
+  .brand {
+    justify-content: center;
+  }
+
+  .brand div:last-child,
+  .nav-item em,
+  .collapse-btn {
+    display: none;
+  }
+
+  .nav-item {
+    justify-content: center;
+    padding: 0;
+  }
+
+  .nav-item span {
+    width: auto;
+  }
+
+  .search-box {
+    width: min(420px, 48vw);
+  }
+}
+
+/* 小屏幕：侧边栏变成顶部横向导航 */
+@media (max-width: 768px) {
+  .student-layout {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+    height: auto;
+    padding: 12px;
+    border-right: none;
+    border-bottom: 1px solid #e8eef7;
+  }
+
+  .brand {
+    margin-bottom: 12px;
+    justify-content: flex-start;
+  }
+
+  .brand div:last-child {
+    display: block;
+  }
+
+  .nav-menu {
+    flex-direction: row;
+    overflow-x: auto;
+    gap: 8px;
+    padding-bottom: 4px;
+  }
+
+  .nav-menu::-webkit-scrollbar {
+    height: 4px;
+  }
+
+  .nav-menu::-webkit-scrollbar-thumb {
+    background: #d7e3f5;
+    border-radius: 999px;
+  }
+
+  .nav-item {
+    min-width: 86px;
+    height: 38px;
+    flex-shrink: 0;
+    justify-content: center;
+    padding: 0 12px;
+  }
+
+  .nav-item em {
+    display: inline;
+    font-size: 13px;
+  }
+
+  .nav-item span {
+    display: none;
+  }
+
+  .layout-main {
+    width: 100%;
+  }
+
+  .topbar {
+    height: auto;
+    min-height: 64px;
+    padding: 12px;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .search-box {
+    order: 2;
+    width: 100%;
+  }
+
+  .top-actions {
+    margin-left: auto;
+  }
+
+  .page-content {
+    width: 100%;
+  }
+}
+
+/* 超小屏幕：用户信息简化 */
+@media (max-width: 480px) {
+  .brand h1 {
+    font-size: 18px;
+  }
+
+  .brand p {
+    display: none;
+  }
+
+  .user-info span,
+  .user-info strong {
+    display: none;
+  }
+
+  .top-actions {
+    gap: 10px;
+  }
+}
 </style>
