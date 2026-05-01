@@ -1,6 +1,15 @@
 import request from '@/utils/request'
 
-export type ResourceType = '课程' | '视频' | '文档' | '题库' | '项目' | '工具'
+export type ResourceType =
+  | '文档'
+  | 'PPT'
+  | '视频'
+  | '动画'
+  | '题库'
+  | '代码案例'
+  | '实验项目'
+  | '拓展阅读'
+  | '思维导图'
 
 export type ResourceDifficulty = '入门' | '基础' | '进阶' | '高级'
 
@@ -10,6 +19,7 @@ export interface ResourceListQuery {
   keyword?: string
   type?: string
   difficulty?: string
+  courseId?: string
   sort?: ResourceSortType
   page?: number
   pageSize?: number
@@ -26,6 +36,12 @@ export interface ResourceListItem {
   updateTime: string
   cover: string
   favorite: boolean
+
+  courseId: string
+  courseName: string
+  chapterName: string
+  tags: string[]
+  fileSize: string
 }
 
 export interface ResourceListResponse {

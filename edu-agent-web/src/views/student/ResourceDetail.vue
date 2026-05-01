@@ -19,12 +19,34 @@
         <div class="tag-row">
           <span>{{ resource.type }}</span>
           <span>{{ resource.difficulty }}</span>
+          <span>{{ resource.courseName }}</span>
         </div>
 
         <h1>{{ resource.title }}</h1>
 
         <p class="summary">{{ resource.description }}</p>
+        <div class="relation-box">
+          <div>
+            <span>所属课程</span>
+            <strong>{{ resource.courseName }}</strong>
+          </div>
 
+          <div>
+            <span>关联章节</span>
+            <strong>{{ resource.chapterName }}</strong>
+          </div>
+
+          <div>
+            <span>文件大小</span>
+            <strong>{{ resource.fileSize }}</strong>
+          </div>
+        </div>
+
+        <div class="resource-tags">
+          <span v-for="tag in resource.tags" :key="tag">
+            {{ tag }}
+          </span>
+        </div>
         <div class="stats-row">
           <div>
             <strong>{{ resource.rating }}</strong>
@@ -45,7 +67,7 @@
         </div>
 
         <div class="action-row">
-          <button class="primary-btn" @click="startLearning">开始学习</button>
+          <button class="primary-btn" @click="startLearning">进入课程学习空间</button>
           <button class="outline-btn" @click="addToPlan">加入学习计划</button>
           <button class="outline-btn" @click="toggleFavorite">
             {{ resource.favorite ? '已收藏' : '收藏资源' }}
@@ -140,28 +162,43 @@
         </div>
 
         <div class="side-card">
-          <h3>资源信息</h3>
+        <h3>资源信息</h3>
 
-          <div class="info-line">
-            <span>资源类型</span>
-            <strong>{{ resource.type }}</strong>
-          </div>
-
-          <div class="info-line">
-            <span>难度等级</span>
-            <strong>{{ resource.difficulty }}</strong>
-          </div>
-
-          <div class="info-line">
-            <span>更新时间</span>
-            <strong>{{ resource.updateTime }}</strong>
-          </div>
-
-          <div class="info-line">
-            <span>授课教师</span>
-            <strong>{{ resource.teacher }}</strong>
-          </div>
+        <div class="info-line">
+          <span>资源类型</span>
+          <strong>{{ resource.type }}</strong>
         </div>
+
+        <div class="info-line">
+          <span>所属课程</span>
+          <strong>{{ resource.courseName }}</strong>
+        </div>
+
+        <div class="info-line">
+          <span>关联章节</span>
+          <strong>{{ resource.chapterName }}</strong>
+        </div>
+
+        <div class="info-line">
+          <span>难度等级</span>
+          <strong>{{ resource.difficulty }}</strong>
+        </div>
+
+        <div class="info-line">
+          <span>文件大小</span>
+          <strong>{{ resource.fileSize }}</strong>
+        </div>
+
+        <div class="info-line">
+          <span>更新时间</span>
+          <strong>{{ resource.updateTime }}</strong>
+        </div>
+
+        <div class="info-line">
+          <span>上传教师</span>
+          <strong>{{ resource.teacher }}</strong>
+        </div>
+      </div>
 
         <div class="side-card">
           <h3>相关推荐</h3>
@@ -218,7 +255,7 @@ const tabs = [
 const createEmptyResource = (): ResourceDetailItem => ({
   id: 0,
   title: '',
-  type: '课程',
+  type: '文档',
   difficulty: '基础',
   description: '',
   rating: 0,
@@ -226,6 +263,13 @@ const createEmptyResource = (): ResourceDetailItem => ({
   updateTime: '',
   cover: '',
   favorite: false,
+
+  courseId: '',
+  courseName: '',
+  chapterName: '',
+  tags: [],
+  fileSize: '',
+
   chapterCount: 0,
   duration: '',
   teacher: '',
@@ -238,61 +282,62 @@ const createEmptyResource = (): ResourceDetailItem => ({
 
 const fallbackResource: ResourceDetailItem = {
   id: 1,
-  title: '计算机组成原理：CPU 指令系统详解',
-  type: '课程',
-  difficulty: '基础',
+  title: 'A* 算法可视化动画',
+  type: '动画',
+  difficulty: '进阶',
   description:
-    '系统学习 CPU 工作原理、指令系统、存储结构与输入输出机制，帮助学生建立完整的计算机底层知识框架。',
+    '通过可视化动画演示 A* 算法的搜索过程，帮助学生理解启发式搜索、路径规划、代价估计和最优路径选择。该资源适合作为人工智能导论课程中“搜索算法”章节的辅助学习材料。',
   rating: 4.9,
   views: 2300,
-  chapterCount: 8,
-  duration: '3小时45分钟',
+  chapterCount: 4,
+  duration: '12分钟',
   updateTime: '2024-05-16',
-  teacher: '李老师',
+  teacher: '王老师',
   cover: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=900',
   favorite: false,
   progress: 32,
+
+  courseId: 'ai',
+  courseName: '人工智能导论',
+  chapterName: '第 2 章：搜索算法',
+  tags: ['A* 算法', '搜索策略', '路径规划'],
+  fileSize: '18.6MB',
+
   goals: [
-    '理解 CPU 的基本结构和运行流程',
-    '掌握指令系统的组成与执行过程',
-    '理解存储系统与总线通信机制',
-    '能够分析简单指令的执行过程'
+    '理解 A* 算法的基本思想',
+    '掌握启发式函数在搜索过程中的作用',
+    '理解路径代价、估价函数和最优路径选择',
+    '能够结合可视化过程分析搜索路径变化'
   ],
   suitableFor: [
-    '计算机相关专业本科生',
-    '正在学习计算机组成原理的学生',
-    '希望补充底层基础知识的学习者'
+    '正在学习人工智能导论的学生',
+    '需要理解搜索算法的学习者',
+    '希望通过动画理解 A* 算法执行过程的学生'
   ],
   chapters: [
     {
       id: 1,
-      title: '第 1 章：计算机系统概述',
-      desc: '认识计算机硬件组成、软件系统和基本工作过程。',
-      duration: '25 分钟'
+      title: '资源导入：路径搜索问题',
+      desc: '通过网格地图示例引入路径搜索问题，理解起点、终点、障碍物和搜索空间。',
+      duration: '2 分钟'
     },
     {
       id: 2,
-      title: '第 2 章：CPU 基本结构',
-      desc: '学习运算器、控制器、寄存器组和数据通路。',
-      duration: '38 分钟'
+      title: '算法演示：开启列表与关闭列表',
+      desc: '演示 A* 算法如何维护 open list 和 closed list，并逐步扩展候选节点。',
+      duration: '4 分钟'
     },
     {
       id: 3,
-      title: '第 3 章：指令系统',
-      desc: '理解指令格式、寻址方式和指令分类。',
-      duration: '45 分钟'
+      title: '核心理解：代价函数与启发式函数',
+      desc: '解释 g(n)、h(n)、f(n) 的含义，以及启发式函数如何影响搜索效率。',
+      duration: '4 分钟'
     },
     {
       id: 4,
-      title: '第 4 章：指令执行过程',
-      desc: '分析取指、译码、执行和写回过程。',
-      duration: '42 分钟'
-    },
-    {
-      id: 5,
-      title: '第 5 章：存储系统',
-      desc: '学习主存、高速缓存和存储层次结构。',
-      duration: '50 分钟'
+      title: '结果分析：最优路径回溯',
+      desc: '展示算法找到目标节点后如何回溯路径，并对比不同启发式策略的效果。',
+      duration: '2 分钟'
     }
   ],
   reviews: [
@@ -300,19 +345,19 @@ const fallbackResource: ResourceDetailItem = {
       id: 1,
       name: '张同学',
       score: 5,
-      content: '讲解很清楚，配合图示之后更容易理解 CPU 指令执行过程。'
+      content: '动画演示很直观，比单纯看公式更容易理解 A* 算法的搜索过程。'
     },
     {
       id: 2,
       name: '李同学',
       score: 4.8,
-      content: '适合复习计算机组成原理，章节安排比较合理。'
+      content: '适合作为搜索算法章节的辅助资料，open list 和 closed list 的变化讲得很清楚。'
     },
     {
       id: 3,
       name: '王同学',
       score: 4.9,
-      content: '内容比较系统，适合作为课程学习的补充资料。'
+      content: '看完之后对启发式函数和路径代价的关系理解更清楚了。'
     }
   ]
 }
@@ -320,39 +365,57 @@ const fallbackResource: ResourceDetailItem = {
 const fallbackRelatedResources: ResourceListItem[] = [
   {
     id: 2,
-    title: 'Python 数据分析实战案例',
-    type: '项目',
-    difficulty: '进阶',
-    description: '通过真实数据案例学习 Pandas、可视化分析和数据报告输出。',
+    title: '搜索算法知识点讲解',
+    type: '文档',
+    difficulty: '基础',
+    description: '系统讲解状态空间搜索、BFS、DFS、启发式搜索和 A* 算法的核心概念。',
     rating: 4.8,
     views: 1800,
     updateTime: '2024-05-14',
-    cover: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=300',
-    favorite: true
+    cover: 'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=300',
+    favorite: true,
+
+    courseId: 'ai',
+    courseName: '人工智能导论',
+    chapterName: '第 2 章：搜索算法',
+    tags: ['搜索算法', 'BFS', 'DFS', 'A* 算法'],
+    fileSize: '6.2MB'
   },
   {
     id: 3,
-    title: '数据库 SQL 经典题库',
-    type: '题库',
+    title: 'BFS / DFS 思维导图',
+    type: '思维导图',
     difficulty: '基础',
-    description: '覆盖查询、连接、聚合、子查询、事务等数据库核心知识点。',
+    description: '用思维导图整理 BFS、DFS 的搜索过程、适用场景、优缺点和复杂度对比。',
     rating: 4.7,
     views: 1560,
     updateTime: '2024-05-13',
-    cover: 'https://images.unsplash.com/photo-1544383835-bda2bc66a55d?w=300',
-    favorite: false
+    cover: 'https://images.unsplash.com/photo-1553877522-43269d4ea984?w=300',
+    favorite: false,
+
+    courseId: 'ai',
+    courseName: '人工智能导论',
+    chapterName: '第 2 章：搜索算法',
+    tags: ['BFS', 'DFS', '思维导图'],
+    fileSize: '3.8MB'
   },
   {
     id: 4,
-    title: '神经网络反向传播可视化讲解',
-    type: '视频',
-    difficulty: '高级',
-    description: '结合图解动画理解神经网络训练过程和梯度反向传播机制。',
+    title: '搜索算法练习题',
+    type: '题库',
+    difficulty: '基础',
+    description: '围绕状态空间搜索、BFS、DFS、A* 算法设计的章节练习题，适合课后巩固。',
     rating: 4.9,
     views: 2100,
     updateTime: '2024-05-12',
-    cover: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=300',
-    favorite: false
+    cover: 'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=300',
+    favorite: false,
+
+    courseId: 'ai',
+    courseName: '人工智能导论',
+    chapterName: '第 2 章：搜索算法',
+    tags: ['章节练习', '搜索算法', 'A* 算法'],
+    fileSize: '2.4MB'
   }
 ]
 
@@ -967,6 +1030,51 @@ watch(
   .review-title {
     flex-direction: column;
     gap: 4px;
+  }
+}
+.relation-box {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 18px 0;
+}
+
+.relation-box div {
+  padding: 14px;
+  border-radius: 14px;
+  background: #f7faff;
+}
+
+.relation-box span {
+  display: block;
+  margin-bottom: 6px;
+  color: #75849a;
+  font-size: 13px;
+}
+
+.relation-box strong {
+  color: #1769ff;
+  font-size: 15px;
+}
+
+.resource-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.resource-tags span {
+  padding: 6px 12px;
+  border-radius: 999px;
+  color: #1769ff;
+  background: #eef5ff;
+  font-size: 13px;
+}
+
+@media (max-width: 768px) {
+  .relation-box {
+    grid-template-columns: 1fr;
   }
 }
 </style>
