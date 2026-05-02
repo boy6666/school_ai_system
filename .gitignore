@@ -1,0 +1,32 @@
+# Node
+node_modules/
+dist/
+npm-debug.log*
+pnpm-debug.log*
+
+# Java
+target/
+*.class
+*.jar
+*.war
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Logs
+logs/
+*.log
+
+# Env
+.env
+.env.local
+application-prod.yml
+
+# Uploads
+uploads/
+
+# OS
+.DS_Store
+Thumbs.db
