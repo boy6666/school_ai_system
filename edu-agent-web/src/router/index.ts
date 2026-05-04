@@ -36,6 +36,14 @@ const routes: RouteRecordRaw[] = [
         meta: {
           title: '课堂 / 学习空间'
         }
+      },
+      {
+        path: 'tasks',
+        name: 'StudentLearningTask',
+        component: () => import('@/views/student/LearningTask.vue'),
+        meta: {
+          title: '学习任务 / 计划'
+        }
       }
     ]
   },

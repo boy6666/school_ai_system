@@ -40,7 +40,10 @@
           <span>☑</span>
           <em>学习评估</em>
         </RouterLink>
-
+        <RouterLink to="/student/tasks" class="nav-item">
+          <span>☑</span>
+          <em>学习任务</em>
+        </RouterLink>
         <RouterLink to="/student/profile" class="nav-item">
           <span>☻</span>
           <em>个人中心</em>
