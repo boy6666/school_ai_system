@@ -30,6 +30,14 @@ const routes: RouteRecordRaw[] = [
         }
       },
       {
+        path: 'courses',
+        name: 'StudentCourseCenter',
+        component: () => import('@/views/student/CourseCenter.vue'),
+        meta: {
+          title: '课程中心'
+        }
+      },
+      {
         path: 'courses/:id',
         name: 'StudentCourseDetail',
         component: () => import('@/views/student/CourseDetail.vue'),
@@ -43,6 +51,14 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/student/LearningTask.vue'),
         meta: {
           title: '学习任务 / 计划'
+        }
+      },
+      {
+        path: 'tutor',
+        name: 'StudentTutorChat',
+        component: () => import('@/views/student/TutorChat.vue'),
+        meta: {
+          title: '智能辅导'
         }
       }
     ]

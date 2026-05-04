@@ -1,10 +1,53 @@
 import request from '@/utils/request'
 
+export type CourseStatus = 'not-started' | 'learning' | 'done'
+
+export type ChapterStatus = 'not-started' | 'learning' | 'done'
+
+export type CourseResourceType =
+  | '文档'
+  | 'PPT'
+  | '视频'
+  | '动画'
+  | '题库'
+  | '代码案例'
+  | '实验项目'
+  | '拓展阅读'
+  | '思维导图'
+
+export type ResourceDifficulty = '入门' | '基础' | '进阶' | '高级'
+
+export interface CourseListItem {
+  id: string
+  title: string
+  teacher: string
+  description: string
+  cover: string
+  progress: number
+  totalChapters: number
+  learnedChapters: number
+  totalHours: number
+  learnedHours: number
+  currentChapter: string
+  status: CourseStatus
+  tags: string[]
+}
+
+export interface CourseListQuery {
+  keyword?: string
+  status?: string
+}
+
+export interface CourseListResponse {
+  list: CourseListItem[]
+  total: number
+}
+
 export interface CourseResource {
   id: number
   title: string
-  type: string
-  difficulty: string
+  type: CourseResourceType
+  difficulty: ResourceDifficulty
   duration: string
 }
 
@@ -14,7 +57,7 @@ export interface CourseChapter {
   description: string
   duration: string
   progress: number
-  status: 'not-started' | 'learning' | 'done'
+  status: ChapterStatus
   knowledgePoints: string[]
   resources: CourseResource[]
 }
@@ -38,22 +81,37 @@ export interface CourseDetail {
   totalHours: number
   totalChapters: number
   currentChapterId: number
+  tags: string[]
   chapters: CourseChapter[]
   tasks: CourseTask[]
+}
+
+export function getCourseList(params: CourseListQuery) {
+  return request.get<unknown, CourseListResponse>('/courses', {
+    params
+  })
 }
 
 export function getCourseDetail(id: string) {
   return request.get<unknown, CourseDetail>(`/courses/${id}`)
 }
 
-export function updateChapterProgress(courseId: string, chapterId: number, progress: number) {
+export function updateChapterProgress(
+  courseId: string,
+  chapterId: number,
+  progress: number
+) {
   return request.post<unknown, { success: boolean }>(
     `/courses/${courseId}/chapters/${chapterId}/progress`,
     { progress }
   )
 }
 
-export function saveCourseNote(courseId: string, chapterId: number, content: string) {
+export function saveCourseNote(
+  courseId: string,
+  chapterId: number,
+  content: string
+) {
   return request.post<unknown, { success: boolean }>(
     `/courses/${courseId}/chapters/${chapterId}/note`,
     { content }

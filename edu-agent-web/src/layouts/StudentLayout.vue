@@ -20,7 +20,10 @@
           <span>👥</span>
           <em>学习画像</em>
         </RouterLink>
-
+        <RouterLink to="/student/courses" class="nav-item">
+          <span>▤</span>
+          <em>课程中心</em>
+        </RouterLink>
         <RouterLink to="/student/resources" class="nav-item">
           <span>▣</span>
           <em>资源中心</em>
