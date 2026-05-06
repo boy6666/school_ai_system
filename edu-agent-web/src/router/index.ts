@@ -1,138 +1,93 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import type { RouteRecordRaw } from 'vue-router'
 
-const routes: RouteRecordRaw[] = [
+const routes = [
+  {
+    path: '/login',
+    name: 'Login',
+    component: () => import('@/views/Login.vue'),
+    meta: { title: '登录' }
+  },
   {
     path: '/',
-    redirect: '/student/resources'
-  },
-
-  // 学生端
-  {
-    path: '/student',
     component: () => import('@/layouts/StudentLayout.vue'),
-    redirect: '/student/resources',
+    meta: { requiresAuth: true },
     children: [
       {
-        path: 'resources',
-        name: 'StudentResourceCenter',
-        component: () => import('@/views/student/ResourceCenter.vue'),
-        meta: {
-          title: '资源中心'
-        }
+        path: '',
+        redirect: '/dashboard'
       },
       {
-        path: 'resources/:id',
-        name: 'StudentResourceDetail',
-        component: () => import('@/views/student/ResourceDetail.vue'),
-        meta: {
-          title: '资源详情'
-        }
+        path: 'dashboard',
+        name: 'Dashboard',
+        component: () => import('@/views/student/Dashboard.vue'),
+        meta: { title: '首页' }
       },
       {
-        path: 'courses',
-        name: 'StudentCourseCenter',
-        component: () => import('@/views/student/CourseCenter.vue'),
-        meta: {
-          title: '课程中心'
-        }
+        path: 'practice',
+        name: 'Practice',
+        component: () => import('@/views/student/Practice.vue'),
+        meta: { title: '练习/题库' }
       },
       {
-        path: 'courses/:id',
-        name: 'StudentCourseDetail',
-        component: () => import('@/views/student/CourseDetail.vue'),
-        meta: {
-          title: '课堂 / 学习空间'
-        }
+        path: 'projects',
+        name: 'Projects',
+        component: () => import('@/views/student/Projects.vue'),
+        meta: { title: '实操/项目案例' }
       },
       {
-        path: 'tasks',
-        name: 'StudentLearningTask',
-        component: () => import('@/views/student/LearningTask.vue'),
-        meta: {
-          title: '学习任务 / 计划'
-        }
+        path: 'report',
+        name: 'Report',
+        component: () => import('@/views/student/Report.vue'),
+        meta: { title: '学习报告' }
       },
       {
-        path: 'tutor',
-        name: 'StudentTutorChat',
-        component: () => import('@/views/student/TutorChat.vue'),
-        meta: {
-          title: '智能辅导'
-        }
+        path: 'messages',
+        name: 'Messages',
+        component: () => import('@/views/student/Messages.vue'),
+        meta: { title: '消息中心' }
+      },
+      {
+        path: 'profile',
+        name: 'Profile',
+        component: () => import('@/views/student/Profile.vue'),
+        meta: { title: '个人中心' }
+      },
+      {
+        path: 'settings',
+        name: 'Settings',
+        component: () => import('@/views/student/Settings.vue'),
+        meta: { title: '设置' }
       }
     ]
   },
-
-  // 管理端
   {
     path: '/admin',
     component: () => import('@/layouts/AdminLayout.vue'),
-    redirect: '/admin/dashboard',
+    meta: { requiresAuth: true, role: 'admin' },
     children: [
+      {
+        path: '',
+        redirect: '/admin/dashboard'
+      },
       {
         path: 'dashboard',
         name: 'AdminDashboard',
         component: () => import('@/views/admin/Dashboard.vue'),
-        meta: {
-          title: '管理后台首页'
-        }
-      },
-      {
-        path: 'users',
-        name: 'AdminUserManage',
-        component: () => import('@/views/admin/UserManage.vue'),
-        meta: {
-          title: '用户管理'
-        }
-      },
-      {
-        path: 'resources',
-        name: 'AdminResourceManage',
-        component: () => import('@/views/admin/ResourceManage.vue'),
-        meta: {
-          title: '课程 / 资源管理'
-        }
-      },
-      {
-        path: 'agents',
-        name: 'AdminAgentManage',
-        component: () => import('@/views/admin/AgentManage.vue'),
-        meta: {
-          title: '智能体管理'
-        }
-      },
-      {
-        path: 'reviews',
-        name: 'AdminContentReview',
-        component: () => import('@/views/admin/ContentReview.vue'),
-        meta: {
-          title: '内容审核'
-        }
+        meta: { title: '管理首页' }
       },
       {
         path: 'statistics',
-        name: 'AdminStatistics',
+        name: 'Statistics',
         component: () => import('@/views/admin/Statistics.vue'),
-        meta: {
-          title: '数据统计'
-        }
+        meta: { title: '数据统计与分析' }
       },
       {
         path: 'settings',
-        name: 'AdminSystemSetting',
-        component: () => import('@/views/admin/SystemSetting.vue'),
-        meta: {
-          title: '系统设置'
-        }
+        name: 'AdminSettings',
+        component: () => import('@/views/admin/Settings.vue'),
+        meta: { title: '系统设置' }
       }
     ]
-  },
-
-  // 兜底
-  {
-    path: '/:pathMatch(.*)*',
-    redirect: '/student/resources'
   }
 ]
 
@@ -141,9 +96,16 @@ const router = createRouter({
   routes
 })
 
-router.afterEach(to => {
-  const title = to.meta.title ? `${String(to.meta.title)} - EduAgent` : 'EduAgent'
-  document.title = title
+router.beforeEach((to, from, next) => {
+  document.title = `${to.meta.title || 'EduAgent'} - 学习平台`
+
+  const token = localStorage.getItem('token')
+
+  if (to.meta.requiresAuth && !token) {
+    next('/login')
+  } else {
+    next()
+  }
 })
 
 export default router
