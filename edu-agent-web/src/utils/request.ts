@@ -1,37 +1,49 @@
 import axios from 'axios'
 
+type ApiResult<T> = {
+  code: number
+  message: string
+  data: T
+}
+
 const request = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL,
-  timeout: 30000,
-  headers: {
-    'Content-Type': 'application/json'
-  }
+  baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
+  timeout: 30000
 })
 
-request.interceptors.request.use(
-  config => {
-    const token = localStorage.getItem('token')
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`
-    }
-    return config
-  },
-  error => {
-    return Promise.reject(error)
+request.interceptors.request.use(config => {
+  const token = localStorage.getItem('token')
+
+  if (token) {
+    config.headers.set('Authorization', `Bearer ${token}`)
   }
-)
+
+  return config
+})
 
 request.interceptors.response.use(
   response => {
-    const res = response.data
-    if (res.code !== 200) {
-      console.error(res.message || '请求失败')
-      return Promise.reject(new Error(res.message || '请求失败'))
+    const responseData = response.data
+
+    if (
+      responseData &&
+      typeof responseData === 'object' &&
+      'code' in responseData &&
+      'data' in responseData
+    ) {
+      const apiResult = responseData as ApiResult<unknown>
+
+      if (apiResult.code !== 200) {
+        return Promise.reject(new Error(apiResult.message || '接口请求失败'))
+      }
+
+      return apiResult.data
     }
-    return res
+
+    return responseData
   },
   error => {
-    console.error('请求错误:', error)
+    console.error('接口请求错误：', error)
     return Promise.reject(error)
   }
 )

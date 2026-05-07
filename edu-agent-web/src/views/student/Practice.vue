@@ -68,8 +68,8 @@
         <template #header>
           <div class="detail-header">
             <div>
-              <el-tag :type="getDifficultyType(currentQuestion?.difficulty)">
-                {{ getDifficultyLabel(currentQuestion?.difficulty) }}
+              <el-tag :type="getDifficultyType(currentQuestion?.difficulty||' ')">
+                {{ getDifficultyLabel(currentQuestion?.difficulty||' ') }}
               </el-tag>
               <h3>{{ currentQuestion?.title }}</h3>
             </div>
@@ -113,7 +113,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { View, User } from '@element-plus/icons-vue'
 
