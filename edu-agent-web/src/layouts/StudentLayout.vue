@@ -16,22 +16,29 @@
           <em>学习总览</em>
         </RouterLink>
 
-        <RouterLink to="/student/profile/overview" class="nav-item">
-          <span>👥</span>
-          <em>学习画像</em>
+        <RouterLink to="/student/practice" class="nav-item">
+          <span>📝</span>
+          <em>练习/题库</em>
         </RouterLink>
+
+        <RouterLink to="/student/projects" class="nav-item">
+          <span>🚀</span>
+          <em>实操/项目案例</em>
+        </RouterLink>
+
         <RouterLink to="/student/courses" class="nav-item">
           <span>▤</span>
           <em>课程中心</em>
         </RouterLink>
+
         <RouterLink to="/student/resources" class="nav-item">
           <span>▣</span>
           <em>资源中心</em>
         </RouterLink>
 
-        <RouterLink to="/student/path" class="nav-item">
-          <span>◇</span>
-          <em>学习路径</em>
+        <RouterLink to="/student/tasks" class="nav-item">
+          <span>☑</span>
+          <em>学习任务</em>
         </RouterLink>
 
         <RouterLink to="/student/tutor" class="nav-item">
@@ -40,16 +47,23 @@
         </RouterLink>
 
         <RouterLink to="/student/report" class="nav-item">
-          <span>☑</span>
-          <em>学习评估</em>
+          <span>📊</span>
+          <em>学习报告</em>
         </RouterLink>
-        <RouterLink to="/student/tasks" class="nav-item">
-          <span>☑</span>
-          <em>学习任务</em>
+
+        <RouterLink to="/student/messages" class="nav-item">
+          <span>💬</span>
+          <em>消息中心</em>
         </RouterLink>
+
         <RouterLink to="/student/profile" class="nav-item">
           <span>☻</span>
           <em>个人中心</em>
+        </RouterLink>
+
+        <RouterLink to="/student/settings" class="nav-item">
+          <span>⚙️</span>
+          <em>设置</em>
         </RouterLink>
       </nav>
 

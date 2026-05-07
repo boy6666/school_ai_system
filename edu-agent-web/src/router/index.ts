@@ -4,15 +4,71 @@ import type { RouteRecordRaw } from 'vue-router'
 const routes: RouteRecordRaw[] = [
   {
     path: '/',
-    redirect: '/student/resources'
+    redirect: '/student/dashboard'
   },
 
   // 学生端
   {
     path: '/student',
     component: () => import('@/layouts/StudentLayout.vue'),
-    redirect: '/student/resources',
+    redirect: '/student/dashboard',
     children: [
+      {
+        path: 'dashboard',
+        name: 'StudentDashboard',
+        component: () => import('@/views/student/Dashboard.vue'),
+        meta: {
+          title: '学习首页'
+        }
+      },
+      {
+        path: 'practice',
+        name: 'StudentPractice',
+        component: () => import('@/views/student/Practice.vue'),
+        meta: {
+          title: '练习/题库'
+        }
+      },
+      {
+        path: 'projects',
+        name: 'StudentProjects',
+        component: () => import('@/views/student/Projects.vue'),
+        meta: {
+          title: '实操/项目案例'
+        }
+      },
+      {
+        path: 'report',
+        name: 'StudentReport',
+        component: () => import('@/views/student/Report.vue'),
+        meta: {
+          title: '学习报告'
+        }
+      },
+      {
+        path: 'messages',
+        name: 'StudentMessages',
+        component: () => import('@/views/student/Messages.vue'),
+        meta: {
+          title: '消息中心'
+        }
+      },
+      {
+        path: 'profile',
+        name: 'StudentProfile',
+        component: () => import('@/views/student/Profile.vue'),
+        meta: {
+          title: '个人中心'
+        }
+      },
+      {
+        path: 'settings',
+        name: 'StudentSettings',
+        component: () => import('@/views/student/Settings.vue'),
+        meta: {
+          title: '设置'
+        }
+      },
       {
         path: 'resources',
         name: 'StudentResourceCenter',
@@ -68,24 +124,8 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/admin',
     component: () => import('@/layouts/AdminLayout.vue'),
-    redirect: '/admin/dashboard',
+    redirect: '/admin/resources',
     children: [
-      {
-        path: 'dashboard',
-        name: 'AdminDashboard',
-        component: () => import('@/views/admin/Dashboard.vue'),
-        meta: {
-          title: '管理后台首页'
-        }
-      },
-      {
-        path: 'users',
-        name: 'AdminUserManage',
-        component: () => import('@/views/admin/UserManage.vue'),
-        meta: {
-          title: '用户管理'
-        }
-      },
       {
         path: 'resources',
         name: 'AdminResourceManage',
@@ -109,22 +149,6 @@ const routes: RouteRecordRaw[] = [
         meta: {
           title: '内容审核'
         }
-      },
-      {
-        path: 'statistics',
-        name: 'AdminStatistics',
-        component: () => import('@/views/admin/Statistics.vue'),
-        meta: {
-          title: '数据统计'
-        }
-      },
-      {
-        path: 'settings',
-        name: 'AdminSystemSetting',
-        component: () => import('@/views/admin/SystemSetting.vue'),
-        meta: {
-          title: '系统设置'
-        }
       }
     ]
   },
@@ -132,7 +156,7 @@ const routes: RouteRecordRaw[] = [
   // 兜底
   {
     path: '/:pathMatch(.*)*',
-    redirect: '/student/resources'
+    redirect: '/student/dashboard'
   }
 ]
 

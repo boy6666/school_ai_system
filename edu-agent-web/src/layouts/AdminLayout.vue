@@ -11,16 +11,6 @@
       </div>
 
       <nav class="admin-menu">
-        <RouterLink to="/admin/dashboard" class="menu-item">
-          <span>⌂</span>
-          <em>后台首页</em>
-        </RouterLink>
-
-        <RouterLink to="/admin/users" class="menu-item">
-          <span>👥</span>
-          <em>用户管理</em>
-        </RouterLink>
-
         <RouterLink to="/admin/resources" class="menu-item">
           <span>▣</span>
           <em>课程 / 资源管理</em>
@@ -34,16 +24,6 @@
         <RouterLink to="/admin/reviews" class="menu-item">
           <span>☑</span>
           <em>内容审核</em>
-        </RouterLink>
-
-        <RouterLink to="/admin/statistics" class="menu-item">
-          <span>📊</span>
-          <em>数据统计</em>
-        </RouterLink>
-
-        <RouterLink to="/admin/settings" class="menu-item">
-          <span>⚙</span>
-          <em>系统设置</em>
         </RouterLink>
       </nav>
 
