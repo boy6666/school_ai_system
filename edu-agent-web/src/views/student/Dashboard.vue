@@ -92,16 +92,16 @@
             </div>
           </template>
           <div class="quick-actions">
-            <el-button type="primary" @click="$router.push('/practice')">
+            <el-button type="primary" @click="$router.push('/student/practice')">
               开始练习
             </el-button>
-            <el-button type="success" @click="$router.push('/projects')">
+            <el-button type="success" @click="$router.push('/student/projects')">
               项目实战
             </el-button>
-            <el-button type="warning" @click="$router.push('/report')">
+            <el-button type="warning" @click="$router.push('/student/report')">
               查看报告
             </el-button>
-            <el-button type="info" @click="$router.push('/messages')">
+            <el-button type="info" @click="$router.push('/student/messages')">
               消息中心
             </el-button>
           </div>

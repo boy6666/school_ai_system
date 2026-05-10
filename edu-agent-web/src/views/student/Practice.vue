@@ -113,7 +113,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { View, User } from '@element-plus/icons-vue'
 
@@ -217,7 +217,7 @@ const questions = ref<Question[]>([
   }
 ])
 
-const getDifficultyType = (difficulty: string) => {
+const getDifficultyType = (difficulty = '') => {
   const types: Record<string, any> = {
     easy: 'success',
     medium: 'warning',
@@ -226,7 +226,7 @@ const getDifficultyType = (difficulty: string) => {
   return types[difficulty] || 'info'
 }
 
-const getDifficultyLabel = (difficulty: string) => {
+const getDifficultyLabel = (difficulty = '') => {
   const labels: Record<string, string> = {
     easy: '简单',
     medium: '中等',

@@ -19,11 +19,18 @@ const routes: RouteRecordRaw[] = [
       { path: 'dashboard', component: () => import('@/views/student/Dashboard.vue') },
       { path: 'profile/chat', component: () => import('@/views/student/ProfileChat.vue') },
       { path: 'profile/overview', component: () => import('@/views/student/ProfileOverview.vue') },
-      { path: 'resources/generate', component: () => import('@/views/student/ResourceGenerate.vue') },
+      { path: 'courses', component: () => import('@/views/student/CourseCenter.vue') },
+      { path: 'courses/:id', component: () => import('@/views/student/CourseDetail.vue') },
       { path: 'resources', component: () => import('@/views/student/ResourceCenter.vue') },
+      { path: 'resources/:id', component: () => import('@/views/student/ResourceDetail.vue') },
       { path: 'path', component: () => import('@/views/student/LearningPath.vue') },
       { path: 'tutor', component: () => import('@/views/student/TutorChat.vue') },
-      { path: 'report', component: () => import('@/views/student/LearningReport.vue') },
+      { path: 'report', component: () => import('@/views/student/Report.vue') },
+      { path: 'tasks', component: () => import('@/views/student/LearningTask.vue') },
+      { path: 'practice', component: () => import('@/views/student/Practice.vue') },
+      { path: 'projects', component: () => import('@/views/student/Projects.vue') },
+      { path: 'messages', component: () => import('@/views/student/Messages.vue') },
+      { path: 'settings', component: () => import('@/views/student/Settings.vue') },
       { path: 'profile', component: () => import('@/views/student/Profile.vue') }
     ]
   },
@@ -37,13 +44,11 @@ const routes: RouteRecordRaw[] = [
     children: [
       { path: 'dashboard', component: () => import('@/views/admin/Dashboard.vue') },
       { path: 'users', component: () => import('@/views/admin/UserManage.vue') },
-      { path: 'courses', component: () => import('@/views/admin/CoursesManage.vue') },
-      { path: 'learning-analysis', component: () => import('@/views/admin/LearningAnalysis.vue') },
-      { path: 'data-report', component: () => import('@/views/admin/DataReport.vue') },
+      { path: 'resources', component: () => import('@/views/admin/ResourceManage.vue') },
       { path: 'agents', component: () => import('@/views/admin/AgentManage.vue') },
-      { path: 'approvals', component: () => import('@/views/admin/ApprovalsManage.vue') },
-      { path: 'settings', component: () => import('@/views/admin/SystemSetting.vue') },
-      { path: 'logs', component: () => import('@/views/admin/LogsAudit.vue') }
+      { path: 'reviews', component: () => import('@/views/admin/ContentReview.vue') },
+      { path: 'statistics', component: () => import('@/views/admin/Statistics.vue') },
+      { path: 'settings', component: () => import('@/views/admin/Settings.vue') }
     ]
   },
 
@@ -57,7 +62,7 @@ const router = createRouter({
 })
 
 // ===================== 路由守卫（关键修复点）=====================
-router.beforeEach((to, from, next) => {
+router.beforeEach((to, _from, next) => {
   const token = localStorage.getItem('token')
 
   // 1. **管理端特殊处理**：除了 /admin/login 之外的所有 /admin/* 都需要登录

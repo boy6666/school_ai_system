@@ -269,7 +269,7 @@
               <el-table-column prop="ip" label="IP地址" width="130" />
               <el-table-column prop="createTime" label="操作时间" width="150" />
               <el-table-column label="操作" width="100">
-                <template #default="{ row }">
+                <template #default>
                   <el-button link type="primary" size="small">详情</el-button>
                 </template>
               </el-table-column>

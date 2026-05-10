@@ -168,7 +168,7 @@
                   </template>
                 </el-table-column>
                 <el-table-column label="操作" width="150">
-                  <template #default="{ row }">
+                  <template #default>
                     <el-button link type="primary" size="small">查看详情</el-button>
                     <el-button link type="primary" size="small">编辑</el-button>
                   </template>

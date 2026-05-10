@@ -102,7 +102,7 @@
       <el-card class="detail-card">
         <template #header>
           <div class="detail-header">
-            <el-button @click="goBack" icon="ArrowLeft">返回</el-button>
+            <el-button @click="goBack" :icon="ArrowLeft">返回</el-button>
             <h2>{{ currentProject?.title }}</h2>
             <div class="header-actions">
               <el-button @click="toggleFavorite">
@@ -511,7 +511,7 @@ const projects = ref<Project[]>([
   }
 ])
 
-const getLevelType = (level: string) => {
+const getLevelType = (level = '') => {
   const types: Record<string, any> = {
     beginner: 'success',
     intermediate: 'warning',
@@ -520,7 +520,7 @@ const getLevelType = (level: string) => {
   return types[level] || 'info'
 }
 
-const getLevelLabel = (level: string) => {
+const getLevelLabel = (level = '') => {
   const labels: Record<string, string> = {
     beginner: '入门',
     intermediate: '进阶',
@@ -529,7 +529,7 @@ const getLevelLabel = (level: string) => {
   return labels[level] || level
 }
 
-const getCategoryLabel = (category: string) => {
+const getCategoryLabel = (category = '') => {
   const labels: Record<string, string> = {
     frontend: '前端项目',
     backend: '后端项目',
