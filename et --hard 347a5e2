@@ -1,0 +1,33 @@
+[33m0417438[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mdevelop[m[33m, [m[1;31morigin/develop[m[33m, [m[1;32mmain[m[33m)[m HEAD@{0}: checkout: moving from cjctest to develop
+[33m33d559b[m[33m ([m[1;31morigin/cjctest[m[33m, [m[1;32mcjctest[m[33m)[m HEAD@{1}: checkout: moving from cjctest to cjctest
+[33m33d559b[m[33m ([m[1;31morigin/cjctest[m[33m, [m[1;32mcjctest[m[33m)[m HEAD@{2}: checkout: moving from develop to cjctest
+[33m0417438[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mdevelop[m[33m, [m[1;31morigin/develop[m[33m, [m[1;32mmain[m[33m)[m HEAD@{3}: reset: moving to 0417438
+[33m347a5e2[m HEAD@{4}: checkout: moving from develop to develop
+[33m347a5e2[m HEAD@{5}: commit: feat: 用 cjctest 的 views 覆盖 develop 的同名文件，保留 develop 独有文件
+[33m607ae29[m HEAD@{6}: checkout: moving from develop to develop
+[33m607ae29[m HEAD@{7}: commit: fix: 恢复 views 目录到补齐操作之前的状态
+[33me199175[m HEAD@{8}: reset: moving to e199175
+[33md3ed5e8[m HEAD@{9}: commit (merge): merge: 将 cjctest 分支的核心页面合并到 develop
+[33md463c30[m HEAD@{10}: reset: moving to origin/develop
+[33m7e59132[m HEAD@{11}: checkout: moving from cjctest to develop
+[33m33d559b[m[33m ([m[1;31morigin/cjctest[m[33m, [m[1;32mcjctest[m[33m)[m HEAD@{12}: pull origin develop --allow-unrelated-histories: updating HEAD
+[33m33d559b[m[33m ([m[1;31morigin/cjctest[m[33m, [m[1;32mcjctest[m[33m)[m HEAD@{13}: commit: chore: 删除 views 目录下的少量代码占位 Vue 文件
+[33md4cd6fc[m HEAD@{14}: commit: chore: 删除 layouts 和 router 中的代码文件，保留文件夹和 .gitkeep
+[33me199175[m HEAD@{15}: commit: 恢复跟踪 layouts 和 router
+[33m95d5fed[m HEAD@{16}: commit: chore: 停止跟踪 layouts 和 router 目录（保留本地文件）
+[33m7e59132[m HEAD@{17}: checkout: moving from develop to cjctest
+[33m7e59132[m HEAD@{18}: commit: fix: 补齐 develop 分支中缺失的 views 文件
+[33m8878950[m HEAD@{19}: checkout: moving from develop to develop
+[33m8878950[m HEAD@{20}: checkout: moving from feature/frontend-cjc to develop
+[33mfa47b68[m[33m ([m[1;31morigin/feature/frontend-cjc[m[33m, [m[1;32mfeature/frontend-cjc[m[33m)[m HEAD@{21}: checkout: moving from develop to feature/frontend-cjc
+[33m8878950[m HEAD@{22}: reset: moving to HEAD
+[33m8878950[m HEAD@{23}: checkout: moving from develop to develop
+[33m8878950[m HEAD@{24}: reset: moving to origin/develop
+[33m8d8b750[m HEAD@{25}: checkout: moving from feature/frontend-cjc to develop
+[33mfa47b68[m[33m ([m[1;31morigin/feature/frontend-cjc[m[33m, [m[1;32mfeature/frontend-cjc[m[33m)[m HEAD@{26}: commit: feat: 完成学生端和管理端所有核心页面（含路由、Layout、画像、路径规划等）
+[33m8d8b750[m HEAD@{27}: checkout: moving from develop to feature/frontend-cjc
+[33m8d8b750[m HEAD@{28}: checkout: moving from develop to develop
+[33m8d8b750[m HEAD@{29}: commit: feat: 完成管理后台首页（统计卡片+快捷入口+公告）
+[33m0417438[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mdevelop[m[33m, [m[1;31morigin/develop[m[33m, [m[1;32mmain[m[33m)[m HEAD@{30}: checkout: moving from main to develop
+[33m0417438[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mdevelop[m[33m, [m[1;31morigin/develop[m[33m, [m[1;32mmain[m[33m)[m HEAD@{31}: commit: chore: 初始化 EduAgent 项目目录结构
+[33m497a981[m HEAD@{32}: commit (initial): chore: 初始化 EduAgent 项目目录结构
