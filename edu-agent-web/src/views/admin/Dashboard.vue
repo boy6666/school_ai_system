@@ -1,99 +1,62 @@
 <template>
   <div class="admin-dashboard">
+    <!-- 统计卡片 7 3 9 2（示例数据） -->
     <el-row :gutter="20" class="stats-row">
       <el-col :span="6">
-        <el-card class="stat-card">
-          <div class="stat-item">
-            <div class="stat-icon users">
-              <el-icon><User /></el-icon>
-            </div>
-            <div class="stat-content">
-              <div class="stat-label">用户总数</div>
-              <div class="stat-value">1,234</div>
-            </div>
+        <el-card shadow="hover" class="stat-card">
+          <div class="stat-content">
+            <div class="stat-number">7</div>
+            <div class="stat-title">今日访问</div>
           </div>
         </el-card>
       </el-col>
       <el-col :span="6">
-        <el-card class="stat-card">
-          <div class="stat-item">
-            <div class="stat-icon online">
-              <el-icon><UserFilled /></el-icon>
-            </div>
-            <div class="stat-content">
-              <div class="stat-label">在线用户</div>
-              <div class="stat-value">156</div>
-            </div>
+        <el-card shadow="hover" class="stat-card">
+          <div class="stat-content">
+            <div class="stat-number">3</div>
+            <div class="stat-title">待审批</div>
           </div>
         </el-card>
       </el-col>
       <el-col :span="6">
-        <el-card class="stat-card">
-          <div class="stat-item">
-            <div class="stat-icon resources">
-              <el-icon><Document /></el-icon>
-            </div>
-            <div class="stat-content">
-              <div class="stat-label">资源总数</div>
-              <div class="stat-value">567</div>
-            </div>
+        <el-card shadow="hover" class="stat-card">
+          <div class="stat-content">
+            <div class="stat-number">9</div>
+            <div class="stat-title">新用户</div>
           </div>
         </el-card>
       </el-col>
       <el-col :span="6">
-        <el-card class="stat-card">
-          <div class="stat-item">
-            <div class="stat-icon exercises">
-              <el-icon><Files /></el-icon>
-            </div>
-            <div class="stat-content">
-              <div class="stat-label">练习完成</div>
-              <div class="stat-value">8,901</div>
-            </div>
+        <el-card shadow="hover" class="stat-card">
+          <div class="stat-content">
+            <div class="stat-number">2</div>
+            <div class="stat-title">待处理报告</div>
           </div>
         </el-card>
       </el-col>
     </el-row>
 
-    <el-row :gutter="20" class="content-row">
+    <el-row :gutter="20">
+      <!-- 快捷入口 -->
       <el-col :span="16">
-        <el-card class="content-card">
-          <template #header>
-            <div class="card-header">
-              <span>最近活动</span>
-              <el-button link type="primary">查看全部</el-button>
+        <el-card shadow="never" class="quick-card">
+          <template #header><span>快捷入口</span></template>
+          <div class="quick-links">
+            <div v-for="item in quickLinks" :key="item.name" class="quick-item" @click="goTo(item.path)">
+              <el-icon :size="28"><component :is="item.icon" /></el-icon>
+              <span>{{ item.name }}</span>
             </div>
-          </template>
-          <el-table :data="recentActivities" style="width: 100%">
-            <el-table-column prop="user" label="用户" width="150" />
-            <el-table-column prop="action" label="操作" width="200" />
-            <el-table-column prop="time" label="时间" />
-          </el-table>
+          </div>
         </el-card>
       </el-col>
+      <!-- 系统公告 -->
       <el-col :span="8">
-        <el-card class="content-card">
-          <template #header>
-            <div class="card-header">
-              <span>系统状态</span>
-            </div>
-          </template>
-          <div class="system-status">
-            <div class="status-item">
-              <el-icon class="success"><SuccessFilled /></el-icon>
-              <span>数据库连接正常</span>
-            </div>
-            <div class="status-item">
-              <el-icon class="success"><SuccessFilled /></el-icon>
-              <span>Redis 服务正常</span>
-            </div>
-            <div class="status-item">
-              <el-icon class="success"><SuccessFilled /></el-icon>
-              <span>API 服务正常</span>
-            </div>
-            <div class="status-item">
-              <el-icon class="warning"><WarningFilled /></el-icon>
-              <span>存储空间使用 75%</span>
+        <el-card shadow="never" class="notice-card">
+          <template #header><span>系统公告</span><el-button type="text" style="float: right">更多</el-button></template>
+          <div class="notice-list">
+            <div v-for="notice in notices" :key="notice.id" class="notice-item">
+              <div class="notice-title">{{ notice.title }}</div>
+              <div class="notice-time">{{ notice.time }}</div>
             </div>
           </div>
         </el-card>
@@ -103,124 +66,43 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { User, UserFilled, Document, Files, SuccessFilled, WarningFilled } from '@element-plus/icons-vue'
+import { useRouter } from 'vue-router'
+import {
+  User, Monitor, Upload, DataAnalysis, Checked, Setting, Tickets
+} from '@element-plus/icons-vue'
 
-const recentActivities = ref([
-  { user: '张三', action: '完成练习 - Vue基础', time: '2026-05-02 14:30' },
-  { user: '李四', action: '提交项目 - 电商系统', time: '2026-05-02 14:25' },
-  { user: '王五', action: '查看学习报告', time: '2026-05-02 14:20' },
-  { user: '赵六', action: '开始新练习', time: '2026-05-02 14:15' }
-])
+const router = useRouter()
+const quickLinks = [
+  { name: '用户管理', path: '/admin/users', icon: 'User' },
+  { name: '课程管理', path: '/admin/courses', icon: 'Monitor' },
+  { name: '资源上传', path: '/admin/resources', icon: 'Upload' },
+  { name: '数据报表', path: '/admin/data-report', icon: 'DataAnalysis' },
+  { name: '审批中心', path: '/admin/approvals', icon: 'Checked' },
+  { name: '系统设置', path: '/admin/settings', icon: 'Setting' },
+  { name: '日志审计', path: '/admin/logs', icon: 'Tickets' }
+]
+const notices = [
+  { id: 1, title: '关于系统维护的通知', time: '2024-05-15' },
+  { id: 2, title: '新功能上线：智能体管理', time: '2024-05-14' },
+  { id: 3, title: '平台使用规范更新', time: '2024-05-12' }
+]
+const goTo = (path: string) => router.push(path)
 </script>
 
 <style scoped>
-.admin-dashboard {
-  padding: 20px;
-}
-
-.stats-row {
-  margin-bottom: 20px;
-}
-
-.stat-card {
-  border-radius: 8px;
-  transition: transform 0.3s;
-}
-
-.stat-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.stat-item {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-}
-
-.stat-icon {
-  width: 60px;
-  height: 60px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 30px;
-  color: #fff;
-}
-
-.stat-icon.users {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-}
-
-.stat-icon.online {
-  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-}
-
-.stat-icon.resources {
-  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-}
-
-.stat-icon.exercises {
-  background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
-}
-
-.stat-content {
-  flex: 1;
-}
-
-.stat-label {
-  font-size: 14px;
-  color: #666;
-  margin-bottom: 8px;
-}
-
-.stat-value {
-  font-size: 28px;
-  font-weight: bold;
-  color: #333;
-}
-
-.content-row {
-  margin-top: 20px;
-}
-
-.content-card {
-  border-radius: 8px;
-}
-
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.system-status {
-  padding: 10px 0;
-}
-
-.status-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 15px;
-  padding: 10px;
-  background: #f5f7fa;
-  border-radius: 6px;
-}
-
-.status-item:last-child {
-  margin-bottom: 0;
-}
-
-.status-item .success {
-  color: #67c23a;
-  font-size: 20px;
-}
-
-.status-item .warning {
-  color: #e6a23c;
-  font-size: 20px;
-}
+.admin-dashboard { padding: 20px; background-color: #f5f7fa; min-height: 100vh; }
+.stats-row { margin-bottom: 20px; }
+.stat-card { border-radius: 12px; text-align: center; padding: 20px 0; }
+.stat-number { font-size: 36px; font-weight: bold; color: #409eff; }
+.stat-title { font-size: 14px; color: #909399; margin-top: 8px; }
+.quick-card, .notice-card { border-radius: 12px; }
+.quick-links { display: flex; flex-wrap: wrap; gap: 24px; }
+.quick-item { width: 80px; text-align: center; cursor: pointer; transition: transform 0.2s; }
+.quick-item:hover { transform: translateY(-4px); }
+.quick-item span { display: block; margin-top: 8px; font-size: 14px; }
+.notice-list { max-height: 300px; overflow-y: auto; }
+.notice-item { padding: 12px 0; border-bottom: 1px solid #eee; cursor: pointer; }
+.notice-item:hover { background: #f5f7fa; }
+.notice-title { font-size: 14px; margin-bottom: 6px; }
+.notice-time { font-size: 12px; color: #909399; }
 </style>
