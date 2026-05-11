@@ -174,20 +174,34 @@ const sendMessage = async () => {
 
   inputValue.value = ''
 
+  const rawProfile = localStorage.getItem('studentProfile')
+  const currentProfile = rawProfile ? JSON.parse(rawProfile) : null
+
   try {
-    const reply = await sendTutorMessage(content)
-    messages.value.push(reply)
+    const res = await sendTutorMessage(content, currentProfile)
+
+  messages.value.push({
+  id: res.data.id || Date.now() + 1,
+  role: res.data.role || 'assistant',
+  content: res.data.content || res.data.message || '已收到你的问题，我会结合你的学习画像进行分析。',
+  time: res.data.time || '刚刚'
+})
   } catch (error) {
     console.warn('智能辅导问答接口暂不可用，使用模拟回复：', error)
+
+    const profileTip = currentProfile
+      ? `\n\n我会参考你的学习画像：${currentProfile.overallType}、${currentProfile.cognitiveStyle}、易错点：${currentProfile.errorTypes?.join('、') || '暂无'}。`
+      : ''
 
     messages.value.push({
       id: Date.now() + 1,
       role: 'assistant',
-      content: `我理解你的问题是：“${content}”。目前接口暂不可用，建议先结合课程章节、资源详情和练习题进行学习。`,
+      content: `我理解你的问题是：“${content}”。目前接口暂不可用，建议先结合课程章节、资源详情和练习题进行学习。${profileTip}`,
       time: '刚刚'
     })
   }
 }
+
 
 const useSuggestion = (prompt: string) => {
   inputValue.value = prompt

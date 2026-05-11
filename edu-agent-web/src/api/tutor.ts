@@ -22,8 +22,9 @@ export function getTutorSession() {
   return request.get<unknown, TutorSession>('/student/tutor/session')
 }
 
-export function sendTutorMessage(content: string) {
-  return request.post<unknown, TutorMessage>('/student/tutor/chat', {
-    content
+export function sendTutorMessage(content: string, profile?: any) {
+  return request.post('/student/tutor/chat', {
+    content,
+    profile
   })
 }

@@ -62,26 +62,61 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import * as echarts from 'echarts'
+import type { StudentProfile } from '@/api/profile'
 
 // 雷达图数据（学科能力）
+const profile = ref<StudentProfile | null>(null)
+
+const loadStudentProfile = () => {
+  const raw = localStorage.getItem('studentProfile')
+  if (raw) {
+    profile.value = JSON.parse(raw)
+  }
+}
+
+const getProfileScore = (value?: string) => {
+  const scoreMap: Record<string, number> = {
+    '基础薄弱': 40,
+    '基础一般': 60,
+    '基础扎实': 80,
+    '基础优秀': 90,
+
+    '未掌握': 30,
+    '初步理解': 55,
+    '基本掌握': 70,
+    '熟练应用': 85,
+    '迁移创新': 95,
+
+    '强依赖型': 40,
+    '提醒辅助型': 60,
+    '半自主型': 75,
+    '高度自主型': 90,
+
+    '基础补齐型': 50,
+    '稳定提升型': 70,
+    '进阶拓展型': 88,
+  }
+
+  return value ? scoreMap[value] || 65 : 60
+}
 const radarChartRef = ref<HTMLElement>()
-const radarData = [
-  { name: '高等数学', value: 85 },
-  { name: '线性代数', value: 72 },
-  { name: '概率论', value: 68 },
-  { name: '数据结构', value: 78 },
-  { name: '算法', value: 65 },
-  { name: '英语', value: 70 }
-]
+const radarData = ref([
+  { name: '知识基础', value: 60 },
+  { name: '目标清晰度', value: 70 },
+  { name: '当前掌握度', value: 55 },
+  { name: '认知匹配度', value: 70 },
+  { name: '错因识别度', value: 65 },
+  { name: '学习自主性', value: 60 }
+])
 
 // 核心指标（进度条数据）
 const coreMetrics = ref([
-  { name: '学习投入度', value: 85, color: '#409EFF' },
-  { name: '知识掌握度', value: 72, color: '#67C23A' },
-  { name: '任务完成率', value: 90, color: '#E6A23C' },
-  { name: '学习持续性', value: 68, color: '#F56C6C' },
-  { name: '互动参与度', value: 55, color: '#909399' },
-  { name: '测验平均分', value: 78, color: '#409EFF' }
+  { name: '知识基础', value: 60, color: '#409EFF' },
+  { name: '学习目标', value: 70, color: '#67C23A' },
+  { name: '当前掌握度', value: 55, color: '#E6A23C' },
+  { name: '认知风格', value: 70, color: '#F56C6C' },
+  { name: '易错点识别', value: 65, color: '#909399' },
+  { name: '学习自主性', value: 60, color: '#409EFF' }
 ])
 
 // 优势与待提升领域
@@ -106,6 +141,45 @@ const refreshSuggestions = () => {
   ]
   suggestions.value = newSuggestions
 }
+const applyProfileToPage = () => {
+  if (!profile.value) return
+
+  const p = profile.value
+
+  radarData.value = [
+    { name: '知识基础', value: getProfileScore(p.knowledgeBase) },
+    { name: '目标清晰度', value: p.learningGoal ? 80 : 50 },
+    { name: '当前掌握度', value: getProfileScore(p.masteryLevel) },
+    { name: '认知匹配度', value: p.cognitiveStyle ? 78 : 55 },
+    { name: '错因识别度', value: p.errorTypes?.length ? 75 : 50 },
+    { name: '学习自主性', value: getProfileScore(p.learningAutonomy) }
+  ]
+
+  coreMetrics.value = [
+    { name: `知识基础：${p.knowledgeBase}`, value: getProfileScore(p.knowledgeBase), color: '#409EFF' },
+    { name: `学习目标：${p.learningGoal}`, value: p.learningGoal ? 80 : 50, color: '#67C23A' },
+    { name: `当前掌握度：${p.masteryLevel}`, value: getProfileScore(p.masteryLevel), color: '#E6A23C' },
+    { name: `认知风格：${p.cognitiveStyle}`, value: p.cognitiveStyle ? 78 : 55, color: '#F56C6C' },
+    { name: `易错点：${p.errorTypes?.join('、') || '暂无'}`, value: p.errorTypes?.length ? 75 : 50, color: '#909399' },
+    { name: `学习自主性：${p.learningAutonomy}`, value: getProfileScore(p.learningAutonomy), color: '#409EFF' }
+  ]
+
+  strengths.value = [
+    p.cognitiveStyle,
+    p.learningGoal,
+    p.knowledgeBase
+  ].filter(Boolean)
+
+  weaknesses.value = p.errorTypes?.length ? p.errorTypes : ['暂无明显薄弱点']
+
+  suggestions.value = p.suggestions?.length
+    ? p.suggestions
+    : [
+        `当前综合类型为：${p.overallType}`,
+        '建议根据六维画像制定个性化学习计划',
+        '建议定期复盘错题并更新学生画像'
+      ]
+}
 
 // 折线图数据（学习进展）
 const lineChartRef = ref<HTMLElement>()
@@ -120,7 +194,7 @@ const initRadarChart = () => {
   const chart = echarts.init(radarChartRef.value)
   const option = {
     radar: {
-      indicator: radarData.map(item => ({ name: item.name, max: 100 })),
+      indicator: radarData.value.map(item => ({ name: item.name, max: 100 })),
       shape: 'circle',
       center: ['50%', '50%'],
       radius: '65%',
@@ -128,7 +202,7 @@ const initRadarChart = () => {
     },
     series: [{
       type: 'radar',
-      data: [{ value: radarData.map(item => item.value), name: '当前水平' }],
+      data: [{ value: radarData.value.map(item => item.value), name: '当前水平' }],
       areaStyle: { color: 'rgba(64, 158, 255, 0.2)' },
       lineStyle: { color: '#409EFF', width: 2 },
       itemStyle: { color: '#409EFF' }
@@ -162,6 +236,8 @@ const initLineChart = () => {
 }
 
 onMounted(() => {
+  loadStudentProfile()
+  applyProfileToPage()
   initRadarChart()
   initLineChart()
 })

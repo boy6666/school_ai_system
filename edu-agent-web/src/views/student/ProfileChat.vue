@@ -127,6 +127,67 @@ const profile = reactive({
   dailyHours: null as number | null,
 })
 
+const buildStudentProfile = () => {
+  const hasWeaknesses = profile.weaknesses.length > 0
+  const hasStrengths = profile.strengths.length > 0
+
+  let overallType = '稳定提升型'
+  let knowledgeBase = '基础一般'
+  let masteryLevel = '初步理解'
+  let learningAutonomy = '提醒辅助型'
+
+  if (hasWeaknesses && !hasStrengths) {
+    overallType = '基础补齐型'
+    knowledgeBase = '基础薄弱'
+    masteryLevel = '初步理解'
+  }
+
+  if (hasStrengths && !hasWeaknesses) {
+    overallType = '进阶拓展型'
+    knowledgeBase = '基础扎实'
+    masteryLevel = '熟练应用'
+  }
+
+  if (profile.dailyHours && profile.dailyHours >= 2) {
+    learningAutonomy = '半自主型'
+  }
+
+  if (profile.dailyHours && profile.dailyHours >= 4) {
+    learningAutonomy = '高度自主型'
+  }
+
+  const errorTypes = hasWeaknesses
+    ? ['概念混淆', '迁移困难']
+    : ['暂无明显易错点']
+
+  const cognitiveStyleMap: Record<string, string> = {
+    '视觉型': '图像视觉型',
+    '阅读型': '理论理解型',
+    '实践型': '任务实践型',
+    '社交型': '互动问答型',
+  }
+
+  return {
+    studentId: 1,
+    overallType,
+    knowledgeBase,
+    learningGoal: profile.goal || '目标待明确',
+    masteryLevel,
+    cognitiveStyle: cognitiveStyleMap[profile.style] || profile.style || '例子驱动型',
+    errorTypes,
+    learningAutonomy,
+    suggestions: [
+      `当前综合类型为：${overallType}`,
+      `建议围绕「${profile.goal || '当前课程'}」制定阶段性学习计划`,
+      hasWeaknesses
+        ? `建议优先提升：${profile.weaknesses.join('、')}`
+        : '建议继续保持当前优势，并尝试更高难度任务',
+      '每个知识点建议先理解概念，再通过练习巩固',
+      '建议定期复盘错题，更新个人学习画像'
+    ]
+  }
+}
+
 let step = 0
 const steps = [
   { question: '你好！我是你的学习画像助手。为了给你推荐最合适的学习资源，能先告诉我你近期的学习目标吗？（例如：通过期末考试、考研、找工作）', type: 'text' },
@@ -184,10 +245,14 @@ const sendMessage = async () => {
   step++
   if (step < steps.length) await aiReply(step)
   else {
-    conversationEnded.value = true
-    ElMessage.success('画像构建完成！即将跳转到概览页')
-    setTimeout(() => router.push('/student/profile/overview'), 1500)
-  }
+  conversationEnded.value = true
+
+  const studentProfile = buildStudentProfile()
+  localStorage.setItem('studentProfile', JSON.stringify(studentProfile))
+
+  ElMessage.success('画像构建完成！即将跳转到概览页')
+  setTimeout(() => router.push('/student/profile/overview'), 1500)
+}
 }
 
 const sendQuickReply = (opt: { label: string; value: any }) => {
@@ -222,7 +287,12 @@ const updateCompleteness = () => {
 watch(() => [profile.goal, profile.strengths, profile.weaknesses, profile.style, profile.dailyHours], updateCompleteness, { deep: true })
 const profileComplete = computed(() => completeness.value === 1)
 
-const viewFullProfile = () => router.push('/student/profile/overview')
+const viewFullProfile = () => {
+  const studentProfile = buildStudentProfile()
+  localStorage.setItem('studentProfile', JSON.stringify(studentProfile))
+  router.push('/student/profile/overview')
+}
+
 
 onMounted(() => resetChat())
 </script>
