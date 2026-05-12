@@ -349,6 +349,42 @@ def _repair_profile_with_knowledge(
 
     return repaired
 
+def classify_student(profile: Dict[str, Any]) -> str:
+    knowledge_base = _to_text(profile.get("knowledge_base"))
+    weaknesses = profile.get("weaknesses", [])
+    mistake_preference = _to_text(profile.get("mistake_preference"))
+    learning_goal = _to_text(profile.get("learning_goal"))
+
+    text = f"{knowledge_base} {_to_text(weaknesses)} {mistake_preference} {learning_goal}"
+
+    score = 0
+
+    if any(word in text for word in ["没基础", "零基础", "基础薄弱", "听不懂", "完全不会", "不系统"]):
+        score += 1
+    elif any(word in text for word in ["有部分基础", "一般", "学过一点", "不熟练"]):
+        score += 2
+    elif any(word in text for word in ["基础扎实", "掌握较好", "比较熟练", "熟练"]):
+        score += 3
+    else:
+        score += 2
+
+    if weaknesses:
+        score += 1
+    else:
+        score += 3
+
+    if any(word in text for word in ["混淆", "易错", "不会用", "不知道", "薄弱"]):
+        score += 1
+    else:
+        score += 2
+
+    if score <= 4:
+        return "基础补齐型"
+    if score <= 7:
+        return "稳定提升型"
+    return "进阶拓展型"
+
+
 def build_profile(state: dict) -> dict:
     """
     节点 1：构建学生画像。
@@ -389,6 +425,7 @@ def build_profile(state: dict) -> dict:
 
     if not profile.get("need_more_info"):
         validate_profile(profile)
+        profile["overall_type"] = classify_student(profile)
 
     return {"profile": profile}
 
@@ -645,34 +682,31 @@ def save_outputs(state: dict) -> dict:
 已生成个性化学习方案。
 
 一、学生画像
-- 专业：{profile.get("major")}
-- 课程：{profile.get("course")}
-- 知识点：{profile.get("topic")}
-- 学习目标：{profile.get("learning_goal")}
-- 知识基础：{profile.get("knowledge_base")}
-- 认知风格：{profile.get("cognitive_style")}
-- 薄弱点：{profile.get("weaknesses")}
-- 易错倾向：{profile.get("mistake_preference")}
-- 资源偏好：{profile.get("resource_preference")}
+- 学生类型：{profile.get("overall_type", "稳定提升型")}
+- 专业：{profile.get("major", "未知")}
+- 课程：{profile.get("course", "未知")}
+- 知识点：{profile.get("topic", "未知")}
+- 学习目标：{profile.get("learning_goal", "未知")}
+- 知识基础：{profile.get("knowledge_base", "未知")}
+- 认知风格：{profile.get("cognitive_style", "未知")}
+- 薄弱点：{", ".join(profile.get("weaknesses", [])) if isinstance(profile.get("weaknesses", []), list) else profile.get("weaknesses", "未知")}
+- 易错倾向：{profile.get("mistake_preference", "未知")}
+- 资源偏好：{profile.get("resource_preference", "未知")}
 
-二、已生成资源
-1. 专业课程讲解文档
-2. 知识点思维导图 Mermaid
-3. 不同类型练习题
-4. 拓展阅读材料
-5. 代码类实操案例
+二、学习资源
+- 课程讲解：{"已生成" if resources.get("course_explanation") else "未生成"}
+- 思维导图：{"已生成" if resources.get("mindmap") else "未生成"}
+- 测验题：{"已生成" if resources.get("quiz") else "未生成"}
+- 拓展阅读：{"已生成" if resources.get("extended_reading") else "未生成"}
+- 编程练习：{"已生成" if resources.get("code_practice") else "未生成"}
 
 三、学习路径
-"""
+{chr(10).join([f"{index + 1}. {item}" for index, item in enumerate(learning_path)]) if learning_path else "暂无学习路径"}
 
-    for item in learning_path:
-        final_answer += (
-            f"{item.get('step')}. {item.get('title')}\n"
-            f"   使用资源：{item.get('resource')}\n"
-            f"   原因：{item.get('reason')}\n"
-        )
-
-    final_answer += f"""
+四、个性化建议
+- 如果学生类型为“基础补齐型”，建议先补前置知识，降低学习难度。
+- 如果学生类型为“稳定提升型”，建议围绕薄弱点进行查漏补缺和变式训练。
+- 如果学生类型为“进阶拓展型”，建议增加项目任务、综合题和跨知识点应用。
 
 文件已保存到：
 {base_dir}
