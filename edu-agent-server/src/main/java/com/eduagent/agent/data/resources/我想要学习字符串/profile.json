@@ -1,0 +1,19 @@
+{
+  "major": "计算机科学与技术",
+  "course": "数据结构与算法",
+  "learning_goal": "掌握核心算法原理，提升代码实现效率",
+  "knowledge_base": "已修完离散数学、C 语言基础",
+  "cognitive_style": "逻辑型",
+  "weaknesses": [
+    "动态规划应用",
+    "图论算法"
+  ],
+  "mistake_preference": [
+    "边界条件处理",
+    "时间复杂度分析"
+  ],
+  "resource_preference": [
+    "在线编程平台",
+    "算法竞赛题库"
+  ]
+}

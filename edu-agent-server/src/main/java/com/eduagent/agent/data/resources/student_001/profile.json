@@ -1,0 +1,10 @@
+{
+  "major": "计算机科学",
+  "course": "C++",
+  "learning_goal": "掌握虚函数机制",
+  "knowledge_base": "C++标准库",
+  "cognitive_style": "逻辑型",
+  "weaknesses": "虚函数理解困难",
+  "mistake_preference": "混淆虚函数与友元函数",
+  "resource_preference": "官方文档与代码示例"
+}

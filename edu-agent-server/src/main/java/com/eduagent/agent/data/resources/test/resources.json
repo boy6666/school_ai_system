@@ -1,0 +1,33 @@
+{
+  "course_explanation": "【Java编程个性化讲解文档】\n\n一、学习主题\n本次重点学习：字符串\n\n二、学生情况\n- 已有基础：基础情况未知，需要从核心概念开始学习\n- 薄弱点：字符串\n- 认知风格：偏好结构化讲解和代码案例\n- 资源偏好：讲解文档、思维导图、练习题、代码案例\n\n三、学习建议\n1. 先梳理 字符串 的核心定义和使用场景。\n2. 再结合知识库中的示例理解常见错误。\n3. 最后通过练习题和代码案例进行巩固。\n\n四、知识库参考\n来源：data\\knowledge_base\\courses\\data_structure\\java_knowagle_qwq.md\n标题：字符串\n课程：Java编程\n主题：字符串\n相关度：35.0\n标签：['Java', '字符串', 'String']\n\n内容：\n---\nid: java_018\ntitle: 字符串\ncourse: Java编程\nchapter: 数据结构基础\ntopic: 字符串\nlevel: beginner\ntags:\n  - Java\n  - 字符串\n  - String\nprerequisites:\n  - 二维数组\nsuitable_for:\n  - 代码案例偏好\nupdated_at: 2026-04-27\n---\n\n# 字符串\n\n## 学习目标\n\n学完本节后，学生应该能够：\n\n1. 理解String的不可变性。\n2. 掌握字符串的创建方式。\n3. 了解字符串常量池。\n\n## 核心概念\n\nString是不可变类，一旦创建内容不能修改。字符串常量池可复用相同内容的字符串。\n\n## 易错点\n\n1. 用==比较字符串内容。\n2. 忘记String的不可变性导致性能问题。\n3. 混淆String和char。\n\n## 示例讲解\n\n```java\nString s = \"hello\";\nString s2 = new String(\"hello\");\ns.equals(s2); // true\ns == s2; // false\nString s1 = \"hello\";\nString s2 = \"hello\"; // 复用常量池\nString s3 = ",
+  "mindmap": "graph TD;\nA[Java编程学习] --> B[字符串核心概念];\nA --> C[字符串常见用法];\nA --> D[字符串易错点];\nA --> E[练习与巩固];\nB --> B1[定义];\nB --> B2[关键特征];\nC --> C1[基础示例];\nC --> C2[实际应用];\nD --> D1[概念混淆];\nD --> D2[边界条件];\nE --> E1[选择题];\nE --> E2[简答题];\nE --> E3[代码练习];",
+  "quiz": [
+    {
+      "type": "choice",
+      "question": "学习 字符串 时，最应该先掌握什么？",
+      "options": [
+        "基本定义、使用场景和常见错误",
+        "直接背诵所有代码",
+        "跳过概念直接做难题",
+        "只看答案不练习"
+      ],
+      "answer": "基本定义、使用场景和常见错误"
+    },
+    {
+      "type": "short_answer",
+      "question": "请用自己的话解释 字符串 的核心作用。",
+      "answer": "字符串 的核心作用需要结合 Java编程 的知识体系理解，重点是掌握定义、典型场景、常见错误和基本实践方法。"
+    },
+    {
+      "type": "practice",
+      "question": "请结合 Java编程 写一个与 字符串 相关的小例子。",
+      "answer": "答案应包含核心概念、简单示例和解释说明。"
+    }
+  ],
+  "extended_reading": [
+    "建议阅读：Java编程 中 字符串 的基础概念资料。",
+    "建议阅读：字符串 的常见错误和排查方法。",
+    "建议阅读：字符串 的案例讲解或代码实操资料。"
+  ],
+  "code_practice": "# Java编程 - 字符串 代码实操案例\n\n## 练习目标\n围绕 字符串 写一个最小可运行示例，并解释每一行的作用。\n\n## 实操要求\n1. 写出一个和 字符串 相关的基础示例。\n2. 标注容易出错的地方。\n3. 修改一个参数或条件，观察输出变化。\n\n## 参考说明\n请结合知识库中的内容完成代码练习。\n"
+}

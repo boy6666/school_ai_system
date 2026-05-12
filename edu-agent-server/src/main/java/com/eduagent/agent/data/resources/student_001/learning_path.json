@@ -1,0 +1,32 @@
+[
+  {
+    "step": 1,
+    "title": "补齐核心概念",
+    "resource": "course_explanation",
+    "reason": "先建立基础概念，降低后续学习难度。"
+  },
+  {
+    "step": 2,
+    "title": "看思维导图建立结构",
+    "resource": "mindmap",
+    "reason": "学生认知风格是：逻辑型"
+  },
+  {
+    "step": 3,
+    "title": "完成基础练习",
+    "resource": "quiz",
+    "reason": "通过题目暴露薄弱点。"
+  },
+  {
+    "step": 4,
+    "title": "做代码实操",
+    "resource": "code_practice",
+    "reason": "用代码巩固递归和树遍历。"
+  },
+  {
+    "step": 5,
+    "title": "阅读拓展材料",
+    "resource": "extended_reading",
+    "reason": "扩展理解，形成长期记忆。"
+  }
+]

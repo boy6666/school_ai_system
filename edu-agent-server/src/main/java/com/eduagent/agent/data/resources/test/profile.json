@@ -1,0 +1,19 @@
+{
+  "major": "计算机相关专业",
+  "course": "Java编程",
+  "topic": "字符串",
+  "learning_goal": "学习并掌握字符串的核心概念、易错点和代码应用",
+  "knowledge_base": "基础情况未知，需要从核心概念开始学习",
+  "cognitive_style": "偏好结构化讲解和代码案例",
+  "weaknesses": [
+    "字符串"
+  ],
+  "mistake_preference": "容易混淆字符串的概念、使用场景和常见细节",
+  "resource_preference": [
+    "讲解文档",
+    "思维导图",
+    "练习题",
+    "代码案例"
+  ],
+  "raw_input": "我要学习字符串"
+}

@@ -1,0 +1,28 @@
+{
+  "course_explanation": "【C++讲解文档】\n针对你的薄弱点 虚函数理解困难，建议先理解核心概念，再结合代码练习。\n\n参考知识：\n来源：data/knowledge_base/courses/data_structure/java_knowledge_1.md\n内容：\n{\"title\": \"Java 教程\", \"text\": \"Java 是由 Sun Microsystems 公司于 1995 年 5 月推出的高级程序设计语言。\\nJava 可运行于多个平台，如 Windows, Mac OS 及其他多种 UNIX 版本的系统。\\n本教程通过简单的实例将让大家更好的了解 Java 编程语言。\\n移动操作系统 Android 大部分的代码采用 Java 编程语言编程。\\nJava 在线工具\\nJDK 11 在线中文手册\\n以下我们通过一个简单的实例来展示 Java 编程，创建文件HelloWorld.java(文件名需与",
+  "mindmap": "graph TD;\nA[数据结构学习] --> B[递归];\nA --> C[树结构];\nB --> D[终止条件];\nB --> E[子问题缩小];\nC --> F[二叉树];\nC --> G[前序/中序/后序遍历];",
+  "quiz": [
+    {
+      "type": "choice",
+      "question": "递归函数必须包含什么？",
+      "options": [
+        "循环变量",
+        "终止条件",
+        "数据库连接",
+        "网络请求"
+      ],
+      "answer": "终止条件"
+    },
+    {
+      "type": "short_answer",
+      "question": "前序遍历的顺序是什么？",
+      "answer": "根节点 -> 左子树 -> 右子树"
+    }
+  ],
+  "extended_reading": [
+    "建议阅读：递归调用栈可视化资料。",
+    "建议阅读：二叉树遍历动画讲解。",
+    "建议阅读：树结构在文件系统中的应用。"
+  ],
+  "code_practice": "class Node:\n    def __init__(self, val):\n        self.val = val\n        self.left = None\n        self.right = None\n\ndef preorder(root):\n    if root is None:\n        return []\n    return [root.val] + preorder(root.left) + preorder(root.right)\n"
+}
