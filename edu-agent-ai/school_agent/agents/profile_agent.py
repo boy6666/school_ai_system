@@ -23,6 +23,88 @@ def _infer_weaknesses(text: str, topic: str) -> List[str]:
         weaknesses.append(topic)
     return list(dict.fromkeys(weaknesses or [topic]))
 
+def _to_text(value: Any) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, list):
+        return " ".join(str(item) for item in value)
+    if isinstance(value, dict):
+        return " ".join(f"{k} {v}" for k, v in value.items())
+    return str(value)
+
+
+def classify_student_profile(profile: Dict[str, Any]) -> str:
+    """
+    根据学生画像将学生分为三类：
+    1. 基础补齐型
+    2. 稳定提升型
+    3. 进阶拓展型
+    """
+    knowledge_base = _to_text(profile.get("knowledge_base"))
+    weaknesses = profile.get("weaknesses", [])
+    mistake_patterns = _to_text(profile.get("mistake_patterns"))
+    learning_goal = _to_text(profile.get("learning_goal"))
+    cognitive_style = _to_text(profile.get("cognitive_style"))
+    pace = _to_text(profile.get("pace"))
+
+    text = f"{knowledge_base} {_to_text(weaknesses)} {mistake_patterns} {learning_goal} {cognitive_style} {pace}"
+
+    score = 0
+
+    # 1. 知识基础评分
+    if any(word in text for word in ["没基础", "零基础", "基础薄弱", "基础未知", "不会", "不懂", "看不懂"]):
+        score += 1
+    elif any(word in text for word in ["有一定基础", "有点基础", "复习", "学过", "中速"]):
+        score += 2
+    elif any(word in text for word in ["基础扎实", "熟练", "掌握较好", "进阶"]):
+        score += 3
+    else:
+        score += 2
+
+    # 2. 薄弱点评分
+    if isinstance(weaknesses, str):
+        weaknesses = [weaknesses]
+
+    if len(weaknesses) >= 3:
+        score += 1
+    elif len(weaknesses) >= 1:
+        score += 2
+    else:
+        score += 3
+
+    # 3. 易错模式评分
+    if any(word in text for word in ["概念混淆", "边界条件遗漏", "不会用", "不知道", "错"]):
+        score += 1
+    else:
+        score += 2
+
+    if score <= 4:
+        return "基础补齐型"
+    if score <= 7:
+        return "稳定提升型"
+    return "进阶拓展型"
+
+
+def build_profile_suggestions(overall_type: str) -> List[str]:
+    if overall_type == "基础补齐型":
+        return [
+            "建议先补充前置知识，降低学习难度，从基础概念和简单例题开始。",
+            "建议采用分步骤讲解，每次只聚焦一个知识点。",
+            "建议多使用图解、代码示例和基础练习帮助学生建立信心。",
+        ]
+
+    if overall_type == "稳定提升型":
+        return [
+            "建议围绕薄弱点进行查漏补缺。",
+            "建议增加变式练习，提升知识迁移能力。",
+            "建议定期复盘错题，形成稳定的解题方法。",
+        ]
+
+    return [
+        "建议增加综合题、项目任务和跨知识点应用训练。",
+        "建议引导学生进行自主总结和拓展学习。",
+        "建议提供更高阶的挑战任务，提升实践能力。",
+    ]
 
 def _build_profile_from_input(text: str) -> Dict[str, Any]:
     topic = _infer_topic(text)
@@ -59,6 +141,10 @@ def build_profile(state: dict) -> dict:
     )
     profile["last_updated"] = now_iso()
 
+    overall_type = classify_student_profile(profile)
+    profile["overall_type"] = overall_type
+    profile["profile_suggestions"] = build_profile_suggestions(overall_type)
+
     return {
         "profile_before": copy.deepcopy(old_profile),
         "profile": profile,
@@ -69,6 +155,7 @@ def build_profile(state: dict) -> dict:
                 "status": "success",
                 "loaded_existing_profile": bool(old_profile),
                 "topic": profile.get("topic"),
+                 "overall_type": overall_type,
             },
         ),
     }
@@ -90,11 +177,16 @@ def update_profile(state: dict) -> dict:
     profile["last_suggestion"] = evaluation.get("suggestion", "")
     profile["last_score"] = evaluation.get("understanding_score")
     profile["last_updated"] = now_iso()
+    overall_type = classify_student_profile(profile)
+    profile["overall_type"] = overall_type
+    profile["profile_suggestions"] = build_profile_suggestions(overall_type)
 
     patch = {
         "weaknesses": merged,
         "last_suggestion": profile["last_suggestion"],
         "last_score": profile["last_score"],
+        "overall_type": profile["overall_type"],
+        "profile_suggestions": profile["profile_suggestions"],
         "last_updated": profile["last_updated"],
     }
 
@@ -106,6 +198,10 @@ def update_profile(state: dict) -> dict:
         "agent_outputs": merge_agent_output(
             state,
             "profile_update_agent",
-            {"status": "success", "patch": patch},
+                        {
+                "status": "success",
+                "overall_type": overall_type,
+                "patch": patch,
+            },
         ),
     }
