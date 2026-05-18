@@ -1,0 +1,20 @@
+{
+  "major": "信息不足",
+  "course": "信息不足",
+  "topic": "信息不足",
+  "learning_goal": "需要用户补充学习目标",
+  "knowledge_base": "需要用户补充已有基础",
+  "cognitive_style": "需要用户补充学习偏好",
+  "weaknesses": [
+    "需要用户补充薄弱点"
+  ],
+  "mistake_preference": "需要用户补充常见错误",
+  "resource_preference": [
+    "需要用户补充资源偏好"
+  ],
+  "need_more_info": true,
+  "raw_input": "已知数据向量 x=1:10, y=x.^2，请用MATLAB绘制红色圆点线、带网格的折线图，并添加坐标标签",
+  "errors": [
+    "字段为空：mistake_preference"
+  ]
+}

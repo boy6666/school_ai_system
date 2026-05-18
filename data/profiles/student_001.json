@@ -1,0 +1,30 @@
+{
+  "major": "计算机相关专业",
+  "grade": "未知年级",
+  "course": "Java 数据结构",
+  "topic": "Java 核心语法",
+  "learning_goal": "掌握并能应用当前知识点",
+  "knowledge_base": "有一定编程基础",
+  "cognitive_style": "偏好结构化讲解",
+  "weaknesses": [
+    "Java",
+    "数据结构基础",
+    "Python 基础语法",
+    "递归",
+    "Java 核心语法"
+  ],
+  "mistake_patterns": [
+    "概念混淆",
+    "边界条件遗漏"
+  ],
+  "resource_preference": [
+    "讲解文档",
+    "思维导图",
+    "练习题",
+    "代码案例"
+  ],
+  "pace": "中速",
+  "last_updated": "2026-05-18T09:20:27.665173",
+  "last_suggestion": "",
+  "last_score": null
+}

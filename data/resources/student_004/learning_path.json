@@ -1,0 +1,32 @@
+[
+  {
+    "step": 1,
+    "title": "复习 信息不足 的核心概念",
+    "resource": "course_explanation",
+    "reason": "学习目标是：需要用户补充学习目标。先明确核心概念，避免后续练习时概念混淆。"
+  },
+  {
+    "step": 2,
+    "title": "用思维导图梳理 信息不足 中的 信息不足",
+    "resource": "mindmap",
+    "reason": "学生认知风格是：需要用户补充学习偏好，适合用结构化方式建立整体认识。"
+  },
+  {
+    "step": 3,
+    "title": "完成基础练习题",
+    "resource": "quiz",
+    "reason": "通过选择题、简答题和练习题检查是否真正理解。"
+  },
+  {
+    "step": 4,
+    "title": "完成代码实操案例",
+    "resource": "code_practice",
+    "reason": "通过动手实践巩固抽象概念，暴露真实易错点。"
+  },
+  {
+    "step": 5,
+    "title": "阅读拓展材料",
+    "resource": "extended_reading",
+    "reason": "通过拓展阅读加深理解，形成长期记忆。"
+  }
+]

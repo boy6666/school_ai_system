@@ -1,0 +1,7 @@
+{
+  "dependencies": ["."],
+  "graphs": {
+    "school_ai_system": "./school_agent/agent.py:graph"
+  },
+  "env": ".env"
+}

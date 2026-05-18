@@ -1,0 +1,16 @@
+{
+  "major": "计算机科学",
+  "course": "数据结构",
+  "topic": "递归算法",
+  "learning_goal": "掌握二叉树的中序遍历方法，并理解其时间复杂度",
+  "knowledge_base": "已有一定基础",
+  "cognitive_style": "分析型",
+  "weaknesses": [
+    "对递归算法的理解不够深入"
+  ],
+  "mistake_preference": "容易在递归过程中忘记基本情况导致死循环",
+  "resource_preference": [
+    "讲解文档",
+    "代码示例"
+  ]
+}
