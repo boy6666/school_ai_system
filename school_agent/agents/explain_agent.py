@@ -4,48 +4,46 @@ from school_agent.utils.text_utils import compact_text, get_main_topic, to_text
 
 def explain_agent(state: dict) -> dict:
     profile = state.get("profile", {})
-    topic = get_main_topic(profile)   # 强制使用画像中的主题
+    user_input = state.get("user_input", "")          # 用户具体问题
+    topic = get_main_topic(profile)                   # 画像中的主题（备用）
     context = compact_text(state.get("retrieved_context", ""), max_chars=800)
 
     prompt = f"""
-你是高校课程个性化讲解智能体。
-请直接围绕学生询问的 **{topic}** 进行结构化讲解，**不要跑题**。
+你是学生的专属编程辅导老师。请直接回答学生的问题。
 
-学生画像：
-{profile}
+学生的问题：{user_input}
+
+参考信息：
+- 学生画像中的知识点：{topic}
+- 学生基础：{profile.get("knowledge_base")}
+- 薄弱点：{to_text(profile.get("weaknesses"))}
+
+知识库参考内容（可作为素材，但不要被它带偏）：
+{context}
 
 要求：
-1. 用通俗语言解释 {topic} 的核心概念。
-2. 说明典型使用场景。
-3. 结合学生薄弱点列出易错点。
-4. 给出下一步学习建议（包括练习题和代码实践）。
-5. 不要提及与 {topic} 无关的知识，如“树结构”。
+1. **首先直接回答学生的问题**，给出清晰的步骤、代码示例（如果需要）。
+2. 如果问题涉及的知识点与 {topic} 相关，可以适当延伸讲解该知识点，但不要跑题到完全不相关的内容。
+3. 代码示例必须正确、可运行，并附上必要的解释。
+4. 最后给出一个简单的巩固练习或下一步学习建议。
 
-知识库参考（仅作补充，非必须）：
-{context}
+输出格式：直接输出讲解内容，不用 JSON，不用额外标记。
 """
-
     llm_text = call_llm(prompt)
     answer = f"""
-## 个性化讲解：{topic}
+## 回答：{user_input}
 
-### 1. 当前画像依据
-- 课程：{profile.get("course")}
-- 知识基础：{profile.get("knowledge_base")}
-- 薄弱点：{to_text(profile.get("weaknesses"))}
-- 学习偏好：{to_text(profile.get("resource_preference"))}
-
-### 2. 讲解内容
+### 📌 讲解内容
 {llm_text}
 
-### 3. 知识库参考
-{context or "当前未检索到足够内容，以上讲解基于通用知识。"}
+### 📚 参考资料
+{context[:500] if context else "（无额外参考）"}
 
-### 4. 下一步建议
-先复述一遍 `{topic}` 的核心定义，再完成 2 道基础题和 1 个代码小练习。
+### 💡 巩固建议
+试着在 IDE 中运行上述代码，并修改输入数据观察输出变化。如有问题可继续提问。
 """.strip()
 
     return {
         "final_answer": answer,
-        "agent_outputs": merge_agent_output(state, "explain_agent", {"status": "success", "topic": topic}),
+        "agent_outputs": merge_agent_output(state, "explain_agent", {"status": "success", "topic": topic, "user_question": user_input}),
     }

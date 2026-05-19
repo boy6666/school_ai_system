@@ -1,3 +1,5 @@
+# school_agent/agents/router_agent.py
+import json
 from school_agent.constants import (
     INTENT_EXPLAIN,
     INTENT_QUIZ,
@@ -5,54 +7,38 @@ from school_agent.constants import (
     INTENT_RESOURCE,
     INTENT_TUTOR,
 )
+from school_agent.services.llm_client import call_llm
 from school_agent.utils.json_utils import merge_agent_output
 
-
 def classify_intent(state: dict) -> dict:
-    """增强版意图分类智能体。
+    """AI 智能体版意图分类：调用大模型判断用户意图"""
+    user_input = state.get("user_input", "")
+    
+    prompt = f"""你是一个智能意图分类器。请分析以下用户输入，判断其最可能属于哪一类意图。
+意图类型：
+- explain: 用户希望获得知识点讲解、概念解释
+- quiz: 用户要求出题、练习、测试
+- resource: 用户希望生成学习资源（文档、思维导图、代码案例等）
+- retrieve: 用户希望检索资料、查找文档
+- tutor: 用户需要辅导、答疑、错题解析
 
-    识别规则：
-    - 优先匹配资源生成、出题、检索、辅导等明确关键词
-    - 对讲解类意图，特别支持 "什么是python"、"java基础" 等自然语言
-    """
-    text = state.get("user_input", "").lower().strip()
+用户输入：{user_input}
 
-    # 特殊处理：明确询问语言特性/语法 → 讲解意图
-    explain_keywords = [
-    "讲解", "解释", "说明", "教我", "怎么理解", "原理",
-    "什么是", "是什么", "何为", "啥是", "哪是",
-    "python", "java", "c++", "go", "rust", "javascript", "html", "css"
-]
-    quiz_keywords = ["出题", "题目", "练习", "测试", "选择题", "判断题", "填空题", "刷题", "考我", "做几道"]
-    resource_keywords = ["生成资源", "学习资料", "资源包", "学习方案", "思维导图", "拓展阅读", "实操案例", "代码案例", "生成一套"]
-    retrieve_keywords = ["查找", "检索", "推荐资料", "找资料", "有哪些资料", "文档"]
-    tutor_keywords = ["错在哪", "为什么错", "不会", "不懂", "答疑", "帮我看", "解释一下这题"]
-
-    # 优先级从高到低
-    intent = INTENT_EXPLAIN
-    confidence = 0.65
-    reason = "未命中明确意图，默认进入个性化讲解"
-
-    for keywords, candidate in [
-        (resource_keywords, INTENT_RESOURCE),
-        (quiz_keywords, INTENT_QUIZ),
-        (retrieve_keywords, INTENT_RETRIEVE),
-        (tutor_keywords, INTENT_TUTOR),
-    ]:
-        hit = [w for w in keywords if w in text]
-        if hit:
-            intent = candidate
-            confidence = min(0.95, 0.8 + 0.03 * len(hit))
-            reason = f"命中关键词：{', '.join(hit)}"
-            break
-    else:
-        # 如果没有命中以上，检查是否命中讲解意图（包含语言名）
-        hit = [w for w in explain_keywords if w in text]
-        if hit:
-            intent = INTENT_EXPLAIN
-            confidence = min(0.9, 0.7 + 0.02 * len(hit))
-            reason = f"命中讲解类关键词：{', '.join(hit)}"
-
+请只输出一个 JSON 对象，格式：{{"intent": "意图类型", "confidence": 0.0-1.0, "reason": "简短理由"}}
+不要输出其他内容。
+"""
+    response = call_llm(prompt)
+    try:
+        cleaned = response.strip().replace("```json", "").replace("```", "").strip()
+        data = json.loads(cleaned)
+        intent = data.get("intent", INTENT_EXPLAIN)
+        confidence = data.get("confidence", 0.7)
+        reason = data.get("reason", "AI 判断")
+    except:
+        intent = INTENT_EXPLAIN
+        confidence = 0.6
+        reason = "JSON 解析失败，默认讲解"
+    
     return {
         "intent": intent,
         "intent_confidence": confidence,
@@ -63,7 +49,6 @@ def classify_intent(state: dict) -> dict:
             {"status": "success", "intent": intent, "confidence": confidence, "reason": reason},
         ),
     }
-
 
 def route_by_intent(state: dict) -> str:
     return state.get("intent", INTENT_EXPLAIN)
