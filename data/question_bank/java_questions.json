@@ -1,0 +1,30 @@
+[
+  {
+    "id": "io_001",
+    "topic": "Java 输入输出",
+    "type": "choice",
+    "difficulty": "基础",
+    "question": "在 Java 中，用于从控制台读取用户输入的标准类是？",
+    "options": ["System.in", "Scanner", "BufferedReader", "Console"],
+    "answer": "Scanner",
+    "analysis": "Scanner 是 Java 标准库中用于解析基本类型和字符串的类。",
+    "tags": ["输入输出"],
+    "weakness_target": ["输入输出"],
+    "cognitive_style": ["例子驱动型"],
+    "suitable_for": ["基础一般"]
+  },
+  {
+    "id": "interface_001",
+    "topic": "Java 接口",
+    "type": "choice",
+    "difficulty": "基础",
+    "question": "下列关于 Java 接口的说法，正确的是？",
+    "options": ["接口可以包含实例变量", "接口中的方法默认是 public abstract", "接口可以使用 new 实例化", "接口可以包含静态代码块"],
+    "answer": "接口中的方法默认是 public abstract",
+    "analysis": "接口中的方法隐式是 public abstract，变量隐式是 public static final。",
+    "tags": ["接口", "面向对象"],
+    "weakness_target": ["接口", "抽象类"],
+    "cognitive_style": ["逻辑推导型"],
+    "suitable_for": ["基础一般"]
+  }
+]
