@@ -4,20 +4,21 @@ from school_agent.utils.text_utils import get_main_topic, to_text
 
 
 def retrieve_knowledge(state: dict) -> dict:
-    """知识库检索节点：为后续所有专业智能体提供上下文。"""
+    """知识库检索节点：只根据用户当前输入和画像主题检索，避免历史薄弱点污染。"""
     profile = state.get("profile", {})
-    query = " ".join(
-        [
-            state.get("user_input", ""),
-            to_text(profile.get("course")),
-            to_text(profile.get("topic")),
-            to_text(profile.get("weaknesses")),
-        ]
-    )
-
+    user_input = state.get("user_input", "")
+    topic = profile.get("topic", "")   # 例如 "Java 基础语法"
+    
+    # 构建干净的查询：优先使用用户输入，如果用户输入太短则加上主题
+    if len(user_input) < 5 and topic:
+        query = topic
+    else:
+        query = f"{topic} {user_input}".strip()
+    
+    # 检索文档（最多5篇）
     docs = search_documents(query, top_k=5)
     context = build_context(docs)
-
+    
     return {
         "retrieved_docs": docs,
         "retrieved_context": context,

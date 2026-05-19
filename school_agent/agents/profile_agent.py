@@ -8,16 +8,14 @@ from school_agent.utils.time_utils import now_iso
 
 def _infer_topic(text: str) -> str:
     text_lower = text.lower()
-    # 优先匹配明确语言/框架
+    if "java" in text_lower:
+        return "Java 基础语法"
     if "python" in text_lower:
         return "Python 基础语法"
-    if "java" in text_lower:
-        return "Java 核心语法"
     if "递归" in text:
         return "递归"
     if "二叉树" in text:
         return "二叉树"
-    # 原有候选匹配
     candidates = ["递归", "二叉树", "链表", "数组", "栈", "队列", "哈希表", "字符串", "排序"]
     for item in candidates:
         if item in text:
