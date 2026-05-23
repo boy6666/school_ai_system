@@ -1,0 +1,26 @@
+{
+  "student_id": "student_demo",
+  "major": "未知专业",
+  "grade": "未知年级",
+  "course": "Java 数据结构",
+  "knowledge_level": "待评估",
+  "learning_goal": "提升课程理解与实践能力",
+  "cognitive_style": "待观察",
+  "weaknesses": [
+    "链表",
+    "链表节点空指针检查（null 防护）",
+    "链表遍历与边界条件（头尾节点）"
+  ],
+  "mistake_patterns": [],
+  "resource_preference": [
+    "讲解文档",
+    "思维导图",
+    "练习题",
+    "代码案例"
+  ],
+  "pace": "中速",
+  "history_summary": "",
+  "last_updated": "2026-05-19T11:59:14",
+  "last_suggestion": "建议降低难度，优先使用图解和基础题巩固。",
+  "last_understanding_score": 55
+}

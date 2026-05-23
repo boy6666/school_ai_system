@@ -1,0 +1,26 @@
+{
+  "student_id": "test_v4",
+  "major": "未知专业",
+  "grade": "未知年级",
+  "course": "Java 程序设计",
+  "knowledge_level": "待评估",
+  "learning_goal": "提升课程理解与实践能力",
+  "cognitive_style": "待观察",
+  "weaknesses": [
+    "异常捕获与多重 catch 的使用",
+    "try-with-resources 与自动资源管理",
+    "自定义异常与日志记录"
+  ],
+  "mistake_patterns": [],
+  "resource_preference": [
+    "讲解文档",
+    "思维导图",
+    "练习题",
+    "代码案例"
+  ],
+  "pace": "中速",
+  "history_summary": "",
+  "last_updated": "2026-05-19T20:26:38",
+  "last_suggestion": "1. 先阅读我为你生成的『Java 异常处理』讲解文档（已含思维导图），重点关注“常见异常类型”和“多层捕获”章节；2. 完成配套练习题 1-5，并在每次提交后查看错题解析，把错误模式记录到笔记；3. 按照代码案例中的模板，改写 Server/Client 套接字通信示例，加入 try-catch 及 finally 块，体会资源释放；4. 设定每日 30 分钟刷题，连续 5 天后做一套综合测验，检验巩固效果。",
+  "last_understanding_score": 25
+}

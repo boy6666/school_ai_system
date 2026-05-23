@@ -1,0 +1,36 @@
+{
+  "major": "未知专业",
+  "grade": "未知年级",
+  "course": "Java 数据结构",
+  "topic": "递归",
+  "learning_goal": "提升课程理解与实践能力",
+  "knowledge_base": "基础未知",
+  "cognitive_style": "待观察",
+  "weaknesses": [
+    "递归",
+    "递归调用过程与栈帧变化",
+    "终止条件设计与边界情况",
+    "将问题分解为子问题的建模能力"
+  ],
+  "mistake_patterns": [],
+  "resource_preference": [
+    "讲解文档",
+    "思维导图",
+    "练习题",
+    "代码案例"
+  ],
+  "pace": "中速",
+  "last_updated": "2026-05-21T11:33:59",
+  "student_id": "pytest_student",
+  "knowledge_level": "待评估",
+  "history_summary": "",
+  "last_suggestion": "1. 先看图文讲解文档（配思维导图）梳理递归基本概念与执行流程；2. 从两个入门代码案例练起：阶乘与递归创建多级目录，逐行加日志观察调用顺序与返回；3. 完成由浅入深的练习题，至少覆盖常见终止条件题型；4. 按你的偏好进行变式练习，对比迭代写法加深理解；5. 每次练习后记录错因，周末复盘形成稳定解题模板。",
+  "last_understanding_score": 55,
+  "overall_type": "基础补齐型",
+  "profile_suggestions": [
+    "建议先补充前置知识，降低学习难度，从基础概念和简单例题开始。",
+    "建议采用分步骤讲解，每次只聚焦一个知识点。",
+    "建议多使用图解、代码示例和基础练习帮助学生建立信心。"
+  ],
+  "last_score": 48
+}

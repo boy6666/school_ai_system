@@ -4,3 +4,4 @@ __pycache__/
 .pytest_cache/
 data/resources/
 data/learning_logs/*.jsonl
+.idea.zip

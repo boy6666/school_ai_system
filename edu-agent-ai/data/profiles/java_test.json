@@ -1,0 +1,26 @@
+{
+  "student_id": "java_test",
+  "major": "未知专业",
+  "grade": "未知年级",
+  "course": "Java 数据结构",
+  "knowledge_level": "待评估",
+  "learning_goal": "提升课程理解与实践能力",
+  "cognitive_style": "待观察",
+  "weaknesses": [
+    "泛型的基本概念与使用场景",
+    "Java 泛型不能使用基本类型的原因（装箱机制、类型参数限制）",
+    "类型擦除及其对运行时行为的影响"
+  ],
+  "mistake_patterns": [],
+  "resource_preference": [
+    "讲解文档",
+    "思维导图",
+    "练习题",
+    "代码案例"
+  ],
+  "pace": "中速",
+  "history_summary": "",
+  "last_updated": "2026-05-19T12:03:15",
+  "last_suggestion": "['阅读《Java 泛型详解》文档，重点理解泛型的本质和使用规则，标记出不理解的部分。', '查看《泛型类型擦除示意图》思维导图，梳理编译期与运行期的类型变化过程。', '完成《泛型基础练习题》，尤其关注 List<Integer> 与基本类型数组的区别题。', '研究提供的代码案例：比较 ArrayList<Integer> 与 int[] 的使用，观察自动装箱/拆箱带来的差异。', '总结类型擦除导致的常见问题（如重载冲突、反射获取泛型信息），记录到个人笔记。']",
+  "last_understanding_score": 25
+}

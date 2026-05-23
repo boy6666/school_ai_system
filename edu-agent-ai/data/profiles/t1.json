@@ -1,0 +1,26 @@
+{
+  "student_id": "t1",
+  "major": "未知专业",
+  "grade": "未知年级",
+  "course": "Java 程序设计",
+  "knowledge_level": "待评估",
+  "learning_goal": "提升课程理解与实践能力",
+  "cognitive_style": "待观察",
+  "weaknesses": [
+    "网络编程基础（Socket/ServerSocket作用及关系、端口与IP概念）",
+    "服务器端流程顺序（创建ServerSocket→accept阻塞等待连接→IO流读写）",
+    "IO流包装层的使用（BufferedReader/BufferedWriter与InputStream/OutputStream的关系）"
+  ],
+  "mistake_patterns": [],
+  "resource_preference": [
+    "讲解文档",
+    "思维导图",
+    "练习题",
+    "代码案例"
+  ],
+  "pace": "中速",
+  "history_summary": "",
+  "last_updated": "2026-05-19T20:33:43",
+  "last_suggestion": "['先阅读《Java 实例 – ServerSocket 和 Socket 通信实例》文档，对照‘打电话’类比，用思维导图梳理服务器端执行流程。', '在本地按文档代码逐行敲一遍，运行后用`telnet localhost 8888`测试，观察控制台输入输出，加深‘读一行’‘写一行’的印象。', '完成一次小修改：让服务器把收到的消息加上`“服务器已收到：”`前缀再回写给客户端，检验IO流写操作。', '做1-2道练习题：编写能同时处理多个客户端的控制台聊天室雏形，思考`while(true) { accept() }`与线程的基本用法。']",
+  "last_understanding_score": 35
+}

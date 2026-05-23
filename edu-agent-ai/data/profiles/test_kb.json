@@ -1,0 +1,26 @@
+{
+  "student_id": "test_kb",
+  "major": "未知专业",
+  "grade": "未知年级",
+  "course": "Java 数据结构",
+  "knowledge_level": "待评估",
+  "learning_goal": "提升课程理解与实践能力",
+  "cognitive_style": "待观察",
+  "weaknesses": [
+    "递归",
+    "二叉树",
+    "图"
+  ],
+  "mistake_patterns": [],
+  "resource_preference": [
+    "讲解文档",
+    "思维导图",
+    "练习题",
+    "代码案例"
+  ],
+  "pace": "中速",
+  "history_summary": "",
+  "last_updated": "2026-05-19T20:18:54",
+  "last_suggestion": "建议继续完成本轮推荐资源，并通过练习题验证掌握情况。",
+  "last_understanding_score": 72
+}

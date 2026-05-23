@@ -1,0 +1,26 @@
+{
+  "student_id": "test_v3",
+  "major": "未知专业",
+  "grade": "未知年级",
+  "course": "Java 程序设计",
+  "knowledge_level": "待评估",
+  "learning_goal": "提升课程理解与实践能力",
+  "cognitive_style": "待观察",
+  "weaknesses": [
+    "try-catch-finally/try-with-resources 结构与执行顺序",
+    "受检异常(Checked Exception)与非受检异常(Unchecked Exception)的区别及适用场景",
+    "自定义异常设计与实际业务场景结合"
+  ],
+  "mistake_patterns": [],
+  "resource_preference": [
+    "讲解文档",
+    "思维导图",
+    "练习题",
+    "代码案例"
+  ],
+  "pace": "中速",
+  "history_summary": "",
+  "last_updated": "2026-05-19T20:24:01",
+  "last_suggestion": "1. 【结构化学习】先看讲解文档，梳理异常体系思维导图，重点标注受检/非受检异常区别；\n2. 【刻意练习】完成3组递进式代码案例：\n   - 基础：捕获算术异常并恢复\n   - 进阶：使用多重catch块处理不同异常\n   - 高级：设计自定义异常处理用户输入验证\n3. 【即时反馈】每完成一个案例，立即运行测试观察异常流程，记录易错点到错题本；\n4. 【综合应用】尝试修改提供的Socket通信示例，添加网络中断异常处理机制。",
+  "last_understanding_score": 45
+}

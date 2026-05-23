@@ -1,0 +1,27 @@
+{
+  "student_id": "t_str",
+  "major": "未知专业",
+  "grade": "未知年级",
+  "course": "Java 数据结构",
+  "knowledge_level": "待评估",
+  "learning_goal": "提升课程理解与实践能力",
+  "cognitive_style": "待观察",
+  "weaknesses": [
+    "字符串",
+    "字符串基础概念",
+    "字符串常用方法",
+    "字符串在数据结构中的操作"
+  ],
+  "mistake_patterns": [],
+  "resource_preference": [
+    "讲解文档",
+    "思维导图",
+    "练习题",
+    "代码案例"
+  ],
+  "pace": "中速",
+  "history_summary": "",
+  "last_updated": "2026-05-19T20:49:12",
+  "last_suggestion": "1. 优先学习【字符串基础概念】，阅读我为你生成的讲解文档，梳理字符串的定义、特性及核心逻辑；2. 结合思维导图，系统掌握字符串的常用方法（如contains、length、substring等），明确各方法的使用场景与参数规则；3. 通过配套练习题，针对性练习字符串查找、拼接、匹配等基础操作，巩固知识点；4. 研读代码案例，重点分析字符串在数据结构（如ArrayList）中的实际应用，动手复现案例代码，理解字符串与数据结构的结合逻辑；5. 完成专项练习后，可借助生成的视频脚本回顾重点，查漏补缺，逐步提升实践能力。",
+  "last_understanding_score": 20
+}
