@@ -10,21 +10,27 @@ import java.util.*;
 public class AdminAgentController {
 
     private static final List<Map<String, Object>> AGENTS = List.of(
-        Map.of("id", 1, "name", "ProfileAgent", "type", "profile", "description", "学生画像识别",
-                "model", "deepseek-v3", "status", "running", "callCount", 1523, "activeUsers", 89,
-                "satisfaction", 92.5, "solveRate", 87.3,
-                "tools", List.of("profile_analysis", "weakness_detection"),
-                "promptVersion", "v2.1", "updateTime", "2026-05-15 10:30:00"),
-        Map.of("id", 2, "name", "TutorAgent", "type", "tutor", "description", "智能辅导",
-                "model", "deepseek-v3", "status", "running", "callCount", 892, "activeUsers", 45,
-                "satisfaction", 88.7, "solveRate", 82.1,
-                "tools", List.of("question_answer", "explain_concept"),
-                "promptVersion", "v1.8", "updateTime", "2026-05-18 14:20:00"),
-        Map.of("id", 3, "name", "QuizAgent", "type", "quiz", "description", "智能出题",
-                "model", "deepseek-v3", "status", "running", "callCount", 2341, "activeUsers", 120,
-                "satisfaction", 90.1, "solveRate", 85.6,
-                "tools", List.of("generate_question", "evaluate_answer"),
-                "promptVersion", "v3.0", "updateTime", "2026-05-20 09:15:00")
+        Map.ofEntries(
+                Map.entry("id", 1), Map.entry("name", "ProfileAgent"), Map.entry("type", "profile"),
+                Map.entry("description", "学生画像识别"), Map.entry("model", "deepseek-v3"),
+                Map.entry("status", "running"), Map.entry("callCount", 1523), Map.entry("activeUsers", 89),
+                Map.entry("satisfaction", 92.5), Map.entry("solveRate", 87.3),
+                Map.entry("tools", List.of("profile_analysis", "weakness_detection")),
+                Map.entry("promptVersion", "v2.1"), Map.entry("updateTime", "2026-05-15 10:30:00")),
+        Map.ofEntries(
+                Map.entry("id", 2), Map.entry("name", "TutorAgent"), Map.entry("type", "tutor"),
+                Map.entry("description", "智能辅导"), Map.entry("model", "deepseek-v3"),
+                Map.entry("status", "running"), Map.entry("callCount", 892), Map.entry("activeUsers", 45),
+                Map.entry("satisfaction", 88.7), Map.entry("solveRate", 82.1),
+                Map.entry("tools", List.of("question_answer", "explain_concept")),
+                Map.entry("promptVersion", "v1.8"), Map.entry("updateTime", "2026-05-18 14:20:00")),
+        Map.ofEntries(
+                Map.entry("id", 3), Map.entry("name", "QuizAgent"), Map.entry("type", "quiz"),
+                Map.entry("description", "智能出题"), Map.entry("model", "deepseek-v3"),
+                Map.entry("status", "running"), Map.entry("callCount", 2341), Map.entry("activeUsers", 120),
+                Map.entry("satisfaction", 90.1), Map.entry("solveRate", 85.6),
+                Map.entry("tools", List.of("generate_question", "evaluate_answer")),
+                Map.entry("promptVersion", "v3.0"), Map.entry("updateTime", "2026-05-20 09:15:00"))
     );
 
     @GetMapping

@@ -23,11 +23,11 @@ public class Result<T> {
         return new Result<>(200, "成功", null);
     }
 
-    public static Result<Void> fail(int code, String message) {
+    public static <T> Result<T> fail(int code, String message) {
         return new Result<>(code, message, null);
     }
 
-    public static Result<Void> fail(String message) {
+    public static <T> Result<T> fail(String message) {
         return new Result<>(400, message, null);
     }
 
