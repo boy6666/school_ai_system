@@ -17,7 +17,7 @@ else:
 
 
     class ChatRequest(BaseModel):
-        user_input: str
+        user_input: str = ""
         student_id: str = "student_001"
         session_id: Optional[str] = "api_session"
 

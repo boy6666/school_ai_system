@@ -1,0 +1,24 @@
+{
+  "major": "信息类相关专业",
+  "grade": "未知年级",
+  "course": "Java 程序设计",
+  "topic": "Java 基础",
+  "learning_goal": "掌握并能应用当前知识点",
+  "knowledge_base": "基础未知",
+  "cognitive_style": "偏好结构化讲解",
+  "weaknesses": [
+    "Java 基础",
+    "数组"
+  ],
+  "mistake_patterns": [],
+  "resource_preference": [
+    "讲解文档",
+    "思维导图",
+    "练习题",
+    "代码案例"
+  ],
+  "pace": "中速",
+  "last_updated": "2026-05-24T16:51:49",
+  "last_suggestion": "建议继续完成 Java 基础 的练习题和代码实操。",
+  "last_score": 78
+}

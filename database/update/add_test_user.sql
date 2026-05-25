@@ -1,0 +1,1 @@
+USE edu_agent; INSERT INTO users (username, password, nickname, role, status) VALUES ('test', '$2a$12$8dPS6vENSHQNwbph0l/HFuArKK1qFOUJqDF5HyGjxt99d6UpD9wLu', '测试用户', 'student', 'active');

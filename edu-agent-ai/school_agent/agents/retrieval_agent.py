@@ -6,14 +6,17 @@ from school_agent.utils.text_utils import get_main_topic, to_text
 def retrieve_knowledge(state: dict) -> dict:
     """知识库检索节点：为后续所有专业智能体提供上下文。"""
     profile = state.get("profile", {})
-    query = " ".join(
-        [
-            state.get("user_input", ""),
-            to_text(profile.get("course")),
-            to_text(profile.get("topic")),
-            to_text(profile.get("weaknesses")),
-        ]
-    )
+    # 用户当前问题为主，画像数据为辅
+    user_input = state.get("user_input", "")
+    topic = to_text(profile.get("topic"))
+    weaknesses = to_text(profile.get("weaknesses"))
+    
+    # 优先用用户输入搜索
+    query = user_input
+    # 如果结果太少，追加 topic 一起搜
+    if topic and topic not in query:
+        query = f"{query} {topic}"
+
 
     docs = search_documents(query, top_k=5)
     context = build_context(docs)

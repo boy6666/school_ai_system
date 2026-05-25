@@ -5,6 +5,7 @@ const routes: RouteRecordRaw[] = [
   // 学生端登录/注册
   { path: '/login', name: 'Login', component: () => import('@/views/Login.vue') },
   { path: '/register', name: 'Register', component: () => import('@/views/Register.vue') },
+  { path: '/register/form', name: 'RegisterForm', component: () => import('@/views/RegisterForm.vue') },
   
   // 管理员登录页（关键：这条路由必须存在，且路径为 /admin/login）
   { path: '/admin/login', name: 'AdminLogin', component: () => import('@/views/admin/AdminLogin.vue') },

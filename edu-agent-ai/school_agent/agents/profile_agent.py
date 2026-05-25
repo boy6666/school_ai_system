@@ -7,16 +7,16 @@ from school_agent.utils.time_utils import now_iso
 
 
 def _infer_topic(text: str) -> str:
-    candidates = ["递归", "二叉树", "链表", "数组", "栈", "队列", "哈希表", "字符串", "排序", "Java"]
+    candidates = ["ArrayList", "LinkedList", "HashMap", "HashSet", "List", "Map", "Set", "集合", "字符串", "异常", "多线程", "泛型", "IO流", "Socket", "反射", "注解", "抽象类", "接口", "继承", "多态", "封装", "数组", "Lambda", "Stream", "Java"]
     for item in candidates:
-        if item in text:
+        if item.lower() in text.lower():
             return item
-    return "数据结构基础"
+    return "Java 基础"
 
 
 def _infer_weaknesses(text: str, topic: str) -> List[str]:
     weaknesses = []
-    for item in ["递归", "二叉树", "链表", "复杂度", "代码实现", "边界条件"]:
+    for item in ["语法", "编译错误", "空指针", "类型转换", "逻辑错误", "API使用", "概念混淆", "代码实现"]:
         if item in text:
             weaknesses.append(item)
     if any(word in text for word in ["不会", "不懂", "薄弱", "错", "看不懂"]):
@@ -29,13 +29,13 @@ def _build_profile_from_input(text: str) -> Dict[str, Any]:
     return {
         "major": "计算机相关专业" if "计算机" in text or "Java" in text else "信息类相关专业",
         "grade": "大二" if "大二" in text else "未知年级",
-        "course": "Java 数据结构" if "Java" in text or "数据结构" in text else "数据结构",
+        "course": "Java 程序设计",
         "topic": topic,
         "learning_goal": "期末考 85 分" if "85" in text else "掌握并能应用当前知识点",
         "knowledge_base": "有一定编程基础" if any(w in text for w in ["复习", "大二", "Java"]) else "基础未知",
         "cognitive_style": "偏好图解、代码案例和练习题" if any(w in text for w in ["图解", "代码", "练习"]) else "偏好结构化讲解",
         "weaknesses": _infer_weaknesses(text, topic),
-        "mistake_patterns": ["概念混淆", "边界条件遗漏"],
+        "mistake_patterns": [],
         "resource_preference": ["讲解文档", "思维导图", "练习题", "代码案例"],
         "pace": "中速",
         "last_updated": now_iso(),
@@ -78,6 +78,12 @@ def update_profile(state: dict) -> dict:
     """画像更新智能体范例：根据评估报告回写薄弱点和建议。"""
     student_id = state.get("student_id", "student_001")
     profile = copy.deepcopy(state.get("profile", {}))
+    # Always refresh topic from latest user input
+    user_input = state.get("user_input", "")
+    if user_input:
+        fresh_topic = _infer_topic(user_input)
+        if fresh_topic:
+            profile["topic"] = fresh_topic
     evaluation = state.get("evaluation_report", {})
 
     weak_points = evaluation.get("weak_points", [])

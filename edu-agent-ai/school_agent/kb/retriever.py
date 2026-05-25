@@ -24,7 +24,7 @@ def search_documents(query: str, top_k: int = 5) -> List[Dict[str, str]]:
             scored.append((score, doc))
 
     if not scored:
-        return docs[:top_k]
+        return []
 
     scored.sort(key=lambda item: item[0], reverse=True)
     results = []
