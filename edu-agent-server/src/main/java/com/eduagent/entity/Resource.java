@@ -26,8 +26,6 @@ public class Resource {
     private String tags;
     private String status;
     private Long teacherId;
-    @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createTime;
-    @TableField(fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updateTime;
 }

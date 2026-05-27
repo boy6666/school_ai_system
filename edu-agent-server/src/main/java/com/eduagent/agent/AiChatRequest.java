@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AiChatRequest {
+    @JsonProperty("user_input")
     private String message;
 
     @JsonProperty("student_id")

@@ -9,7 +9,10 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class PageResult<T> {
-    private List<T> list;
+    private List<T> records;
+
+    // alias for frontend
+    public List<T> getList() { return records; }
     private long total;
     private int page;
     private int pageSize;

@@ -11,6 +11,7 @@ import com.eduagent.service.AuthService;
 import com.eduagent.vo.LoginVO;
 import com.eduagent.vo.UserInfoVO;
 import lombok.RequiredArgsConstructor;
+import java.time.LocalDateTime;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -68,6 +69,7 @@ public class AuthServiceImpl implements AuthService {
         user.setEmail(request.getEmail());
         user.setRole(request.getRole() != null ? request.getRole() : "student");
         user.setCreateTime(LocalDateTime.now());
+        user.setUpdateTime(LocalDateTime.now());
         userMapper.insert(user);
 
         log.info("用户注册成功: username={}", user.getUsername());
