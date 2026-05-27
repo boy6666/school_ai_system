@@ -3,30 +3,29 @@
   "grade": "未知年级",
   "course": "Java 程序设计",
   "topic": "Java 基础",
-  "learning_goal": "掌握 TCP/UDP 通信和简易服务器开发",
-  "knowledge_base": "有一定编程基础",
-  "cognitive_style": "偏好项目实战驱动",
+  "learning_goal": "掌握线程创建、同步机制和线程池使用",
+  "knowledge_base": "有一定编程基础，了解基本语法",
+  "cognitive_style": "偏好实操驱动学习",
   "weaknesses": [
-    "TCP 三次握手",
-    "Socket 超时处理",
-    "多线程服务器",
+    "线程安全",
+    "死锁排查",
+    "synchronized 原理",
     "Java 基础",
     "字符串"
   ],
   "mistake_patterns": [
-    "端口未释放",
-    "连接未关闭"
+    "线程状态混淆",
+    "忘记释放锁"
   ],
   "resource_preference": [
     "代码案例",
     "讲解文档",
-    "拓展阅读",
-    "思维导图",
-    "练习题"
+    "练习题",
+    "思维导图"
   ],
   "pace": "中速",
-  "last_updated": "2026-05-27T10:20:47",
-  "username": "test",
+  "last_updated": "2026-05-27T10:24:27",
+  "username": "student001",
   "last_score": 78,
   "last_suggestion": "建议继续完成 Java 基础 的练习题和代码实操。"
 }

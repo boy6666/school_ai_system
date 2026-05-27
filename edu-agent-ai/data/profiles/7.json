@@ -1,0 +1,25 @@
+{
+  "username": "student004",
+  "course": "Java 程序设计",
+  "topic": "异常处理与调试",
+  "learning_goal": "掌握 try-catch-finally 和自定义异常",
+  "knowledge_base": "略有基础，写过简单程序",
+  "weaknesses": [
+    "异常链追踪",
+    "finally 执行时机",
+    "自定义异常"
+  ],
+  "mistake_patterns": [
+    "catch 顺序错误",
+    "异常吞没"
+  ],
+  "resource_preference": [
+    "练习题",
+    "讲解文档",
+    "代码案例"
+  ],
+  "cognitive_style": "偏好练习驱动",
+  "pace": "中速",
+  "last_updated": "2026-05-26T20:00:00",
+  "last_score": 66
+}
