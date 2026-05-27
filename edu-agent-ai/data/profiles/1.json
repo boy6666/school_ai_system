@@ -1,0 +1,26 @@
+{
+  "major": "信息类相关专业",
+  "grade": "未知年级",
+  "course": "数据结构",
+  "topic": "数据结构基础",
+  "learning_goal": "掌握并能应用当前知识点",
+  "knowledge_base": "基础未知",
+  "cognitive_style": "偏好结构化讲解",
+  "weaknesses": [
+    "数据结构基础"
+  ],
+  "mistake_patterns": [
+    "概念混淆",
+    "边界条件遗漏"
+  ],
+  "resource_preference": [
+    "讲解文档",
+    "思维导图",
+    "练习题",
+    "代码案例"
+  ],
+  "pace": "中速",
+  "last_updated": "2026-05-25T17:51:42",
+  "last_suggestion": "建议继续完成 数据结构基础 的练习题和代码实操。",
+  "last_score": 78
+}

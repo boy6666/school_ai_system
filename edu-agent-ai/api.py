@@ -1,34 +1,32 @@
+from fastapi import FastAPI, Request
+from pydantic import BaseModel
 from typing import Optional
-
-try:
-    from fastapi import FastAPI
-    from pydantic import BaseModel
-except Exception:  # pragma: no cover
-    FastAPI = None
-    BaseModel = object
+import traceback
 
 from school_agent.graph import graph
 
+app = FastAPI(title="Edu Agent AI", version="0.1.0")
 
-if FastAPI is None:
-    app = None
-else:
-    app = FastAPI(title="Edu Agent AI", version="0.1.0")
+class ChatRequest(BaseModel):
+    user_input: str
+    student_id: str = "student_001"
+    session_id: Optional[str] = "api_session"
 
+@app.get("/health")
+def health():
+    return {"status": "ok"}
 
-    class ChatRequest(BaseModel):
-        user_input: str
-        student_id: str = "student_001"
-        session_id: Optional[str] = "api_session"
-
-
-    @app.get("/health")
-    def health():
-        return {"status": "ok"}
-
-
-    @app.post("/chat")
-    def chat(req: ChatRequest):
+@app.post("/chat")
+async def chat(request: Request):
+    try:
+        body = await request.json()
+        print("Received body:", body)
+        # 手动构建 ChatRequest 对象以兼容可能缺少的字段
+        req = ChatRequest(
+            user_input=body.get("user_input", ""),
+            student_id=body.get("student_id", "student_001"),
+            session_id=body.get("session_id", "api_session")
+        )
         result = graph.invoke(
             {
                 "student_id": req.student_id,
@@ -47,3 +45,6 @@ else:
             "evaluation_report": result.get("evaluation_report"),
             "resource_dir": result.get("resource_dir"),
         }
+    except Exception as e:
+        print("Error in chat endpoint:", traceback.format_exc())
+        return {"error": str(e)}, 500

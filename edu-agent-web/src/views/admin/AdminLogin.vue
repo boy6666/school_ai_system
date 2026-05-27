@@ -1,6 +1,6 @@
 <template>
   <div class="admin-login-container">
-    <div class="login-card">
+    <el-card class="login-card" shadow="always">
       <h1>EduAgent 管理后台</h1>
       <p class="subtitle">高等教育个性化学习智能体系统</p>
       <div class="slogan">安全 · 高效 · 智能管理</div>
@@ -16,31 +16,26 @@
         <el-form-item>
           <el-button type="primary" size="large" @click="handleLogin" :loading="loading" class="login-btn">登录</el-button>
         </el-form-item>
-        <el-form-item>
-          <el-button type="success" size="large" @click="mockLogin" plain class="mock-btn">模拟登录（跳过验证）</el-button>
-        </el-form-item>
       </el-form>
 
       <div class="other-login">
         <span>其他登录方式</span>
         <div class="icons">
-          <el-link :underline="'never'">SSO单点登录</el-link>
-          <el-link :underline="'never'">扫码登录</el-link>
+          <el-link :underline="false">SSO单点登录</el-link>
+          <el-link :underline="false">扫码登录</el-link>
         </div>
       </div>
-      <div class="footer-links">
-        <el-link :underline="'never'">用户协议</el-link> & <el-link :underline="'never'">隐私政策</el-link>
-      </div>
       <div class="copyright">© 2025 EduAgent. 保留所有权利。</div>
-    </div>
+    </el-card>
   </div>
 </template>
 
-<script setup lang="ts">
+<script setup>
 import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/stores/user'
+import request from '@/utils/request'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -57,29 +52,27 @@ const handleLogin = async () => {
   await formRef.value.validate()
   loading.value = true
   try {
-    // 模拟登录，实际应调用后端接口 /admin/login
-    const mockRes = { code: 1, data: { id: 1, username: form.username, name: '系统管理员', token: 'admin-token' } }
-    if (mockRes.code === 1) {
-      userStore.setToken(mockRes.data.token)
-      userStore.setUserInfo(mockRes.data)
-      ElMessage.success('登录成功')
-      router.push('/admin/dashboard')
+    const res = await request.post('/auth/login', form)
+    if (res.code === 200) {
+      const userRes = await request.get('/user/info', {
+        headers: { Authorization: `Bearer ${res.data.token}` }
+      })
+      if (userRes.code === 200 && userRes.data.role === 'admin') {
+        userStore.setToken(res.data.token)
+        userStore.setUserInfo(userRes.data)
+        ElMessage.success('登录成功')
+        router.push('/admin/dashboard')
+      } else {
+        ElMessage.error('当前账号不是管理员，无法登录管理后台')
+      }
     } else {
-      ElMessage.error('账号或密码错误')
+      ElMessage.error(res.message || '账号或密码错误')
     }
   } catch (error) {
-    ElMessage.error('登录失败')
+    ElMessage.error(error.response?.data?.message || '登录失败')
   } finally {
     loading.value = false
   }
-}
-
-// 模拟登录：直接设置 token 并跳转
-const mockLogin = () => {
-  userStore.setToken('admin-token')
-  userStore.setUserInfo({ id: 1, username: 'admin', name: '系统管理员', token: 'admin-token' })
-  ElMessage.success('模拟登录成功')
-  router.push('/admin/dashboard')
 }
 </script>
 
@@ -123,11 +116,8 @@ h1 {
 .login-form {
   margin-top: 20px;
 }
-.login-btn, .mock-btn {
+.login-btn {
   width: 100%;
-}
-.mock-btn {
-  margin-top: 10px;
 }
 .other-login {
   margin-top: 30px;
@@ -140,10 +130,6 @@ h1 {
   display: flex;
   justify-content: center;
   gap: 24px;
-}
-.footer-links {
-  margin-top: 20px;
-  font-size: 12px;
 }
 .copyright {
   margin-top: 20px;

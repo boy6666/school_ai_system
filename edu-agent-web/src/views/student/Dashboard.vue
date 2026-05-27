@@ -1,149 +1,133 @@
 <template>
   <div class="dashboard-container">
-    <!-- 顶部：欢迎语 + 搜索 -->
-    <div class="dashboard-header">
-      <div class="welcome-section">
-        <h2>{{ greeting }}，李明明</h2>
-        <p>今天也要继续努力的学习哦！</p>
+    <!-- 欢迎区域 -->
+    <el-card class="welcome-card" shadow="never">
+      <div class="welcome-header">
+        <div>
+          <h2>{{ greeting }}，{{ userName }}</h2>
+          <p>今天也要继续努力的学习哦！</p>
+        </div>
+        <el-avatar :size="60" src="https://cube.elemecdn.com/0/88/03b6d3b6a6f4e6b8b6c0e6b4d6b6e6b6.png" />
       </div>
-      <div class="search-section">
-        <el-input
-          v-model="searchKeyword"
-          placeholder="搜索课程、资料、问题等"
-          prefix-icon="Search"
-          size="large"
-          clearable
-        />
-      </div>
-    </div>
+    </el-card>
 
-    <el-row :gutter="20">
-      <!-- 左侧列：今日任务、学习回顾、学习目标、学习进度 -->
-      <el-col :span="12">
+    <el-row :gutter="20" v-loading="loading">
+      <!-- 左侧：今日任务 + 学习回顾 + 学习目标 + 学习进度 -->
+      <el-col :span="14">
         <!-- 今日任务卡片 -->
         <el-card class="task-card" shadow="never">
-          <template #header><span>📋 今日任务</span></template>
-          <div v-for="task in todayTasks" :key="task.name" class="task-item">
-            <div class="task-name">{{ task.name }}</div>
-            <div class="task-duration">预计 {{ task.duration }} 分钟</div>
-          </div>
+          <template #header>
+            <span>今日任务</span>
+            <el-button type="text" style="float: right" @click="$router.push('/student/tasks')">更多</el-button>
+          </template>
+          <el-timeline>
+            <el-timeline-item v-for="task in todayTasks" :key="task.name" :timestamp="task.duration > 0 ? task.duration + '分钟' : ''" placement="top">
+              <el-card shadow="hover"><h4>{{ task.name }}</h4></el-card>
+            </el-timeline-item>
+            <el-timeline-item v-if="todayTasks.length === 0">
+              <el-card shadow="hover"><h4>暂无今日任务，去「学习任务」页面创建吧</h4></el-card>
+            </el-timeline-item>
+          </el-timeline>
         </el-card>
 
         <!-- 学习回顾卡片 -->
         <el-card class="review-card" shadow="never" style="margin-top: 20px">
-          <template #header><span>📚 学习回顾</span></template>
-          <div v-for="subject in reviewSubjects" :key="subject.name" class="review-item">
-            <span>{{ subject.name }}</span>
-            <span>{{ subject.hours }} 小时</span>
+          <template #header><span>学习回顾</span></template>
+          <div v-if="reviewSubjects.length === 0">暂无学习回顾数据</div>
+          <div v-else v-for="sub in reviewSubjects" :key="sub.name" class="review-item">
+            <span>{{ sub.name }}</span><span>{{ sub.hours }} 小时</span>
           </div>
         </el-card>
 
         <!-- 学习目标卡片 -->
         <el-card class="goal-card" shadow="never" style="margin-top: 20px">
-          <template #header><span>🎯 学习目标</span></template>
-          <div class="goal-stats">
-            <div class="stat">
-              <div class="stat-value">{{ totalHours }}</div>
-              <div class="stat-label">总学习时长(小时)</div>
-            </div>
-            <div class="stat">
-              <div class="stat-value">{{ completedTopics }}</div>
-              <div class="stat-label">完成主题数</div>
-            </div>
+          <template #header><span>学习目标</span></template>
+          <div class="goal-stats" v-if="goal.totalHours || goal.completedTopics">
+            <div class="stat"><div class="stat-value">{{ goal.totalHours || 0 }}</div><div class="stat-label">总学习时长(小时)</div></div>
+            <div class="stat"><div class="stat-value">{{ goal.completedTopics || 0 }}</div><div class="stat-label">完成主题数</div></div>
           </div>
+          <div v-else>暂无学习目标数据</div>
         </el-card>
 
         <!-- 学习进度卡片 -->
         <el-card class="progress-card" shadow="never" style="margin-top: 20px">
-          <template #header><span>📈 学习进度</span></template>
-          <div v-for="subject in learningProgress" :key="subject.name" class="progress-item">
-            <div class="progress-label">{{ subject.name }}</div>
-            <el-progress :percentage="subject.percent" :stroke-width="10" />
-            <div class="progress-hours">{{ subject.hours }}小时</div>
+          <template #header><span>学习进度</span></template>
+          <div v-if="learningProgress.length === 0">暂无学习进度数据</div>
+          <div v-else v-for="sub in learningProgress" :key="sub.name" class="progress-item">
+            <div class="progress-label">{{ sub.name }}</div>
+            <el-progress :percentage="sub.percent" :stroke-width="10" />
+            <div class="progress-hours">{{ sub.hours }}小时</div>
           </div>
         </el-card>
       </el-col>
 
-      <!-- 右侧列：学习总结、学习评价、学习节奏、学习计划 -->
-      <el-col :span="12">
+      <!-- 右侧：学习总结 + 学习评价 + 学习节奏 + 学习计划 -->
+      <el-col :span="10">
         <!-- 学习总结卡片 -->
         <el-card class="summary-card" shadow="never">
-          <template #header><span>📝 学习总结</span></template>
-          <div class="summary-grid">
-            <div class="summary-item">
-              <div class="summary-label">知识图谱</div>
-              <el-progress :percentage="65" :stroke-width="8" />
-            </div>
-            <div class="summary-item">
-              <div class="summary-label">学习笔记</div>
-              <el-progress :percentage="72" :stroke-width="8" />
-            </div>
-            <div class="summary-item">
-              <div class="summary-label">学习反思</div>
-              <el-progress :percentage="80" :stroke-width="8" />
-            </div>
-            <div class="summary-item">
-              <div class="summary-label">学习收获</div>
-              <el-progress :percentage="70" :stroke-width="8" />
-            </div>
-            <div class="summary-item">
-              <div class="summary-label">学习感悟</div>
-              <el-progress :percentage="65" :stroke-width="8" />
+          <template #header><span>学习总结</span></template>
+          <div v-if="summary.knowledgeGraph || summary.notes || summary.reflection || summary.harvest || summary.insight">
+            <div class="summary-grid">
+              <div class="summary-item"><div class="summary-label">知识图谱</div><el-progress :percentage="summary.knowledgeGraph" :stroke-width="8" /></div>
+              <div class="summary-item"><div class="summary-label">学习笔记</div><el-progress :percentage="summary.notes" :stroke-width="8" /></div>
+              <div class="summary-item"><div class="summary-label">学习反思</div><el-progress :percentage="summary.reflection" :stroke-width="8" /></div>
+              <div class="summary-item"><div class="summary-label">学习收获</div><el-progress :percentage="summary.harvest" :stroke-width="8" /></div>
+              <div class="summary-item"><div class="summary-label">学习感悟</div><el-progress :percentage="summary.insight" :stroke-width="8" /></div>
             </div>
           </div>
+          <div v-else>暂无学习总结数据</div>
         </el-card>
 
         <!-- 学习评价卡片 -->
         <el-card class="evaluation-card" shadow="never" style="margin-top: 20px">
-          <template #header><span>⭐ 学习评价</span></template>
-          <div class="eval-list">
-            <div class="eval-item"><span class="eval-label">学习目标：</span><span>个人能力提升，考研深造</span></div>
-            <div class="eval-item"><span class="eval-label">认知风格：</span><span>偏重逻辑分析</span></div>
-            <div class="eval-item"><span class="eval-label">薄弱环节：</span><span>数据挖掘，线性代数</span></div>
-            <div class="eval-item"><span class="eval-label">兴趣偏好：</span><span>人工智能，算法与编程</span></div>
+          <template #header><span>学习评价</span></template>
+          <div v-if="evaluation.goal || evaluation.cognitiveStyle || evaluation.weakPoints || evaluation.interestPreference">
+            <div class="eval-list">
+              <div class="eval-item"><span class="eval-label">学习目标：</span>{{ evaluation.goal }}</div>
+              <div class="eval-item"><span class="eval-label">认知风格：</span>{{ evaluation.cognitiveStyle }}</div>
+              <div class="eval-item"><span class="eval-label">薄弱环节：</span>{{ evaluation.weakPoints }}</div>
+              <div class="eval-item"><span class="eval-label">兴趣偏好：</span>{{ evaluation.interestPreference }}</div>
+            </div>
           </div>
+          <div v-else>暂无学习评价数据</div>
         </el-card>
 
         <!-- 学习节奏卡片 -->
         <el-card class="rhythm-card" shadow="never" style="margin-top: 20px">
-          <template #header><span>⏱️ 学习节奏</span></template>
-          <div class="rhythm-stats">
-            <div class="rhythm-item">
-              <div class="rhythm-value">1-3 小时</div>
-              <div class="rhythm-label">每日学习量</div>
-            </div>
-            <div class="rhythm-item">
-              <div class="rhythm-value">2-4 小时</div>
-              <div class="rhythm-label">每日学习时长</div>
+          <template #header><span>学习节奏</span></template>
+          <div v-if="rhythm.dailyAmount || rhythm.dailyDuration">
+            <div class="rhythm-stats">
+              <div class="rhythm-item"><div class="rhythm-value">{{ rhythm.dailyAmount }}</div><div class="rhythm-label">每日学习量</div></div>
+              <div class="rhythm-item"><div class="rhythm-value">{{ rhythm.dailyDuration }}</div><div class="rhythm-label">每日学习时长</div></div>
             </div>
           </div>
+          <div v-else>暂无学习节奏数据</div>
         </el-card>
 
         <!-- 学习计划卡片 -->
         <el-card class="plan-card" shadow="never" style="margin-top: 20px">
-          <template #header><span>📅 学习计划</span></template>
-          <div class="plan-stats">
-            <div class="plan-item">
-              <div class="plan-value">1-3 小时</div>
-              <div class="plan-label">每日学习计划</div>
-            </div>
-            <div class="plan-item">
-              <div class="plan-value">2-4 小时</div>
-              <div class="plan-label">每日学习时间</div>
+          <template #header><span>学习计划</span></template>
+          <div v-if="plan.dailyPlan || plan.dailyTime">
+            <div class="plan-stats">
+              <div class="plan-item"><div class="plan-value">{{ plan.dailyPlan }}</div><div class="plan-label">每日学习计划</div></div>
+              <div class="plan-item"><div class="plan-value">{{ plan.dailyTime }}</div><div class="plan-label">每日学习时间</div></div>
             </div>
           </div>
+          <div v-else>暂无学习计划数据</div>
         </el-card>
       </el-col>
     </el-row>
   </div>
 </template>
 
-<script setup lang="ts">
-import { ref, computed } from 'vue'
+<script setup>
+import { ref, onMounted, computed } from 'vue'
+import { getDashboardStats } from '@/api/dashboard'
+import { ElMessage } from 'element-plus'
+import { useUserStore } from '@/stores/user'
 
-const searchKeyword = ref('')
-
-// 问候语
+const userStore = useUserStore()
+const userName = computed(() => userStore.userInfo?.name || userStore.userInfo?.username || '学生')
 const greeting = computed(() => {
   const hour = new Date().getHours()
   if (hour < 12) return '上午好'
@@ -151,31 +135,42 @@ const greeting = computed(() => {
   return '晚上好'
 })
 
-// 今日任务 Mock
-const todayTasks = ref([
-  { name: '高等数学（上）——导数与微分', duration: 45 },
-  { name: '线性代数', duration: 30 },
-  { name: '大学物理（上）——牛顿定律', duration: 20 }
-])
+const loading = ref(true)
+const todayTasks = ref([])
+const reviewSubjects = ref([])
+const learningProgress = ref([])
+const goal = ref({})
+const summary = ref({})
+const evaluation = ref({})
+const rhythm = ref({})
+const plan = ref({})
 
-// 学习回顾
-const reviewSubjects = ref([
-  { name: '高数', hours: 72 },
-  { name: '概率论', hours: 70 },
-  { name: '线性代数', hours: 60 }
-])
+const fetchDashboard = async () => {
+  try {
+    const res = await getDashboardStats()
+    if (res.code === 200) {
+      const data = res.data
+      todayTasks.value = data.todayTasks || []
+      reviewSubjects.value = data.reviewSubjects || []
+      learningProgress.value = data.learningProgress || []
+      goal.value = data.goal || {}
+      summary.value = data.summary || {}
+      evaluation.value = data.evaluation || {}
+      rhythm.value = data.rhythm || {}
+      plan.value = data.plan || {}
+    } else {
+      ElMessage.error('加载数据失败')
+    }
+  } catch (error) {
+    console.error('Dashboard加载失败', error)
+  } finally {
+    loading.value = false
+  }
+}
 
-// 学习目标
-const totalHours = ref(12.6)
-const completedTopics = ref(2)
-
-// 学习进度
-const learningProgress = ref([
-  { name: '高等数学', percent: 65, hours: 10 },
-  { name: '概率论', percent: 70, hours: 8 },
-  { name: '线性代数', percent: 60, hours: 7 },
-  { name: '大学物理', percent: 50, hours: 6 }
-])
+onMounted(() => {
+  fetchDashboard()
+})
 </script>
 
 <style scoped>
@@ -184,45 +179,32 @@ const learningProgress = ref([
   background-color: #f5f7fa;
   min-height: 100vh;
 }
-.dashboard-header {
+.welcome-card {
+  margin-bottom: 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+.welcome-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
-  background: white;
-  padding: 16px 24px;
-  border-radius: 16px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
-.welcome-section h2 {
-  margin: 0 0 6px 0;
-  font-size: 22px;
+.welcome-header h2 {
+  margin: 0 0 8px 0;
+  color: white;
+  font-size: 24px;
+  font-weight: 600;
 }
-.welcome-section p {
+.welcome-header p {
   margin: 0;
-  color: #666;
+  opacity: 0.9;
 }
-.search-section {
-  width: 300px;
+.task-card .el-timeline-item__timestamp {
+  font-size: 14px;
+  font-weight: bold;
 }
-.task-card, .review-card, .goal-card, .progress-card,
-.summary-card, .evaluation-card, .rhythm-card, .plan-card {
-  border-radius: 16px;
-}
-.task-item, .review-item {
-  display: flex;
-  justify-content: space-between;
-  padding: 12px 0;
-  border-bottom: 1px solid #f0f0f0;
-}
-.task-item:last-child, .review-item:last-child {
-  border-bottom: none;
-}
-.task-name {
-  font-weight: 500;
-}
-.task-duration, .review-item span:last-child {
-  color: #909399;
+.review-item, .progress-item {
+  margin-bottom: 12px;
 }
 .goal-stats {
   display: flex;
@@ -234,62 +216,32 @@ const learningProgress = ref([
   font-weight: bold;
   color: #409eff;
 }
-.stat-label {
-  font-size: 14px;
-  color: #909399;
-  margin-top: 6px;
-}
-.progress-item {
-  margin-bottom: 18px;
-}
 .progress-label {
-  margin-bottom: 8px;
-  font-weight: 500;
-}
-.progress-hours {
-  font-size: 12px;
-  color: #909399;
-  margin-top: 4px;
+  margin-bottom: 6px;
 }
 .summary-grid {
   display: flex;
   flex-wrap: wrap;
-  gap: 16px;
-}
-.summary-item {
-  width: calc(50% - 8px);
-}
-.summary-label {
-  margin-bottom: 6px;
-  font-size: 14px;
-}
-.eval-list {
-  display: flex;
-  flex-direction: column;
   gap: 12px;
 }
-.eval-item {
-  font-size: 14px;
+.summary-item {
+  width: calc(50% - 6px);
+}
+.eval-list .eval-item {
+  margin-bottom: 8px;
 }
 .eval-label {
   font-weight: 600;
-  color: #606266;
   width: 90px;
   display: inline-block;
 }
 .rhythm-stats, .plan-stats {
   display: flex;
   justify-content: space-around;
-  text-align: center;
 }
 .rhythm-value, .plan-value {
   font-size: 24px;
   font-weight: bold;
   color: #e6a23c;
-}
-.rhythm-label, .plan-label {
-  font-size: 14px;
-  color: #909399;
-  margin-top: 6px;
 }
 </style>

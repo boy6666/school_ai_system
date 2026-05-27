@@ -9,24 +9,12 @@
         text-color="#bfcbd9"
         active-text-color="#409EFF"
       >
-        <el-menu-item index="/student/dashboard">
-          <el-icon><HomeFilled /></el-icon><span>首页</span>
-        </el-menu-item>
-        <el-menu-item index="/student/profile/chat">
-          <el-icon><ChatDotRound /></el-icon><span>学习画像</span>
-        </el-menu-item>
-        <el-menu-item index="/student/resources/generate">
-          <el-icon><MagicStick /></el-icon><span>资源生成</span>
-        </el-menu-item>
-        <el-menu-item index="/student/path">
-          <el-icon><Guide /></el-icon><span>学习路径</span>
-        </el-menu-item>
-        <el-menu-item index="/student/tutor">
-          <el-icon><Service /></el-icon><span>智能辅导</span>
-        </el-menu-item>
-        <el-menu-item index="/student/report">
-          <el-icon><DataAnalysis /></el-icon><span>学习报告</span>
-        </el-menu-item>
+        <el-menu-item index="/student/dashboard"><el-icon><HomeFilled /></el-icon><span>首页</span></el-menu-item>
+        <el-menu-item index="/student/profile/chat"><el-icon><ChatDotRound /></el-icon><span>学习画像</span></el-menu-item>
+        <el-menu-item index="/student/tasks"><el-icon><List /></el-icon><span>学习任务</span></el-menu-item>
+        <el-menu-item index="/student/report"><el-icon><Document /></el-icon><span>学习报告</span></el-menu-item>
+        <el-menu-item index="/student/tutor"><el-icon><Service /></el-icon><span>智能辅导</span></el-menu-item>
+        <el-menu-item index="/student/path"><el-icon><Guide /></el-icon><span>学习路径</span></el-menu-item>
       </el-menu>
     </el-aside>
     <el-container>
@@ -49,7 +37,7 @@
   </el-container>
 </template>
 
-<script setup lang="ts">
+<script setup>
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { ElMessage } from 'element-plus'
@@ -57,7 +45,7 @@ import { ElMessage } from 'element-plus'
 const router = useRouter()
 const userStore = useUserStore()
 
-const handleCommand = (command: string) => {
+const handleCommand = (command) => {
   if (command === 'profile') {
     router.push('/student/profile')
   } else if (command === 'logout') {
