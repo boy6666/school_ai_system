@@ -53,6 +53,8 @@ CREATE TABLE IF NOT EXISTS `student_profiles` (
   `profile_suggestions` JSON DEFAULT NULL COMMENT '画像建议(JSON数组)',
   `last_score` INT DEFAULT NULL COMMENT '最近评估分数',
   `last_suggestion` TEXT DEFAULT NULL COMMENT '最近建议',
+  `current_mastery` TEXT DEFAULT NULL COMMENT '当前掌握度',
+  `learning_behavior` TEXT DEFAULT NULL COMMENT '学习行为与自主性',
   `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   UNIQUE KEY uk_student_id (`student_id`),

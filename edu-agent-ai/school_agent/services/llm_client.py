@@ -47,6 +47,7 @@ def get_model():
         api_key=API_KEY,
         temperature=TEMPERATURE,
         max_tokens=MAX_TOKENS,
+        request_timeout=30,
     )
     return _model
 

@@ -1,17 +1,16 @@
 <template>
   <div class="profile-chat-container">
     <el-row :gutter="20">
-      <!-- 左侧对话区域 -->
       <el-col :span="16">
         <el-card class="chat-card" shadow="never">
           <template #header>
             <div class="chat-header">
               <div class="avatar">
                 <el-avatar :size="40" src="https://cube.elemecdn.com/0/88/03b6d3b6a6f4e6b8b6c0e6b4d6b6e6b6.png" />
-                <span class="ai-name">智能画像助手</span>
+                <span class="ai-name">Java学习画像助手</span>
               </div>
               <div class="reset-btn">
-                <el-button type="text" @click="resetChat" :disabled="messages.length <= 1">
+                <el-button type="text" @click="resetChat" :disabled="aiProcessing">
                   <el-icon><Refresh /></el-icon>重新开始
                 </el-button>
               </div>
@@ -39,54 +38,51 @@
                 <div class="message-time">{{ msg.time }}</div>
               </div>
             </div>
-            <div v-if="isTyping" class="message ai-message">
+            <div v-if="aiProcessing" class="message ai-message">
               <div class="message-avatar"><el-avatar :size="32" :src="aiAvatar" /></div>
-              <div class="message-content"><div class="typing-indicator"><span></span><span></span><span></span></div></div>
+              <div class="message-content">
+                <div class="typing-indicator"><span></span><span></span><span></span></div>
+              </div>
             </div>
           </div>
 
-          <div class="chat-input">
+          <div class="chat-input" v-if="!aiProcessing && !conversationEnded">
             <el-input
               v-model="inputText"
               type="textarea"
               :rows="2"
-              placeholder="输入你的回答... 或使用下方快捷选项"
+              placeholder="输入你的回答..."
               @keyup.enter.prevent="sendMessage"
-              :disabled="isTyping || conversationEnded"
             />
             <div class="input-actions">
-              <el-button type="primary" @click="sendMessage" :loading="isTyping" :disabled="conversationEnded">
-                发送
-              </el-button>
+              <el-button type="primary" @click="sendMessage">发送</el-button>
             </div>
           </div>
         </el-card>
       </el-col>
 
-      <!-- 右侧画像预览 -->
       <el-col :span="8">
         <el-card class="preview-card" shadow="never">
           <template #header>
-            <span>当前画像预览</span>
-            <el-button type="text" @click="viewFullProfile" v-if="profileComplete" style="float: right">
+            <span>六维画像预览</span>
+            <el-tag v-if="profile.overall_type" size="small" :type="typeTagType" style="float: right; margin-right: 8px;">
+              {{ profile.overall_type }}
+            </el-tag>
+            <el-button type="text" @click="viewFullProfile" v-if="conversationEnded" style="float: right">
               查看完整画像
             </el-button>
           </template>
           <div class="profile-preview">
-            <div v-if="!profileComplete" class="incomplete-tip">
-              <el-icon><InfoFilled /></el-icon> 回答几个问题，即可生成专属学习画像
-            </div>
-            <div v-else class="profile-summary">
-              <div class="preview-item"><span class="label">学习目标：</span><span class="value">{{ profile.goal || '未填写' }}</span></div>
-              <div class="preview-item"><span class="label">优势学科：</span><el-tag size="small" type="success" v-for="sub in profile.strengths" :key="sub">{{ sub }}</el-tag></div>
-              <div class="preview-item"><span class="label">待提升学科：</span><el-tag size="small" type="danger" v-for="sub in profile.weaknesses" :key="sub">{{ sub }}</el-tag></div>
-              <div class="preview-item"><span class="label">学习风格：</span><span class="value">{{ profile.style || '未填写' }}</span></div>
-              <div class="preview-item"><span class="label">每日学习时长：</span><span class="value">{{ profile.dailyHours || '?' }} 小时</span></div>
+            <div class="dimension-list">
+              <div class="dim-item" v-for="dim in dimensions" :key="dim.key">
+                <span class="dim-label">{{ dim.label }}</span>
+                <span class="dim-value" :class="{ filled: dim.filled }">{{ dim.summary }}</span>
+              </div>
             </div>
             <el-divider />
             <div class="progress">
-              <span>画像完整度：{{ Math.floor(completeness * 100) }}%</span>
-              <el-progress :percentage="completeness * 100" :stroke-width="8" />
+              <span>画像完整度：{{ completedDims }}/6</span>
+              <el-progress :percentage="(completedDims / 6) * 100" :stroke-width="8" />
             </div>
           </div>
         </el-card>
@@ -96,12 +92,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, nextTick, onMounted, watch, computed } from 'vue'
+import { ref, reactive, nextTick, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Refresh, InfoFilled } from '@element-plus/icons-vue'
+import { Refresh } from '@element-plus/icons-vue'
+import { buildProfile, saveProfile } from '@/api/profile'
+import { useUserStore } from '@/stores/user'
 
 const router = useRouter()
+const userStore = useUserStore()
 const userAvatar = 'https://cube.elemecdn.com/1/2e/3b6d3b6a6f4e6b8b6c0e6b4d6b6e6b6.png'
 const aiAvatar = 'https://cube.elemecdn.com/0/88/03b6d3b6a6f4e6b8b6c0e6b4d6b6e6b6.png'
 
@@ -115,35 +114,93 @@ interface Message {
 
 const messages = ref<Message[]>([])
 const inputText = ref('')
-const isTyping = ref(false)
+const aiProcessing = ref(false)
 const conversationEnded = ref(false)
 const chatContainer = ref<HTMLElement>()
 
 const profile = reactive({
-  goal: '',
-  strengths: [] as string[],
-  weaknesses: [] as string[],
-  style: '',
-  dailyHours: null as number | null,
+  learning_goal: '',
+  knowledge_base: [] as string[],
+  current_mastery: '',
+  cognitive_style: '',
+  mistake_patterns: [] as string[],
+  learning_behavior: '',
+  daily_hours: 0,
+  overall_type: '',
+})
+
+const dimensions = computed(() => [
+  { key: 'learning_goal', label: '学习目标', filled: !!profile.learning_goal, summary: profile.learning_goal || '待采集' },
+  { key: 'knowledge_base', label: '知识基础', filled: profile.knowledge_base.length > 0, summary: profile.knowledge_base.length ? profile.knowledge_base.join('、') : '待采集' },
+  { key: 'current_mastery', label: '当前掌握度', filled: !!profile.current_mastery, summary: profile.current_mastery || '待采集' },
+  { key: 'cognitive_style', label: '认知风格', filled: !!profile.cognitive_style, summary: profile.cognitive_style || '待采集' },
+  { key: 'mistake_patterns', label: '易错点类型', filled: profile.mistake_patterns.length > 0, summary: profile.mistake_patterns.length ? profile.mistake_patterns.join('、') : '待采集' },
+  { key: 'learning_behavior', label: '学习行为', filled: !!profile.learning_behavior, summary: profile.learning_behavior || '待采集' },
+])
+
+const completedDims = computed(() => dimensions.value.filter(d => d.filled).length)
+const typeTagType = computed(() => {
+  if (profile.overall_type === '进阶拓展型') return 'success'
+  if (profile.overall_type === '稳定提升型') return ''
+  return 'warning'
 })
 
 let step = 0
 const steps = [
-  { question: '你好！我是你的学习画像助手。为了给你推荐最合适的学习资源，能先告诉我你近期的学习目标吗？（例如：通过期末考试、考研、找工作）', type: 'text' },
-  { question: '你比较擅长哪些学科或技能？（可多选）', type: 'options', options: [
-    { label: '数学', value: '数学' }, { label: '英语', value: '英语' }, { label: '编程', value: '编程' },
-    { label: '物理', value: '物理' }, { label: '写作', value: '写作' }, { label: '设计', value: '设计' }
-  ] },
-  { question: '哪些学科让你感到比较吃力？想重点提升什么？', type: 'options', options: [
-    { label: '数学', value: '数学' }, { label: '英语', value: '英语' }, { label: '编程', value: '编程' },
-    { label: '物理', value: '物理' }, { label: '写作', value: '写作' }
-  ] },
-  { question: '你更喜欢哪种学习方式？（单选）', type: 'options', options: [
-    { label: '看视频课程', value: '视觉型' }, { label: '阅读文档', value: '阅读型' },
-    { label: '动手实践', value: '实践型' }, { label: '与他人讨论', value: '社交型' }
-  ] },
-  { question: '你每天大概能投入多少小时学习？', type: 'text' },
-  { question: '感谢你的回答！你的学习画像已经生成。你可以随时在“学习画像概览”中查看详细分析。', type: 'text', isEnd: true }
+  {
+    dimension: '学习目标',
+    question: '你好！我是你的Java学习画像助手，会通过6个问题为你构建专属画像。\n\n首先，你的Java学习目标是什么？（例如：通过期末考试、掌握Spring Boot、准备校招面试）',
+    type: 'text' as const,
+  },
+  {
+    dimension: '知识基础',
+    question: '你目前Java学到什么程度了？已掌握哪些知识点？（可多选）',
+    type: 'options' as const,
+    options: [
+      { label: 'Java基础语法', value: 'Java基础语法' },
+      { label: '面向对象', value: '面向对象' },
+      { label: '集合框架', value: '集合框架' },
+      { label: '多线程并发', value: '多线程并发' },
+      { label: 'JVM虚拟机', value: 'JVM虚拟机' },
+      { label: 'Spring/Spring Boot', value: 'Spring/Spring Boot' },
+      { label: '数据库/MyBatis', value: '数据库/MyBatis' },
+      { label: '网络编程', value: '网络编程' },
+    ],
+  },
+  {
+    dimension: '当前掌握度',
+    question: '在上面这些知识点里，哪些你掌握得好，哪些还不太熟？简单描述一下你的掌握情况。（例如：基础语法比较熟，多线程和JVM只了解皮毛）',
+    type: 'text' as const,
+  },
+  {
+    dimension: '认知风格',
+    question: '你更喜欢哪种学习方式？（单选）',
+    type: 'options' as const,
+    options: [
+      { label: '看视频课程', value: '视觉型' },
+      { label: '阅读文档/书籍', value: '阅读型' },
+      { label: '动手写代码练习', value: '实践型' },
+      { label: '和他人讨论交流', value: '社交型' },
+    ],
+  },
+  {
+    dimension: '易错点类型',
+    question: '写Java代码时，你经常遇到哪些类型的错误或困难？（可多选）',
+    type: 'options' as const,
+    options: [
+      { label: '空指针异常', value: '空指针异常' },
+      { label: '类型转换错误', value: '类型转换错误' },
+      { label: '并发/线程安全问题', value: '并发/线程安全问题' },
+      { label: '逻辑设计错误', value: '逻辑设计错误' },
+      { label: '边界条件遗漏', value: '边界条件遗漏' },
+      { label: '语法/编译错误', value: '语法/编译错误' },
+    ],
+  },
+  {
+    dimension: '学习行为',
+    question: '最后一个问题，你每天怎么安排Java学习？大概花多少小时？会主动找资料或做额外练习吗？（例如：每天课后学2小时，会刷LeetCode和看技术博客）',
+    type: 'text' as const,
+  },
 ]
 
 const addMessage = async (msg: Message) => {
@@ -153,17 +210,19 @@ const addMessage = async (msg: Message) => {
 }
 
 const aiReply = async (stepIndex: number) => {
-  isTyping.value = true
+  await new Promise(resolve => setTimeout(resolve, 600))
   const stepData = steps[stepIndex]
-  await new Promise(resolve => setTimeout(resolve, 800))
-  isTyping.value = false
   const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   if (stepData.options) {
-    addMessage({ role: 'ai', type: 'options', options: stepData.options, time: now })
+    await addMessage({ role: 'ai', type: 'options', options: stepData.options, time: now })
   } else {
-    addMessage({ role: 'ai', type: 'text', content: stepData.question, time: now })
+    await addMessage({ role: 'ai', type: 'text', content: stepData.question, time: now })
   }
-  if (stepData.isEnd) conversationEnded.value = true
+}
+
+const extractHours = (text: string): number => {
+  const match = text.match(/(\d+(?:\.\d+)?)\s*(小?时|h|H|个?钟|个?小)/)
+  return match ? parseFloat(match[1]) : 0
 }
 
 const sendMessage = async () => {
@@ -171,22 +230,25 @@ const sendMessage = async () => {
   if (!text) return
   inputText.value = ''
   const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-  addMessage({ role: 'user', type: 'text', content: text, time: now })
+  await addMessage({ role: 'user', type: 'text', content: text, time: now })
 
   switch (step) {
-    case 0: profile.goal = text; break
-    case 1: profile.strengths = text.split(/[ ,]+/).filter(s => s); break
-    case 2: profile.weaknesses = text.split(/[ ,]+/).filter(s => s); break
-    case 3: profile.style = text; break
-    case 4: profile.dailyHours = parseFloat(text) || null; break
-    default: break
+    case 0: profile.learning_goal = text; break
+    case 1: profile.knowledge_base = text.split(/[ ,，、]+/).filter(s => s); break
+    case 2: profile.current_mastery = text; break
+    case 3: profile.cognitive_style = text; break
+    case 4: profile.mistake_patterns = text.split(/[ ,，、]+/).filter(s => s); break
+    case 5:
+      profile.learning_behavior = text
+      profile.daily_hours = extractHours(text)
+      break
   }
   step++
-  if (step < steps.length) await aiReply(step)
-  else {
-    conversationEnded.value = true
-    ElMessage.success('画像构建完成！即将跳转到概览页')
-    setTimeout(() => router.push('/student/profile/overview'), 1500)
+
+  if (step < steps.length) {
+    await aiReply(step)
+  } else {
+    await finishAndBuildProfile()
   }
 }
 
@@ -195,32 +257,85 @@ const sendQuickReply = (opt: { label: string; value: any }) => {
   sendMessage()
 }
 
+const finishAndBuildProfile = async () => {
+  conversationEnded.value = true
+  aiProcessing.value = true
+  await addMessage({
+    role: 'ai', type: 'text',
+    content: '信息收集完毕，正在调用AI分析你的六维学习画像，请稍候...',
+    time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+  })
+
+  const studentId = userStore.userInfo?.username || 'student001'
+
+  try {
+    const result = await buildProfile({
+      student_id: studentId,
+      learning_goal: profile.learning_goal,
+      knowledge_base: profile.knowledge_base,
+      current_mastery: profile.current_mastery,
+      cognitive_style: profile.cognitive_style,
+      mistake_patterns: profile.mistake_patterns,
+      learning_behavior: profile.learning_behavior,
+      daily_hours: profile.daily_hours,
+    })
+
+    aiProcessing.value = false
+    const aiProfile = result.profile
+
+    if (aiProfile && Object.keys(aiProfile).length > 0) {
+      profile.overall_type = aiProfile.overall_type || ''
+
+      const lines = [
+        aiProfile.overall_type ? `综合类型：${aiProfile.overall_type}` : '',
+        aiProfile.knowledge_base ? `知识基础：${aiProfile.knowledge_base}` : '',
+        aiProfile.current_mastery ? `当前掌握度：${aiProfile.current_mastery}` : '',
+        aiProfile.learning_behavior ? `学习行为：${aiProfile.learning_behavior}` : '',
+        aiProfile.profile_suggestions?.length ? `\n建议：${aiProfile.profile_suggestions.join('；')}` : '',
+      ].filter(Boolean).join('\n')
+
+      await addMessage({
+        role: 'ai', type: 'text',
+        content: `AI六维画像构建完成！\n\n${lines}\n\n正在保存到数据库...`,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      })
+
+      try {
+        await saveProfile(studentId, aiProfile)
+        ElMessage.success('六维画像已保存到数据库')
+      } catch {
+        ElMessage.warning('画像已生成，但保存数据库失败')
+      }
+
+      setTimeout(() => router.push('/student/profile/overview'), 2500)
+    }
+  } catch (err: any) {
+    aiProcessing.value = false
+    await addMessage({
+      role: 'ai', type: 'text',
+      content: `AI画像构建失败：${err.message || '网络错误'}。请确保AI后端已启动后重试。`,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    })
+    ElMessage.error('AI画像构建失败')
+  }
+}
+
 const resetChat = () => {
   messages.value = []
   step = 0
   conversationEnded.value = false
-  profile.goal = ''
-  profile.strengths = []
-  profile.weaknesses = []
-  profile.style = ''
-  profile.dailyHours = null
+  aiProcessing.value = false
+  profile.learning_goal = ''
+  profile.knowledge_base = []
+  profile.current_mastery = ''
+  profile.cognitive_style = ''
+  profile.mistake_patterns = []
+  profile.learning_behavior = ''
+  profile.daily_hours = 0
+  profile.overall_type = ''
   const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   addMessage({ role: 'ai', type: 'text', content: steps[0].question, time: now })
 }
-
-const completeness = ref(0)
-const updateCompleteness = () => {
-  let count = 0
-  if (profile.goal) count++
-  if (profile.strengths.length) count++
-  if (profile.weaknesses.length) count++
-  if (profile.style) count++
-  if (profile.dailyHours) count++
-  completeness.value = count / 5
-}
-
-watch(() => [profile.goal, profile.strengths, profile.weaknesses, profile.style, profile.dailyHours], updateCompleteness, { deep: true })
-const profileComplete = computed(() => completeness.value === 1)
 
 const viewFullProfile = () => router.push('/student/profile/overview')
 
@@ -239,7 +354,7 @@ onMounted(() => resetChat())
 .user-message { justify-content: flex-end; }
 .user-message .message-avatar { order: 2; margin-left: 12px; margin-right: 0; }
 .message-content { max-width: 80%; }
-.message-bubble { padding: 10px 14px; border-radius: 18px; background-color: #fff; box-shadow: 0 1px 2px rgba(0,0,0,0.05); display: inline-block; }
+.message-bubble { padding: 10px 14px; border-radius: 18px; background-color: #fff; box-shadow: 0 1px 2px rgba(0,0,0,0.05); display: inline-block; white-space: pre-wrap; }
 .user-message .message-bubble { background-color: #409eff; color: white; }
 .options-group { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
 .option-item { background-color: #f0f2f5; padding: 6px 12px; border-radius: 20px; cursor: pointer; transition: all 0.2s; }
@@ -254,9 +369,10 @@ onMounted(() => resetChat())
 .chat-input { border-top: 1px solid #eee; padding-top: 16px; }
 .input-actions { display: flex; justify-content: flex-end; margin-top: 12px; }
 .profile-preview { min-height: 300px; }
-.incomplete-tip { text-align: center; color: #909399; padding: 40px 0; }
-.preview-item { margin-bottom: 12px; }
-.label { font-weight: 600; width: 90px; display: inline-block; }
-.el-tag { margin-right: 6px; margin-bottom: 4px; }
+.dimension-list { display: flex; flex-direction: column; gap: 10px; }
+.dim-item { display: flex; justify-content: space-between; align-items: baseline; }
+.dim-label { font-weight: 600; font-size: 13px; color: #303133; white-space: nowrap; }
+.dim-value { font-size: 12px; color: #c0c4cc; text-align: right; max-width: 60%; }
+.dim-value.filled { color: #409eff; }
 .progress { margin-top: 12px; }
 </style>
