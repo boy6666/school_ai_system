@@ -293,46 +293,13 @@ const learningChart = ref()
 const radarChart = ref()
 const compareChart = ref()
 
-const learningProgress = ref([
-  { subject: 'Vue开发', progress: 85 },
-  { subject: 'React开发', progress: 72 },
-  { subject: 'Spring Boot', progress: 58 },
-  { subject: '数据库', progress: 65 },
-  { subject: '项目实战', progress: 78 }
-])
+const learningProgress = ref<any[]>([])
 
-const suggestions = ref([
-  {
-    type: 'success',
-    title: '保持优秀表现',
-    description: '您在前端开发方面表现出色，继续保持学习热情，可以尝试挑战更复杂的项目'
-  },
-  {
-    type: 'warning',
-    title: '加强后端学习',
-    description: '建议适当增加后端开发的学习时间，提升全栈开发能力'
-  },
-  {
-    type: 'info',
-    title: '注重实践应用',
-    description: '多参与实际项目，将所学知识应用到实践中，加深理解和记忆'
-  }
-])
+const suggestions = ref<any[]>([])
 
-const scores = ref({
-  attitude: 4.5,
-  effect: 4.2,
-  progress: 4.3,
-  ability: 4.0
-})
+const scores = ref<any>({})
 
-const detailData = ref([
-  { date: '2026-05-01', subject: 'Vue开发', duration: 2.5, exercises: 5, accuracy: '90%', notes: '完成了Vue组件练习' },
-  { date: '2026-04-30', subject: 'Spring Boot', duration: 1.8, exercises: 3, accuracy: '82%', notes: '学习了RESTful API' },
-  { date: '2026-04-29', subject: 'React开发', duration: 2.2, exercises: 4, accuracy: '88%', notes: 'React Hooks练习' },
-  { date: '2026-04-28', subject: '数据库', duration: 1.5, exercises: 6, accuracy: '85%', notes: 'SQL查询优化' },
-  { date: '2026-04-27', subject: '项目实战', duration: 3.0, exercises: 2, accuracy: '95%', notes: '电商系统开发' }
-])
+const detailData = ref<any[]>([])
 
 const getProgressColor = (percentage: number) => {
   if (percentage >= 80) return '#67c23a'

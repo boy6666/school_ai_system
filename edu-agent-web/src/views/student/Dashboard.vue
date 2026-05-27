@@ -139,11 +139,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { getAdminStats } from '@/api/admin'
+import { ref, computed, onMounted } from 'vue'
 
 const searchKeyword = ref('')
+const dashboardStats = ref({ totalUsers:0, activeUsers:0, totalConversations:0 })
 
 // 问候语
+
+
+
 const greeting = computed(() => {
   const hour = new Date().getHours()
   if (hour < 12) return '上午好'
@@ -152,12 +157,7 @@ const greeting = computed(() => {
 })
 
 // 今日任务 Mock
-const todayTasks = ref([
-  { name: '高等数学（上）——导数与微分', duration: 45 },
-  { name: '线性代数', duration: 30 },
-  { name: '大学物理（上）——牛顿定律', duration: 20 }
-])
-
+const todayTasks = ref<any[]>([])
 // 学习回顾
 const reviewSubjects = ref([
   { name: '高数', hours: 72 },

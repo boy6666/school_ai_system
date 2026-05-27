@@ -15,7 +15,7 @@
         <el-menu-item index="/student/profile/chat">
           <el-icon><ChatDotRound /></el-icon><span>学习画像</span>
         </el-menu-item>
-        <el-menu-item index="/student/resources/generate">
+        <el-menu-item index="/student/resources">
           <el-icon><MagicStick /></el-icon><span>资源生成</span>
         </el-menu-item>
         <el-menu-item index="/student/path">

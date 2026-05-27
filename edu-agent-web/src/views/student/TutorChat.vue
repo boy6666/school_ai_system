@@ -81,126 +81,42 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
-import {
-  getTutorSession,
-  sendTutorMessage
-} from '@/api/tutor'
-
-import type {
-  TutorMessage,
-  TutorSuggestion
-} from '@/api/tutor'
+import { ref } from 'vue'
+import { sendTutorMessage } from '@/api/tutor'
+import { ElMessage } from 'element-plus'
 
 const loading = ref(false)
 const inputValue = ref('')
+const messages = ref<{ role: string; content: string }[]>([])
+const sessionId = ref('session_' + Date.now())
 
-const messages = ref<TutorMessage[]>([])
-const suggestions = ref<TutorSuggestion[]>([])
+const sendMessage = async () => {
+  const content = inputValue.value.trim()
+  if (!content || loading.value) return
 
-const fallbackMessages: TutorMessage[] = [
-  {
-    id: 1,
-    role: 'assistant',
-    content: '你好，我是你的 AI 学习助手。你可以问我课程知识点、题目解析、学习计划或资源推荐。',
-    time: '09:00'
-  },
-  {
-    id: 2,
-    role: 'user',
-    content: 'A* 算法和 BFS 有什么区别？',
-    time: '09:01'
-  },
-  {
-    id: 3,
-    role: 'assistant',
-    content: 'BFS 是无权图中的广度优先搜索，按层扩展节点；A* 算法会结合实际代价和启发式估价，更适合路径规划问题。',
-    time: '09:01'
-  }
-]
-
-const fallbackSuggestions: TutorSuggestion[] = [
-  {
-    id: 1,
-    title: '解释 A* 算法核心思想',
-    prompt: '请用简单例子解释 A* 算法的核心思想。'
-  },
-  {
-    id: 2,
-    title: '对比 BFS 和 DFS',
-    prompt: 'BFS 和 DFS 的区别是什么？适合哪些场景？'
-  },
-  {
-    id: 3,
-    title: '生成本周学习计划',
-    prompt: '请根据人工智能导论课程帮我生成本周学习计划。'
-  },
-  {
-    id: 4,
-    title: '推荐搜索算法资源',
-    prompt: '推荐几个学习搜索算法的资源。'
-  }
-]
-
-const fetchSession = async () => {
+  messages.value.push({ role: 'user', content })
+  inputValue.value = ''
   loading.value = true
 
   try {
-    const result = await getTutorSession()
-
-    messages.value = result.messages
-    suggestions.value = result.suggestions
-  } catch (error) {
-    console.warn('智能辅导接口暂不可用，使用页面静态数据：', error)
-
-    messages.value = fallbackMessages
-    suggestions.value = fallbackSuggestions
+    const result = await sendTutorMessage(content, sessionId.value)
+    const answer = result?.answer || result?.finalAnswer || result?.data?.answer || ''
+    if (answer) {
+      messages.value.push({ role: 'assistant', content: answer })
+    }
+  } catch (err: any) {
+    ElMessage.error(err?.response?.data?.message || '请求失败，请确认后端和AI引擎是否运行')
   } finally {
     loading.value = false
   }
 }
 
-const sendMessage = async () => {
-  const content = inputValue.value.trim()
-
-  if (!content) return
-
-  messages.value.push({
-    id: Date.now(),
-    role: 'user',
-    content,
-    time: '刚刚'
-  })
-
-  inputValue.value = ''
-
-  try {
-    const reply = await sendTutorMessage(content)
-    messages.value.push(reply)
-  } catch (error) {
-    console.warn('智能辅导问答接口暂不可用，使用模拟回复：', error)
-
-    messages.value.push({
-      id: Date.now() + 1,
-      role: 'assistant',
-      content: `我理解你的问题是：“${content}”。目前接口暂不可用，建议先结合课程章节、资源详情和练习题进行学习。`,
-      time: '刚刚'
-    })
-  }
-}
-
-const useSuggestion = (prompt: string) => {
-  inputValue.value = prompt
-}
-
 const resetChat = () => {
-  messages.value = fallbackMessages.slice(0, 1)
+  messages.value = []
+  sessionId.value = 'session_' + Date.now()
 }
-
-onMounted(() => {
-  fetchSession()
-})
 </script>
+
 
 <style scoped>
 .tutor-page {

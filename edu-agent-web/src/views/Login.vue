@@ -62,12 +62,12 @@ import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/stores/user'
+import { login } from '@/api/auth'
 
 const router = useRouter()
 const userStore = useUserStore()
 const formRef = ref()
 const loading = ref(false)
-const remember = ref(false)
 
 const form = reactive({
   username: '',
@@ -75,46 +75,41 @@ const form = reactive({
 })
 
 const rules = {
-  username: [{ required: true, message: '请输入账号/学号/邮箱', trigger: 'blur' }],
+  username: [{ required: true, message: '请输入账号/学号/工号', trigger: 'blur' }],
   password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
 }
 
-// 真实登录（对接后端）
 const handleLogin = async () => {
-  await formRef.value.validate()
-  loading.value = true
-  try {
-    // 临时模拟，实际应调用 request.post('/login', form)
-    // const res = await request.post('/login', form)
-    const mockRes = { code: 1, data: { id: 1, username: form.username, name: '李明明', token: 'mock-token' } }
-    if (mockRes.code === 1) {
-      userStore.setToken(mockRes.data.token)
-      userStore.setUserInfo(mockRes.data)
-      if (remember.value) localStorage.setItem('remember', form.username)
-      ElMessage.success('登录成功')
-      router.push('/student/dashboard')
-    } else {
-      ElMessage.error(mockRes.msg || '登录失败')
+  if (!formRef.value) return
+  await formRef.value.validate(async (valid: boolean) => {
+    if (!valid) return
+    loading.value = true
+    try {
+      const res = await login({ username: form.username, password: form.password })
+      if (res?.token) {
+        userStore.setToken(res.token)
+        userStore.setUserInfo(res.userInfo || {})
+        ElMessage.success('登录成功')
+        const role = res?.userInfo?.role || ''
+        if (role === 'admin') {
+          router.push('/admin/dashboard')
+        } else {
+          router.push('/student/dashboard')
+        }
+      }
+    } catch (err: any) {
+      ElMessage.error(err?.response?.data?.message || err?.message || '登录失败')
+    } finally {
+      loading.value = false
     }
-  } catch (error) {
-    ElMessage.error('请求失败')
-  } finally {
-    loading.value = false
-  }
-}
-
-// 模拟登录（跳过后端验证）
-const mockLogin = () => {
-  userStore.setToken('mock-token-123')
-  userStore.setUserInfo({ id: 1, username: 'demo', name: '李明明', token: 'mock-token-123' })
-  ElMessage.success('模拟登录成功')
-  router.push('/student/dashboard')
+  })
 }
 
 const goToRegister = () => {
   router.push('/register')
 }
 </script>
+
 
 <style scoped>
 .login-container {

@@ -12,6 +12,7 @@ export const useUserStore = defineStore('user', () => {
 
   const setUserInfo = (info: any) => {
     userInfo.value = info
+    if (info?.role) localStorage.setItem('role', info.role)
   }
 
   const logout = () => {

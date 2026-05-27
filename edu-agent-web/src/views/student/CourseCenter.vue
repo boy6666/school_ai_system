@@ -119,8 +119,11 @@
 </template>
 
 <script setup lang="ts">
+import { getAdminResourceList } from '@/api/admin'
 import { computed, onMounted, ref } from 'vue'
+
 import { useRouter } from 'vue-router'
+
 import { getCourseList } from '@/api/course'
 import type { CourseListItem, CourseStatus } from '@/api/course'
 

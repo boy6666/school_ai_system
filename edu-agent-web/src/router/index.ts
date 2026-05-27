@@ -21,7 +21,8 @@ const routes: RouteRecordRaw[] = [
       { path: 'profile/overview', component: () => import('@/views/student/ProfileOverview.vue') },
       { path: 'courses', component: () => import('@/views/student/CourseCenter.vue') },
       { path: 'courses/:id', component: () => import('@/views/student/CourseDetail.vue') },
-      { path: 'resources', component: () => import('@/views/student/ResourceCenter.vue') },
+      { path: 'resources/generate', component: () => import('@/views/student/ResourceGenerate.vue') },
+        { path: 'resources', component: () => import('@/views/student/ResourceCenter.vue') },
       { path: 'resources/:id', component: () => import('@/views/student/ResourceDetail.vue') },
       { path: 'path', component: () => import('@/views/student/LearningPath.vue') },
       { path: 'tutor', component: () => import('@/views/student/TutorChat.vue') },
@@ -75,9 +76,14 @@ router.beforeEach((to, _from, next) => {
       // 访问其他管理端页面，必须要有 token
       if (!token) {
         next('/admin/login')
-      } else {
-        next()
+        return
       }
+      const role = localStorage.getItem('role')
+      if (role !== 'admin') {
+        next('/student/dashboard')
+        return
+      }
+      next()
       return
     }
   }

@@ -67,11 +67,15 @@
 
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
+import { ref, onMounted } from 'vue'
+import { getAdminStats } from '@/api/admin'
 import {
   User, Monitor, Upload, DataAnalysis, Checked, Setting, Tickets
 } from '@element-plus/icons-vue'
 
 const router = useRouter()
+const stats = ref({ totalUsers: 0, activeUsers: 0, totalConversations: 0 })
+
 const quickLinks = [
   { name: '用户管理', path: '/admin/users', icon: 'User' },
   { name: '课程管理', path: '/admin/courses', icon: 'Monitor' },
@@ -81,12 +85,15 @@ const quickLinks = [
   { name: '系统设置', path: '/admin/settings', icon: 'Setting' },
   { name: '日志审计', path: '/admin/logs', icon: 'Tickets' }
 ]
-const notices = [
-  { id: 1, title: '关于系统维护的通知', time: '2024-05-15' },
-  { id: 2, title: '新功能上线：智能体管理', time: '2024-05-14' },
-  { id: 3, title: '平台使用规范更新', time: '2024-05-12' }
-]
+const notices = ref<any[]>([])
 const goTo = (path: string) => router.push(path)
+
+onMounted(async () => {
+  try {
+    const s = await getAdminStats()
+    stats.value = { totalUsers: s?.totalUsers??0, activeUsers: s?.activeUsers??0, totalConversations: s?.totalConversations??0 }
+  } catch {}
+})
 </script>
 
 <style scoped>

@@ -3,40 +3,41 @@
     <el-aside width="220px" class="aside">
       <div class="logo">EduAgent 管理后台</div>
       <el-menu
-        :default-active="$route.path"
-        router
-        background-color="#304156"
-        text-color="#bfcbd9"
-        active-text-color="#409EFF"
-      >
-        <el-menu-item index="/admin/dashboard">
-          <el-icon><HomeFilled /></el-icon><span>首页</span>
-        </el-menu-item>
-        <el-menu-item index="/admin/users">
-          <el-icon><User /></el-icon><span>用户管理</span>
-        </el-menu-item>
-        <el-menu-item index="/admin/courses">
-          <el-icon><Monitor /></el-icon><span>课程/资源</span>
-        </el-menu-item>
-        <el-menu-item index="/admin/learning-analysis">
-          <el-icon><DataAnalysis /></el-icon><span>学习分析</span>
-        </el-menu-item>
-        <el-menu-item index="/admin/data-report">
-          <el-icon><Document /></el-icon><span>数据报表</span>
-        </el-menu-item>
-        <el-menu-item index="/admin/agents">
-          <el-icon><Cpu /></el-icon><span>智能体管理</span>
-        </el-menu-item>
-        <el-menu-item index="/admin/approvals">
-          <el-icon><Checked /></el-icon><span>审批管理</span>
-        </el-menu-item>
-        <el-menu-item index="/admin/settings">
-          <el-icon><Setting /></el-icon><span>系统设置</span>
-        </el-menu-item>
-        <el-menu-item index="/admin/logs">
-          <el-icon><Tickets /></el-icon><span>日志审计</span>
-        </el-menu-item>
-      </el-menu>
+          router
+          :default-active="$route.path"
+          background-color="#304156"
+          text-color="#bfcbd9"
+          active-text-color="#409eff"
+        >
+          <el-menu-item index="/admin/dashboard">
+            <el-icon><DataAnalysis /></el-icon>
+            <span>控制台</span>
+          </el-menu-item>
+          <el-menu-item index="/admin/users">
+            <el-icon><User /></el-icon>
+            <span>用户管理</span>
+          </el-menu-item>
+          <el-menu-item index="/admin/resources">
+            <el-icon><FolderOpened /></el-icon>
+            <span>资源管理</span>
+          </el-menu-item>
+          <el-menu-item index="/admin/reviews">
+            <el-icon><DocumentChecked /></el-icon>
+            <span>内容审核</span>
+          </el-menu-item>
+          <el-menu-item index="/admin/statistics">
+            <el-icon><TrendCharts /></el-icon>
+            <span>数据统计</span>
+          </el-menu-item>
+          <el-menu-item index="/admin/agents">
+            <el-icon><Monitor /></el-icon>
+            <span>智能体管理</span>
+          </el-menu-item>
+          <el-menu-item index="/admin/settings">
+            <el-icon><Setting /></el-icon>
+            <span>系统设置</span>
+          </el-menu-item>
+        </el-menu>
     </el-aside>
     <el-container>
       <el-header class="header">

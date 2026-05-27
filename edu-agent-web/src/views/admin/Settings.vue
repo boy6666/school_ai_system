@@ -376,7 +376,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { ref, onMounted } from 'vue'
+import { getSettings, updateSetting } from '@/api/admin'
+import { reactive } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   Setting, User, Key, Monitor, Document, Files, Plus
@@ -621,6 +623,12 @@ const deleteBackup = (backup: any) => {
     }
   }).catch(() => {})
 }
+onMounted(async () => {
+  try {
+    const data = await getSettings()
+    settings.value = data || []
+  } catch { settings.value = [] }
+})
 </script>
 
 <style scoped>

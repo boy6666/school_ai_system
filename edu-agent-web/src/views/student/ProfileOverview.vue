@@ -75,26 +75,14 @@ const radarData = [
 ]
 
 // 核心指标（进度条数据）
-const coreMetrics = ref([
-  { name: '学习投入度', value: 85, color: '#409EFF' },
-  { name: '知识掌握度', value: 72, color: '#67C23A' },
-  { name: '任务完成率', value: 90, color: '#E6A23C' },
-  { name: '学习持续性', value: 68, color: '#F56C6C' },
-  { name: '互动参与度', value: 55, color: '#909399' },
-  { name: '测验平均分', value: 78, color: '#409EFF' }
-])
+const coreMetrics = ref<any[]>([])
 
 // 优势与待提升领域
-const strengths = ref(['数据结构', '算法思维', '英语阅读'])
-const weaknesses = ref(['高等数学', '线性代数', '概率统计'])
+const strengths = ref<any[]>([])
+const weaknesses = ref<any[]>([])
 
 // 学习建议（可刷新）
-const suggestions = ref([
-  '每天专注学习高等数学30分钟，重点突破极限与导数',
-  '尝试用思维导图整理线性代数章节框架',
-  '参与每周的编程练习，巩固数据结构知识',
-  '观看概率论教学视频并完成课后习题'
-])
+const suggestions = ref<any[]>([])
 
 const refreshSuggestions = () => {
   // 模拟刷新新建议，实际可调用后端接口

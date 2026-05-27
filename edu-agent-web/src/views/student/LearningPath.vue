@@ -282,11 +282,7 @@ const resources = {
 const currentResources = computed(() => resources[activeResourceTab.value as keyof typeof resources] || [])
 
 // 动态调整记录
-const adjustRecords = ref([
-  { time: '05-06 09:30', content: '检测到“反向传播算法”掌握度偏低（55%），自动插入图解视频与专项练习。' },
-  { time: '05-05 20:15', content: '完成“梯度下降原理与实现”，掌握度提升至72%，路径顺利推进。' },
-  { time: '05-04 18:40', content: '根据学习时长不足，调整今日计划，延长学习时段30分钟。' }
-])
+const adjustRecords = ref<any[]>([])
 </script>
 
 <style scoped>

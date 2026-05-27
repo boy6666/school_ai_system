@@ -225,8 +225,11 @@
 </template>
 
 <script setup lang="ts">
+import { getAdminStats, getUserList } from '@/api/admin'
 import { ref, reactive, onMounted, nextTick } from 'vue'
+
 import { ElMessage } from 'element-plus'
+
 import {
   User, UserFilled, DocumentChecked, FolderChecked, TrendCharts
 } from '@element-plus/icons-vue'
@@ -247,25 +250,15 @@ const pagination = reactive({
   total: 100
 })
 
-const stats = ref({
-  users: 1234,
-  online: 156,
-  exercises: 8901,
-  projects: 567
-})
+const stats = ref<any>({ users:0, online:0, exercises:0, projects:0 })
 
 const userGrowthChart = ref()
 const userDistributionChart = ref()
 const learningTimeChart = ref()
 const projectCompletionChart = ref()
 
-const userData = ref([
-  { id: 1, name: '张三', email: 'zhangsan@example.com', level: 'advanced', learningTime: 120, exercises: 45, projects: 3, lastActive: '2026-05-02 14:30', status: 'active' },
-  { id: 2, name: '李四', email: 'lisi@example.com', level: 'intermediate', learningTime: 85, exercises: 32, projects: 2, lastActive: '2026-05-02 13:45', status: 'active' },
-  { id: 3, name: '王五', email: 'wangwu@example.com', level: 'beginner', learningTime: 45, exercises: 15, projects: 1, lastActive: '2026-05-01 16:20', status: 'active' },
-  { id: 4, name: '赵六', email: 'zhaoliu@example.com', level: 'intermediate', learningTime: 92, exercises: 38, projects: 2, lastActive: '2026-04-30 09:15', status: 'inactive' },
-  { id: 5, name: '钱七', email: 'qianqi@example.com', level: 'beginner', learningTime: 28, exercises: 10, projects: 0, lastActive: '2026-04-29 18:30', status: 'inactive' }
-])
+const userData = ref<any[]>([])
+const loading = ref(false)
 
 const learningData = ref([
   { date: '2026-05-02', activeUsers: 156, totalTime: 432, avgTime: 2.8, completedExercises: 234, completedProjects: 12, avgAccuracy: '85%', newUsers: 15 },
