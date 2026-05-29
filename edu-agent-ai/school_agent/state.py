@@ -24,6 +24,7 @@ class StudentState(TypedDict, total=False):
     profile: Dict[str, Any]
     profile_before: Dict[str, Any]
     profile_patch: Dict[str, Any]
+    profile_changes: Dict[str, Any]
 
     # 知识库检索
     retrieved_context: str

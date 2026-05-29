@@ -3,7 +3,7 @@ from typing import Callable, Dict
 from school_agent.agents.evaluation_agent import evaluate_learning, log_interaction
 from school_agent.agents.explain_agent import explain_agent
 from school_agent.agents.path_agent import path_agent
-from school_agent.agents.profile_agent import build_profile, update_profile
+from school_agent.agents.profile_agent import extract_profile, init_profile
 from school_agent.agents.quiz_agent import quiz_agent
 from school_agent.agents.resource_agent import resource_agent
 from school_agent.agents.retrieval_agent import retrieval_agent, retrieve_knowledge
@@ -74,12 +74,16 @@ class SimpleGraph:
 
     正式比赛环境安装 langgraph 后，会自动使用真正的 StateGraph。
     这个类只用于本地快速测试流程。
+
+    新流程：init_profile → classify → safety → retrieve → intent → ... → evaluate → extract_profile → finalize
+    画像在后台自动生成/更新，不再需要用户主动填写。
     """
 
     def invoke(self, input_state: dict, config: dict | None = None) -> dict:
         state = dict(input_state)
 
-        for func in [build_profile, classify_intent, safety_precheck]:
+        # 初始化/加载画像（后台操作，不打断对话）
+        for func in [init_profile, classify_intent, safety_precheck]:
             state.update(func(state))
 
         if route_after_safety(state) == "reject":
@@ -103,7 +107,8 @@ class SimpleGraph:
         else:
             state.update(explain_agent(state))
 
-        for func in [safety_postcheck, evaluate_learning, update_profile, log_interaction, finalize_output]:
+        # 闭环节点：安全复核 → 评估 → 后台提取画像 → 日志 → 输出
+        for func in [safety_postcheck, evaluate_learning, extract_profile, log_interaction, finalize_output]:
             state.update(func(state))
 
         return state
@@ -121,8 +126,8 @@ def _build_langgraph():
 
     builder = StateGraph(StudentState)
 
-    # 总控前置节点
-    builder.add_node("build_profile", build_profile)
+    # 前置节点：初始化画像（后台加载/创建，不对话）
+    builder.add_node("init_profile", init_profile)
     builder.add_node("classify_intent", classify_intent)
     builder.add_node("safety_precheck", safety_precheck)
     builder.add_node("retrieve_knowledge", retrieve_knowledge)
@@ -135,15 +140,16 @@ def _build_langgraph():
     builder.add_node("path_agent", path_agent)
     builder.add_node("tutor_agent", tutor_agent)
 
-    # 统一闭环节点
+    # 统一闭环节点：安全 → 评估 → 画像提取 → 日志 → 输出
     builder.add_node("safety_postcheck", safety_postcheck)
     builder.add_node("evaluate_learning", evaluate_learning)
-    builder.add_node("update_profile", update_profile)
+    builder.add_node("extract_profile", extract_profile)
     builder.add_node("log_interaction", log_interaction)
     builder.add_node("finalize_output", finalize_output)
 
-    builder.add_edge(START, "build_profile")
-    builder.add_edge("build_profile", "classify_intent")
+    # 流程连接
+    builder.add_edge(START, "init_profile")
+    builder.add_edge("init_profile", "classify_intent")
     builder.add_edge("classify_intent", "safety_precheck")
 
     builder.add_conditional_edges(
@@ -174,8 +180,8 @@ def _build_langgraph():
         builder.add_edge(node_name, "safety_postcheck")
 
     builder.add_edge("safety_postcheck", "evaluate_learning")
-    builder.add_edge("evaluate_learning", "update_profile")
-    builder.add_edge("update_profile", "log_interaction")
+    builder.add_edge("evaluate_learning", "extract_profile")
+    builder.add_edge("extract_profile", "log_interaction")
     builder.add_edge("log_interaction", "finalize_output")
     builder.add_edge("finalize_output", END)
 

@@ -451,4 +451,18 @@ CREATE TABLE IF NOT EXISTS `courses` (
 -- 显示创建结果
 -- ================================
 
+-- ================================
+-- 画像维度层次扩展 (2026-05-28)
+-- ================================
+
+ALTER TABLE `student_profiles`
+  ADD COLUMN IF NOT EXISTS `knowledge_mastery_level` VARCHAR(20) DEFAULT 'level_1' COMMENT '知识掌握度层次',
+  ADD COLUMN IF NOT EXISTS `learning_goal_clarity_level` VARCHAR(20) DEFAULT 'level_1' COMMENT '学习目标清晰度层次',
+  ADD COLUMN IF NOT EXISTS `cognitive_adaptation_level` VARCHAR(20) DEFAULT 'level_1' COMMENT '认知风格适配层次',
+  ADD COLUMN IF NOT EXISTS `mistake_avoidance_level` VARCHAR(20) DEFAULT 'level_1' COMMENT '错误规避力层次',
+  ADD COLUMN IF NOT EXISTS `learning_autonomy_level` VARCHAR(20) DEFAULT 'level_1' COMMENT '学习自主性层次',
+  ADD COLUMN IF NOT EXISTS `overall_level` VARCHAR(20) DEFAULT 'level_1' COMMENT '综合能力层次',
+  ADD COLUMN IF NOT EXISTS `dimension_scores` JSON DEFAULT NULL COMMENT '各维度分数JSON',
+  ADD COLUMN IF NOT EXISTS `conversation_count` INT DEFAULT 0 COMMENT '累计对话次数';
+
 SELECT 'Database tables created successfully!' AS status;
