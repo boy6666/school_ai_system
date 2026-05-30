@@ -6,13 +6,36 @@ const aiClient = axios.create({
   timeout: 60000,
 })
 
+export interface DimensionState {
+  level: string
+  level_label: string
+  level_number: number
+  score: number
+  evidence: string[]
+}
+
 export interface ProfileData {
+  // 六维层次画像
+  knowledge_mastery?: DimensionState
+  knowledge_mastery_label?: string
+  learning_goal_clarity?: DimensionState
+  learning_goal_clarity_label?: string
+  cognitive_adaptation?: DimensionState
+  cognitive_adaptation_label?: string
+  mistake_avoidance?: DimensionState
+  mistake_avoidance_label?: string
+  learning_autonomy?: DimensionState
+  learning_autonomy_label?: string
+  overall_level?: DimensionState
+  overall_level_label?: string
+
+  // 辅助信息
   major?: string
   grade?: string
   course?: string
   topic?: string
-  knowledge_base?: string
   learning_goal?: string
+  knowledge_base?: string
   current_mastery?: string
   cognitive_style?: string
   weaknesses?: string[]
@@ -22,29 +45,29 @@ export interface ProfileData {
   pace?: string
   overall_type?: string
   profile_suggestions?: string[]
-  last_score?: number
-  last_suggestion?: string
+  conversation_count?: number
   last_updated?: string
+  created_at?: string
   exists?: boolean
 }
 
-export interface ProfileBuildParams {
+export interface ProfileChange {
+  dimension: string
+  from_level: string
+  to_level: string
+  reason: string
+}
+
+export interface ProfileChanges {
+  changed_dimensions: ProfileChange[]
+  has_changes: boolean
+}
+
+export const getProfileFromAI = async (studentId: string): Promise<{
   student_id: string
-  learning_goal: string
-  knowledge_base: string[]
-  current_mastery: string
-  cognitive_style: string
-  mistake_patterns: string[]
-  learning_behavior: string
-  daily_hours: number
-}
-
-export const buildProfile = async (params: ProfileBuildParams): Promise<{ student_id: string; profile: ProfileData }> => {
-  const res = await aiClient.post('/profile/build', params)
-  return res.data
-}
-
-export const getProfileFromAI = async (studentId: string): Promise<{ student_id: string; profile: ProfileData; exists: boolean }> => {
+  profile: ProfileData
+  exists: boolean
+}> => {
   const res = await aiClient.get(`/profile/${studentId}`)
   return res.data
 }

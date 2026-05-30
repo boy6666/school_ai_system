@@ -12,8 +12,8 @@
         <el-menu-item index="/student/dashboard">
           <el-icon><HomeFilled /></el-icon><span>首页</span>
         </el-menu-item>
-        <el-menu-item index="/student/profile/chat">
-          <el-icon><ChatDotRound /></el-icon><span>学习画像</span>
+        <el-menu-item index="/student/profile/overview">
+          <el-icon><UserFilled /></el-icon><span>学习画像</span>
         </el-menu-item>
         <el-menu-item index="/student/resources/generate">
           <el-icon><MagicStick /></el-icon><span>资源生成</span>

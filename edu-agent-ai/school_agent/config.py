@@ -23,8 +23,8 @@ MODEL_NAME = os.getenv("MODEL_NAME", "星火API测试体验")
 BASE_URL = os.getenv("BASE_URL", "https://maas-api.cn-huabei-1.xf-yun.com/v2")
 API_KEY = os.getenv("API_KEY", "")
 
-TEMPERATURE = float(os.getenv("TEMPERATURE", "0"))
-MAX_TOKENS = int(os.getenv("MAX_TOKENS", "1024"))
+TEMPERATURE = float(os.getenv("TEMPERATURE", "0.75"))
+MAX_TOKENS = int(os.getenv("MAX_TOKENS", "4096"))
 MAX_KB_CHARS = int(os.getenv("MAX_KB_CHARS", "1800"))
 
 # 没有 API_KEY 时默认 mock，保证演示和测试流程不会卡住。

@@ -2,26 +2,31 @@
   "major": "计算机相关专业",
   "grade": "大二",
   "course": "Java 数据结构",
-  "topic": "递归",
+  "topic": "面向对象",
   "learning_goal": "期末考 85 分",
   "knowledge_base": "有一定编程基础",
   "cognitive_style": "偏好图解、代码案例和练习题",
   "weaknesses": [
     "递归",
-    "二叉树"
-  ],
-  "mistake_patterns": [
-    "概念混淆",
-    "边界条件遗漏"
+    "二叉树",
+    "数据结构基础",
+    "面向对象"
   ],
   "resource_preference": [
     "讲解文档",
     "思维导图",
     "练习题",
-    "代码案例"
+    "代码案例",
+    "项目实战",
+    "编程练习",
+    "实战项目"
   ],
   "pace": "中速",
-  "last_updated": "2026-05-13T10:04:38",
-  "last_suggestion": "建议继续完成 递归 的练习题和代码实操。",
+  "last_updated": "2026-05-26T19:45:29",
+  "mistake_patterns": [
+    "概念混淆",
+    "边界条件遗漏"
+  ],
+  "last_suggestion": "建议继续完成 面向对象 的练习题和代码实操。",
   "last_score": 78
 }

@@ -10,14 +10,11 @@ from school_agent.config import (
 )
 
 
-_model = None
+_client = None
 
 
 def _mock_llm(prompt: str, system: Optional[str] = None) -> str:
-    """没有 API Key 时的本地模拟输出。
-
-    注意：这不是正式大模型能力，只用于跑通流程、写测试和前端联调。
-    """
+    """没有 API Key 时的本地模拟输出。"""
     snippet = (prompt or "").strip().replace("\n", " ")
     if len(snippet) > 220:
         snippet = snippet[:220] + "..."
@@ -28,35 +25,43 @@ def _mock_llm(prompt: str, system: Optional[str] = None) -> str:
     )
 
 
-def get_model():
-    global _model
-    if _model is not None:
-        return _model
-
-    if USE_MOCK_LLM or not API_KEY:
-        return None
+def _get_openai_client():
+    global _client
+    if _client is not None:
+        return _client
 
     try:
-        from langchain_openai import ChatOpenAI
-    except Exception as exc:  # pragma: no cover
-        raise RuntimeError("缺少 langchain-openai，请先安装 requirements.txt") from exc
-
-    _model = ChatOpenAI(
-        model=MODEL_NAME,
-        base_url=BASE_URL,
-        api_key=API_KEY,
-        temperature=TEMPERATURE,
-        max_tokens=MAX_TOKENS,
-        request_timeout=30,
-    )
-    return _model
+        from openai import OpenAI
+        _client = OpenAI(
+            base_url=BASE_URL,
+            api_key=API_KEY,
+            timeout=60,
+        )
+    except Exception:
+        _client = None
+    return _client
 
 
 def call_llm(prompt: str, system: Optional[str] = None) -> str:
-    model = get_model()
-    if model is None:
+    if USE_MOCK_LLM or not API_KEY:
         return _mock_llm(prompt, system)
 
-    full_prompt = prompt if not system else f"{system}\n\n{prompt}"
-    resp = model.invoke(full_prompt)
-    return getattr(resp, "content", str(resp))
+    client = _get_openai_client()
+    if client is None:
+        return _mock_llm(prompt, system)
+
+    messages = []
+    if system:
+        messages.append({"role": "system", "content": system})
+    messages.append({"role": "user", "content": prompt})
+
+    try:
+        resp = client.chat.completions.create(
+            model=MODEL_NAME,
+            messages=messages,
+            temperature=TEMPERATURE,
+            max_tokens=MAX_TOKENS,
+        )
+        return resp.choices[0].message.content or ""
+    except Exception:
+        return _mock_llm(prompt, system)

@@ -1,0 +1,56 @@
+{
+  "knowledge_mastery": {
+    "level": "level_1",
+    "score": 30,
+    "evidence": [],
+    "last_updated": null
+  },
+  "learning_goal_clarity": {
+    "level": "level_1",
+    "score": 30,
+    "evidence": [],
+    "last_updated": null
+  },
+  "cognitive_adaptation": {
+    "level": "level_1",
+    "score": 30,
+    "evidence": [],
+    "last_updated": null
+  },
+  "mistake_avoidance": {
+    "level": "level_1",
+    "score": 30,
+    "evidence": [],
+    "last_updated": null
+  },
+  "learning_autonomy": {
+    "level": "level_1",
+    "score": 30,
+    "evidence": [],
+    "last_updated": null
+  },
+  "overall_level": {
+    "level": "level_1",
+    "score": 30,
+    "evidence": [],
+    "last_updated": null
+  },
+  "major": "计算机相关专业",
+  "grade": "未知年级",
+  "course": "数据结构",
+  "topic": "Java基础",
+  "learning_goal": "",
+  "knowledge_base": "",
+  "current_mastery": "",
+  "cognitive_style": "",
+  "weaknesses": [],
+  "mistake_patterns": [],
+  "learning_behavior": "",
+  "resource_preference": [],
+  "pace": "中速",
+  "overall_type": null,
+  "profile_suggestions": [],
+  "conversation_count": 0,
+  "created_at": "2026-05-28T20:16:00",
+  "last_updated": "2026-05-28T20:16:00"
+}
