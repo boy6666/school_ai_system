@@ -65,6 +65,31 @@ public class StudentProfile {
     @Column(name = "last_suggestion", columnDefinition = "TEXT")
     private String lastSuggestion;
 
+    // ==================== 六维层次字段 ====================
+    @Column(name = "knowledge_mastery_level", length = 20)
+    private String knowledgeMasteryLevel;
+
+    @Column(name = "learning_goal_clarity_level", length = 20)
+    private String learningGoalClarityLevel;
+
+    @Column(name = "cognitive_adaptation_level", length = 20)
+    private String cognitiveAdaptationLevel;
+
+    @Column(name = "mistake_avoidance_level", length = 20)
+    private String mistakeAvoidanceLevel;
+
+    @Column(name = "learning_autonomy_level", length = 20)
+    private String learningAutonomyLevel;
+
+    @Column(name = "overall_level", length = 20)
+    private String overallLevel;
+
+    @Column(name = "dimension_scores", columnDefinition = "JSON")
+    private String dimensionScores;
+
+    @Column(name = "conversation_count")
+    private Integer conversationCount;
+
     @Column(name = "create_time", nullable = false, updatable = false)
     private LocalDateTime createTime;
 
@@ -120,6 +145,24 @@ public class StudentProfile {
     public void setLastScore(Integer lastScore) { this.lastScore = lastScore; }
     public String getLastSuggestion() { return lastSuggestion; }
     public void setLastSuggestion(String lastSuggestion) { this.lastSuggestion = lastSuggestion; }
+
+    public String getKnowledgeMasteryLevel() { return knowledgeMasteryLevel; }
+    public void setKnowledgeMasteryLevel(String v) { this.knowledgeMasteryLevel = v; }
+    public String getLearningGoalClarityLevel() { return learningGoalClarityLevel; }
+    public void setLearningGoalClarityLevel(String v) { this.learningGoalClarityLevel = v; }
+    public String getCognitiveAdaptationLevel() { return cognitiveAdaptationLevel; }
+    public void setCognitiveAdaptationLevel(String v) { this.cognitiveAdaptationLevel = v; }
+    public String getMistakeAvoidanceLevel() { return mistakeAvoidanceLevel; }
+    public void setMistakeAvoidanceLevel(String v) { this.mistakeAvoidanceLevel = v; }
+    public String getLearningAutonomyLevel() { return learningAutonomyLevel; }
+    public void setLearningAutonomyLevel(String v) { this.learningAutonomyLevel = v; }
+    public String getOverallLevel() { return overallLevel; }
+    public void setOverallLevel(String v) { this.overallLevel = v; }
+    public String getDimensionScores() { return dimensionScores; }
+    public void setDimensionScores(String v) { this.dimensionScores = v; }
+    public Integer getConversationCount() { return conversationCount; }
+    public void setConversationCount(Integer v) { this.conversationCount = v; }
+
     public LocalDateTime getCreateTime() { return createTime; }
     public LocalDateTime getUpdateTime() { return updateTime; }
 }

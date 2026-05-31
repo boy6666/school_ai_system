@@ -93,6 +93,33 @@ def _parse_extractor_json(text: str) -> Dict[str, Any]:
     return json.loads(text)
 
 
+# LLM 可能返回中文层次标签，映射回 level_1/2/3
+_LEVEL_CN_MAP = {
+    "入门": "level_1",
+    "熟练": "level_2",
+    "精通": "level_3",
+    "level_1": "level_1",
+    "level_2": "level_2",
+    "level_3": "level_3",
+}
+
+
+def _normalize_level(raw: str) -> str:
+    return _LEVEL_CN_MAP.get(raw, "level_1")
+
+
+def _to_int(val, default: int = 30) -> int:
+    """安全转换为 int，兼容 LLM 返回的字符串或浮点数。"""
+    try:
+        if isinstance(val, str):
+            return int(float(val))
+        if isinstance(val, (int, float)):
+            return int(val)
+    except (ValueError, TypeError):
+        pass
+    return default
+
+
 def _build_default_changes() -> Dict[str, Any]:
     return {
         "dimension_changes": {},
@@ -136,8 +163,8 @@ def extract_profile_from_conversation(
         ]:
             dim = current_profile.get(dim_name)
             if isinstance(dim, dict):
-                level = dim.get("level", "level_1")
-                level_label = DimensionLevel.label(DimensionLevel(level))
+                level = _normalize_level(dim.get("level", "level_1"))
+                level_label = DimensionLevel.label(DimensionLevel(level), dim_name)
                 score = dim.get("score", 30)
                 evidence = dim.get("evidence", [])
                 recent_evidence = evidence[-3:] if len(evidence) > 3 else evidence
@@ -210,10 +237,10 @@ def apply_profile_changes(
         if dim_name not in profile_dict or not isinstance(profile_dict.get(dim_name), dict):
             profile_dict[dim_name] = DimensionState().model_dump()
 
-        old_level = profile_dict[dim_name].get("level", "level_1")
-        old_score = profile_dict[dim_name].get("score", 30)
-        new_level = dim_change.get("new_level", old_level)
-        new_score = dim_change.get("new_score", old_score)
+        old_level = _normalize_level(profile_dict[dim_name].get("level", "level_1"))
+        old_score = _to_int(profile_dict[dim_name].get("score", 30))
+        new_level = _normalize_level(dim_change.get("new_level", old_level))
+        new_score = _to_int(dim_change.get("new_score", old_score))
         evidence = dim_change.get("evidence", [])
         level_changed = dim_change.get("level_changed", False)
 
@@ -235,20 +262,26 @@ def apply_profile_changes(
         )[-10:]  # 只保留最近10条证据
         profile_dict[dim_name]["last_updated"] = now
 
+        from_label = DimensionLevel.label(DimensionLevel(old_level), dim_name)
+        to_label = DimensionLevel.label(DimensionLevel(new_level), dim_name)
+
         if level_changed:
             changed_dimensions.append({
                 "dimension": dim_name,
                 "from_level": old_level,
                 "to_level": new_level,
+                "from_label": from_label,
+                "to_label": to_label,
                 "level_changed": True,
                 "reason": dim_change.get("reason", ""),
             })
         elif abs(new_score - old_score) >= 5:
-            # 分数变化超过5分也记录（但不作为"层次变化"展示）
             changed_dimensions.append({
                 "dimension": dim_name,
                 "from_level": old_level,
                 "to_level": new_level,
+                "from_label": from_label,
+                "to_label": to_label,
                 "level_changed": False,
                 "score_change": f"{old_score}→{profile_dict[dim_name]['score']}",
                 "reason": dim_change.get("score_change_reason", dim_change.get("reason", "基于本轮对话调整")),

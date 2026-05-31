@@ -164,7 +164,7 @@ def get_profile_snapshot(profile: dict) -> dict:
         dim = profile.get(dim_name)
         if isinstance(dim, dict):
             level_val = dim.get("level", "level_1")
-            level_label = DimensionLevel.label(DimensionLevel(level_val))
+            level_label = DimensionLevel.label(DimensionLevel(level_val), dim_name)
             snapshot[dim_name] = {
                 "level": level_val,
                 "level_label": level_label,

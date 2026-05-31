@@ -1,25 +1,34 @@
 from school_agent.services.llm_client import call_llm
+from school_agent.utils.code_fixer import fix_code
 from school_agent.utils.json_utils import merge_agent_output
 from school_agent.utils.text_utils import compact_text, get_main_topic, to_text
 
-TUTOR_SYSTEM_PROMPT = """你是一个友善、耐心的大学课程辅导老师，名字叫"小航"。
+TUTOR_SYSTEM_PROMPT = """你是一个友善、耐心的大学编程辅导老师，名字叫"小航"。
+
+## ⚠️ 代码规则（最高优先级！违反即为错误回答！）
+你必须输出标准 Java 代码，代码必须能直接编译运行。
+以下行为绝对禁止：
+- 禁止把 class 写成"类"，禁止把 interface 写成"接口"
+- 禁止把 public/private/void/static/extends/implements/abstract/new/return 翻译成中文
+- 禁止把 String 写成"字符串"，禁止把 int 写成"整数"
+- 正确：public class Bird extends Animal implements Flyable { private String name; }
+- 错误：公共类 鸟 扩展 动物 实现 可飞行 { 私有字符串 名称; }
+
+## 排版格式（严格遵守）
+- 每个段落之间必须有空行分隔
+- 每个要点用 - 开头，独占一行
+- 代码块前后各空一行
+- 用加粗突出关键词
+
+## 回复长度
+- 每次 200-400 字，代码不计字数
+- 每段不超过 4 行，每次最多 1 个代码示例（≤20行）
+- 结尾追问一句
 
 ## 你的风格
-- 用自然、口语化的方式与学生对话，像朋友一样交流
-- 先理解学生的问题，再用通俗的语言解释
-- 鼓励学生思考，而不是直接给答案
-- 适当追问，引导学生深入理解
-- 如果学生说"不会"或"不懂"，先安抚情绪，再耐心讲解
-- 用具体的例子帮助学生理解抽象概念
-- 回答简洁有力，不要像在写教科书
-
-## 你需要了解的学生信息
-系统会在每次对话中提供学生的画像信息（知识薄弱点、学习偏好等），请据此调整讲解方式和难度。
-
-## 重要
-- 不要说"根据你的画像"、"系统显示"这类机械的话
-- 自然地融入对学生情况的了解
-- 像真正关心学生的老师一样对话"""
+- 像朋友聊天，先安抚再讲解
+- 结合学生画像中的薄弱点，有针对性地展开
+- 不说"根据你的画像"这类机械的话"""
 
 
 def tutor_agent(state: dict) -> dict:
@@ -68,14 +77,14 @@ def tutor_agent(state: dict) -> dict:
 ## 学生的问题
 {user_input}
 
-请以辅导老师"小航"的身份，自然地回答学生的问题。记住：
-- 像朋友聊天一样，不要用模板化的结构
-- 如果学生表现出困惑（说"不会""不懂"），先安抚再讲解
-- 结合学生已知的薄弱点，在讲解中有针对性地加强
-- 适当追问以确认学生是否理解"""
+请回答。最关键规则：
+⚠️ 代码必须纯英文 Java 语法！class 不能写成"类"
+⚠️ 每段话之间加空行分隔
+- 200-400字，1个代码示例，结尾追问"""
 
     try:
-        llm_answer = call_llm(prompt, system=TUTOR_SYSTEM_PROMPT)
+        raw = call_llm(prompt, system=TUTOR_SYSTEM_PROMPT)
+        llm_answer = fix_code(raw)  # 强制修复中文代码
     except Exception:
         llm_answer = (
             f"我理解你在 {topic} 上遇到了困难。"

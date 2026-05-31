@@ -1,71 +1,116 @@
+from school_agent.services.llm_client import call_llm
 from school_agent.utils.json_utils import merge_agent_output
-from school_agent.utils.text_utils import get_main_topic, to_text
+from school_agent.utils.text_utils import compact_text, get_main_topic, to_text
+
+QUIZ_SYSTEM_PROMPT = """你是编程课程出题专家。请根据学生的知识薄弱点和知识库内容，生成有针对性的练习题。
+
+## 出题要求
+- 题目必须与学生的薄弱点和当前学习主题相关
+- 难度递进：基础→进阶→提高
+- 每道题都要有答案解析，指出易错点
+- 题目类型可以多样化：选择题、判断题、代码阅读题、简答题、编码实践题
+- 如果知识库提供了相关内容，优先基于知识库出题
+
+## 输出格式
+严格返回JSON：
+{
+  "quiz": [
+    {
+      "type": "choice",
+      "difficulty": "基础",
+      "question": "题目标题",
+      "options": ["A. xxx", "B. xxx", "C. xxx", "D. xxx"],
+      "answer": "B. xxx",
+      "analysis": "解析说明，包含易错提示"
+    }
+  ]
+}"""
 
 
-def _build_quiz(topic: str, weaknesses_text: str):
+def _build_fallback_quiz(topic: str, weaknesses_text: str):
+    """LLM 不可用时的兜底模板。"""
     return [
         {
             "type": "choice",
             "difficulty": "基础",
             "question": f"学习 {topic} 时，最应该先掌握哪一项？",
-            "options": [
-                "基本定义、使用场景和常见错误",
-                "直接背诵全部代码",
-                "跳过概念直接做难题",
-                "只看答案不练习",
-            ],
-            "answer": "基本定义、使用场景和常见错误",
-            "analysis": f"当前薄弱点包括：{weaknesses_text}，应先建立概念框架。",
-        },
-        {
-            "type": "judge",
-            "difficulty": "基础",
-            "question": f"判断：只要能背出 {topic} 的定义，就一定能解决相关编程题。",
-            "answer": "错误",
-            "analysis": "编程题还需要理解边界条件、输入输出和具体实现过程。",
+            "options": ["基本定义和使用场景", "直接背诵代码", "跳过概念做难题", "只看答案不练习"],
+            "answer": "基本定义和使用场景",
+            "analysis": f"当前薄弱点：{weaknesses_text}，应先建立概念框架。",
         },
         {
             "type": "short_answer",
             "difficulty": "中等",
-            "question": f"请用自己的话解释 {topic} 解决了什么问题。",
-            "answer": f"{topic} 的价值在于帮助我们组织或处理特定类型的数据与过程。",
-            "analysis": "这道题检查是否真正理解概念，而不是机械背诵。",
+            "question": f"请用自己的话解释 {topic} 解决了什么问题，并举一个实际场景。",
+            "answer": f"{topic} 的核心价值在于解决特定类型的数据组织/处理问题。",
+            "analysis": "检查是否真正理解概念而非机械记忆。",
         },
         {
-            "type": "code_reading",
-            "difficulty": "中等",
-            "question": f"阅读一段与 {topic} 相关的代码，指出可能遗漏的边界条件。",
-            "answer": "需要检查空输入、极端规模、递归终止条件或索引越界等情况。",
-            "analysis": "代码阅读题用于暴露常见错误模式。",
-        },
-        {
-            "type": "practice",
+            "type": "code_practice",
             "difficulty": "提高",
-            "question": f"请写一个 Java 小例子，演示 {topic} 的核心思想。",
-            "answer": "答案应包含核心逻辑、注释说明和一个简单测试用例。",
+            "question": f"请用 Java 写一个最小示例，演示 {topic} 的典型用法，包含边界条件处理。",
+            "answer": "代码应包含核心逻辑、注释说明和边界测试。",
             "analysis": "实践题用于把概念迁移到代码实现中。",
         },
     ]
 
 
 def quiz_agent(state: dict) -> dict:
-    """出题与解析智能体范例。"""
+    """出题与解析智能体——LLM 驱动，结合知识库和画像生成个性化练习题。"""
     profile = state.get("profile", {})
+    user_input = state.get("user_input", "")
     topic = get_main_topic(profile)
-    weaknesses_text = to_text(profile.get("weaknesses"))
-    quiz = _build_quiz(topic, weaknesses_text)
+    context = compact_text(state.get("retrieved_context", ""), max_chars=2000)
+    weaknesses = profile.get("weaknesses", [])
+    mistake_patterns = profile.get("mistake_patterns", [])
+    overall_type = profile.get("overall_type", "")
+
+    quiz = None
+    try:
+        prompt = f"""## 学生情况
+- 当前学习主题：{topic}
+- 薄弱点：{', '.join(weaknesses[:5]) if weaknesses else '暂无'}
+- 易错模式：{', '.join(mistake_patterns[:3]) if mistake_patterns else '暂无'}
+- 学生类型：{overall_type or '未知'}
+
+## 知识库参考
+{context if context else '暂无相关知识库内容，请根据通用编程知识出题'}
+
+## 学生请求
+{user_input}
+
+请生成3-5道与当前主题和薄弱点紧密相关的练习题，难度递进。"""
+        import json as _json
+        response = call_llm(prompt, system=QUIZ_SYSTEM_PROMPT)
+        # 解析 JSON
+        text = response.strip()
+        if text.startswith("```"):
+            lines = text.split("\n")
+            text = "\n".join(lines[1:-1] if lines[-1].strip() == "```" else lines[1:])
+        start = text.find("{")
+        end = text.rfind("}") + 1
+        if start != -1 and end > start:
+            result = _json.loads(text[start:end])
+            quiz = result.get("quiz", [])
+    except Exception:
+        pass
+
+    if not quiz:
+        quiz = _build_fallback_quiz(topic, to_text(weaknesses))
 
     lines = [f"## 个性化练习题：{topic}", ""]
     for index, item in enumerate(quiz, start=1):
-        lines.append(f"### {index}. {item['type']}｜{item['difficulty']}")
-        lines.append(f"**题目：** {item['question']}")
+        qtype = item.get("type", "题")
+        diff = item.get("difficulty", "")
+        lines.append(f"### {index}. {qtype}｜{diff}")
+        lines.append(f"**题目：** {item.get('question', '')}")
         if item.get("options"):
             lines.append("")
             for option in item["options"]:
                 lines.append(f"- {option}")
         lines.append("")
-        lines.append(f"**参考答案：** {item['answer']}")
-        lines.append(f"**解析：** {item['analysis']}")
+        lines.append(f"**参考答案：** {item.get('answer', '')}")
+        lines.append(f"**解析：** {item.get('analysis', '')}")
         lines.append("")
 
     return {

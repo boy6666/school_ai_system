@@ -79,3 +79,15 @@ export const getProfile = (username: string): Promise<ProfileData> => {
 export const saveProfile = (username: string, profile: Record<string, any>): Promise<any> => {
   return request.post('/profile/save', { username, profile })
 }
+
+/**
+ * 将AI引擎返回的画像数据同步到Java后端MySQL。
+ * 异步执行，不抛出异常，失败时静默忽略。
+ */
+export const syncProfileToBackend = async (username: string, profile: Record<string, any>) => {
+  try {
+    await saveProfile(username, profile)
+  } catch {
+    // 静默忽略同步失败，AI引擎JSON文件仍为数据源
+  }
+}

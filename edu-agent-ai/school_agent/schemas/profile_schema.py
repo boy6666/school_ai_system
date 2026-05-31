@@ -4,15 +4,27 @@ from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field
 
 
+# 每个维度的三层次专属标签
+DIM_LEVEL_LABELS = {
+    "knowledge_mastery":     {"level_1": "了解概念", "level_2": "熟练应用", "level_3": "深入精通"},
+    "learning_goal_clarity": {"level_1": "方向模糊", "level_2": "目标明确", "level_3": "系统规划"},
+    "cognitive_adaptation":  {"level_1": "有待观察", "level_2": "初显偏好", "level_3": "策略自驱"},
+    "mistake_avoidance":     {"level_1": "易重复错", "level_2": "能自查纠", "level_3": "主动预防"},
+    "learning_autonomy":     {"level_1": "被动等待", "level_2": "主动提问", "level_3": "自主深耕"},
+    "overall_level":         {"level_1": "基础补齐", "level_2": "稳步提升", "level_3": "拔尖拓展"},
+}
+_FALLBACK_LABELS = {"level_1": "入门", "level_2": "熟练", "level_3": "精通"}
+
+
 class DimensionLevel(str, Enum):
-    LEVEL_1 = "level_1"  # 入门
-    LEVEL_2 = "level_2"  # 熟练
-    LEVEL_3 = "level_3"  # 精通
+    LEVEL_1 = "level_1"
+    LEVEL_2 = "level_2"
+    LEVEL_3 = "level_3"
 
     @classmethod
-    def label(cls, level: "DimensionLevel") -> str:
-        labels = {cls.LEVEL_1: "入门", cls.LEVEL_2: "熟练", cls.LEVEL_3: "精通"}
-        return labels.get(level, "入门")
+    def label(cls, level: "DimensionLevel", dim_name: str = "") -> str:
+        labels = DIM_LEVEL_LABELS.get(dim_name, _FALLBACK_LABELS)
+        return labels.get(str(level), "入门")
 
     @classmethod
     def next_level(cls, level: "DimensionLevel") -> Optional["DimensionLevel"]:

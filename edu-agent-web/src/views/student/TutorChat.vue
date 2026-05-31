@@ -35,7 +35,7 @@
             <template v-for="(c, i) in lastProfileChanges.changed_dimensions" :key="c.dimension">
               {{ i > 0 ? '、' : '' }}{{ dimLabelMap[c.dimension] || c.dimension }}
               <template v-if="c.level_changed">
-                {{ levelLabelMap[c.from_level] || c.from_level }}→{{ levelLabelMap[c.to_level] || c.to_level }}
+                {{ c.from_label || c.from_level }}→{{ c.to_label || c.to_level }}
               </template>
               <template v-else-if="c.score_change">
                 {{ c.score_change }}
@@ -104,7 +104,7 @@
 import { onMounted, ref, computed } from 'vue'
 import { UserFilled } from '@element-plus/icons-vue'
 import { getTutorSession, sendTutorMessage, resetSessionId } from '@/api/tutor'
-import { getProfileFromAI, type ProfileData, type ProfileChanges } from '@/api/profile'
+import { getProfileFromAI, syncProfileToBackend, type ProfileData, type ProfileChanges } from '@/api/profile'
 import { useUserStore } from '@/stores/user'
 import type { TutorMessage, TutorSuggestion } from '@/api/tutor'
 
@@ -125,12 +125,6 @@ const dimLabelMap: Record<string, string> = {
   mistake_avoidance: '错误规避',
   learning_autonomy: '学习自主',
   overall_level: '综合能力',
-}
-
-const levelLabelMap: Record<string, string> = {
-  level_1: '入门',
-  level_2: '熟练',
-  level_3: '精通',
 }
 
 const miniDimensions = computed(() => {
@@ -200,6 +194,8 @@ const sendMessage = async () => {
     if (reply.profile) {
       profileExists.value = true
       profileData.value = reply.profile
+      // 同步到 Java 后端 MySQL
+      syncProfileToBackend(username, reply.profile)
     }
     if (reply.profileChanges) {
       lastProfileChanges.value = reply.profileChanges

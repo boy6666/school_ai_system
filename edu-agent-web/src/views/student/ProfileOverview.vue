@@ -50,7 +50,7 @@
                     :class="['level-dot', { active: dim.levelNumber >= lvl }]"
                     :style="{ background: dim.levelNumber >= lvl ? dim.color : '#e4e7ed' }"
                   >
-                    {{ lvl === 1 ? '入门' : lvl === 2 ? '熟练' : '精通' }}
+                    {{ dim.levelLabels[lvl - 1] }}
                   </span>
                 </div>
               </div>
@@ -110,7 +110,7 @@
 import { ref, computed, onMounted, nextTick } from 'vue'
 import * as echarts from 'echarts'
 import { Loading } from '@element-plus/icons-vue'
-import { getProfileFromAI, type ProfileData } from '@/api/profile'
+import { getProfileFromAI, getProfile, syncProfileToBackend, type ProfileData } from '@/api/profile'
 import { useUserStore } from '@/stores/user'
 
 const userStore = useUserStore()
@@ -132,6 +132,16 @@ const dimensionKeys = [
 
 const dimensionColors = ['#409EFF', '#67C23A', '#E6A23C', '#F56C6C', '#9C27B0', '#FF5722']
 
+// 每个维度的三层次专属标签
+const dimLevelLabels: Record<string, string[]> = {
+  knowledge_mastery:      ['了解概念', '熟练应用', '深入精通'],
+  learning_goal_clarity:  ['方向模糊', '目标明确', '系统规划'],
+  cognitive_adaptation:   ['有待观察', '初显偏好', '策略自驱'],
+  mistake_avoidance:      ['易重复错', '能自查纠', '主动预防'],
+  learning_autonomy:      ['被动等待', '主动提问', '自主深耕'],
+  overall_level:          ['基础补齐', '稳步提升', '拔尖拓展'],
+}
+
 const dimLabels: Record<string, string> = {
   knowledge_mastery: '知识掌握度',
   learning_goal_clarity: '学习目标清晰度',
@@ -150,6 +160,7 @@ const dimensionList = computed(() =>
       level: dim.level || 'level_1',
       levelLabel: dim.level_label || '入门',
       levelNumber: dim.level_number || 1,
+      levelLabels: dimLevelLabels[key] || ['入门', '熟练', '精通'],
       score: dim.score || 30,
       evidence: dim.evidence || [],
       color: dimensionColors[i],
@@ -190,20 +201,78 @@ async function loadProfile() {
   loading.value = true
   const username = userStore.userInfo?.username || 'student001'
 
+  // 1) 优先从 AI 引擎读取（含六维层次+证据）
   try {
     const aiRes = await getProfileFromAI(username)
     if (aiRes.exists && aiRes.profile) {
       profileExists.value = true
       profileData.value = aiRes.profile
+      // 同时同步到 Java 后端 MySQL
+      syncProfileToBackend(username, aiRes.profile)
+      loading.value = false
+      await nextTick()
+      initRadarChart()
       return
     }
   } catch {
-    // use empty state
+    // AI 引擎不可用，尝试 Java 后端
+  }
+
+  // 2) 兜底：从 Java 后端 MySQL 读取
+  try {
+    const beRes: any = await getProfile(username)
+    // request 拦截器已解包 data，beRes 即为 Map 对象
+    if (beRes && beRes.exists !== false) {
+      profileExists.value = true
+      profileData.value = mapBackendProfile(beRes)
+      loading.value = false
+      await nextTick()
+      initRadarChart()
+      return
+    }
+  } catch {
+    // 两个来源都不可用
   }
 
   loading.value = false
   await nextTick()
   initRadarChart()
+}
+
+/**
+ * 将 Java 后端扁平格式转为 AI 引擎的嵌套六维格式，方便组件统一渲染。
+ */
+function mapBackendProfile(data: Record<string, any>): ProfileData {
+  const dimKeys = [
+    'knowledge_mastery', 'learning_goal_clarity', 'cognitive_adaptation',
+    'mistake_avoidance', 'learning_autonomy', 'overall_level',
+  ]
+  const result: Record<string, any> = { ...data }
+  for (const key of dimKeys) {
+    const levelVal = data[key + '_level'] || data[key]?.level || 'level_1'
+    const levelNum = levelVal === 'level_1' ? 1 : levelVal === 'level_2' ? 2 : 3
+    // per-dimension 兜底标签(本地定义，后端也会下发专属标签)
+    const labelMap: Record<string, string[]> = dimLevelLabels
+    const labels = labelMap[key] || ['入门', '熟练', '精通']
+    const label = labels[levelNum - 1] || '入门'
+    // 尝试从 dimension_scores JSON 解析分数
+    let score = 30
+    try {
+      const scoresStr = data['dimension_scores']
+      if (scoresStr) {
+        const scores = typeof scoresStr === 'string' ? JSON.parse(scoresStr) : scoresStr
+        if (scores[key] !== undefined) score = scores[key]
+      }
+    } catch { /* ignore */ }
+    result[key] = {
+      level: levelVal,
+      level_label: label,
+      level_number: levelNum,
+      score,
+      evidence: [],
+    }
+  }
+  return result as ProfileData
 }
 
 function initRadarChart() {
@@ -235,9 +304,13 @@ function initRadarChart() {
 let chartInited = false
 onMounted(async () => {
   await loadProfile()
-  loading.value = false
-  await nextTick()
-  initRadarChart()
+  // loadProfile 内部已经 set loading=false 并 initRadarChart
+  // 此处兜底处理 loading 仍为 true 的情况
+  if (loading.value) {
+    loading.value = false
+    await nextTick()
+    initRadarChart()
+  }
 })
 </script>
 

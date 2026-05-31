@@ -51,6 +51,25 @@ public class StudentProfileService {
         profile.setLastScore(getInt(profileData, "last_score"));
         profile.setLastSuggestion(getString(profileData, "last_suggestion"));
 
+        // 六维层次 — 支持 AI 引擎嵌套对象格式 {level, score, ...}
+        profile.setKnowledgeMasteryLevel(getNestedString(profileData, "knowledge_mastery", "level"));
+        profile.setLearningGoalClarityLevel(getNestedString(profileData, "learning_goal_clarity", "level"));
+        profile.setCognitiveAdaptationLevel(getNestedString(profileData, "cognitive_adaptation", "level"));
+        profile.setMistakeAvoidanceLevel(getNestedString(profileData, "mistake_avoidance", "level"));
+        profile.setLearningAutonomyLevel(getNestedString(profileData, "learning_autonomy", "level"));
+        profile.setOverallLevel(getNestedString(profileData, "overall_level", "level"));
+
+        // 六维分数汇总
+        profile.setDimensionScores(buildDimensionScores(profileData));
+
+        // 对话计数
+        Integer convCount = getInt(profileData, "conversation_count");
+        if (convCount == null) {
+            Object cv = profileData.get("conversation_count");
+            if (cv instanceof Number) convCount = ((Number) cv).intValue();
+        }
+        profile.setConversationCount(convCount);
+
         profileRepository.save(profile);
         return toMap(profile);
     }
@@ -86,6 +105,17 @@ public class StudentProfileService {
         map.put("profile_suggestions", fromJson(p.getProfileSuggestions()));
         map.put("last_score", p.getLastScore());
         map.put("last_suggestion", p.getLastSuggestion());
+
+        // 六维层次
+        map.put("knowledge_mastery_level", p.getKnowledgeMasteryLevel());
+        map.put("learning_goal_clarity_level", p.getLearningGoalClarityLevel());
+        map.put("cognitive_adaptation_level", p.getCognitiveAdaptationLevel());
+        map.put("mistake_avoidance_level", p.getMistakeAvoidanceLevel());
+        map.put("learning_autonomy_level", p.getLearningAutonomyLevel());
+        map.put("overall_level", p.getOverallLevel());
+        map.put("dimension_scores", p.getDimensionScores());
+        map.put("conversation_count", p.getConversationCount());
+
         map.put("create_time", p.getCreateTime() != null ? p.getCreateTime().toString() : null);
         map.put("update_time", p.getUpdateTime() != null ? p.getUpdateTime().toString() : null);
         return map;
@@ -125,5 +155,53 @@ public class StudentProfileService {
         Object val = map.get(key);
         if (val instanceof List) return (List<String>) val;
         return List.of();
+    }
+
+    /**
+     * 从嵌套对象中提取字符串字段。AI引擎返回格式如
+     * {"knowledge_mastery": {"level": "level_2", "score": 65, ...}}
+     */
+    @SuppressWarnings("unchecked")
+    private String getNestedString(Map<String, Object> map, String key, String subKey) {
+        Object val = map.get(key);
+        if (val instanceof Map) {
+            Object sub = ((Map<String, Object>) val).get(subKey);
+            return sub != null ? sub.toString() : null;
+        }
+        // 兼容扁平格式: knowledge_mastery_level
+        Object flat = map.get(key + "_" + subKey);
+        return flat != null ? flat.toString() : null;
+    }
+
+    /**
+     * 从六维嵌套对象构建 dimension_scores JSON。
+     * 输入: {"knowledge_mastery": {"score": 65}, "learning_goal_clarity": {"score": 40}, ...}
+     * 输出: {"knowledge_mastery":65,"learning_goal_clarity":40,...}
+     */
+    @SuppressWarnings("unchecked")
+    private String buildDimensionScores(Map<String, Object> profileData) {
+        String[] dims = {
+            "knowledge_mastery", "learning_goal_clarity", "cognitive_adaptation",
+            "mistake_avoidance", "learning_autonomy", "overall_level"
+        };
+        Map<String, Integer> scores = new LinkedHashMap<>();
+        for (String dim : dims) {
+            Object val = profileData.get(dim);
+            if (val instanceof Map) {
+                Object score = ((Map<String, Object>) val).get("score");
+                if (score instanceof Number) {
+                    scores.put(dim, ((Number) score).intValue());
+                }
+            }
+        }
+        return scores.isEmpty() ? null : toJsonObj(scores);
+    }
+
+    private String toJsonObj(Object obj) {
+        try {
+            return objectMapper.writeValueAsString(obj);
+        } catch (JsonProcessingException e) {
+            return null;
+        }
     }
 }
