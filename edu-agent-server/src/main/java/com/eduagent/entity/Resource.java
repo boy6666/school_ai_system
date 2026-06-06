@@ -21,6 +21,8 @@ public class Resource {
     private Integer views;
     private Integer favorites;
     private String duration;
+    private String chapterName;
+    private Long studentId;
     private String courseId;
     private String courseName;
     private String tags;

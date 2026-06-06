@@ -4,4 +4,5 @@ import com.eduagent.vo.LearningPathVO;
 
 public interface LearningPathService {
     LearningPathVO getCurrentPath(Long studentId);
+    LearningPathVO generatePath(Long studentId);
 }

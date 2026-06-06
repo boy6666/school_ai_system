@@ -70,8 +70,9 @@
 import { ref, computed, onMounted, nextTick } from 'vue'
 import * as echarts from 'echarts'
 import { Loading } from '@element-plus/icons-vue'
-import { getProfile, getProfileFromAI, type ProfileData } from '@/api/profile'
+import { getProfile, type ProfileData } from '@/api/profile'
 import { useUserStore } from '@/stores/user'
+import request from '@/utils/request'
 
 const userStore = useUserStore()
 const radarChartRef = ref<HTMLElement>()
@@ -127,10 +128,10 @@ function calcRadar(p: ProfileData): number[] {
 
 async function loadProfile() {
   loading.value = true
-  const username = userStore.userInfo?.username || 'student001'
+  const userId = userStore.userInfo?.id
 
   try {
-    const res = await getProfile(username) as ProfileData
+    const res = userId ? await getProfile(userId) as ProfileData : null
     if (res && res.exists) {
       profileExists.value = true
       profileData.value = res
@@ -138,18 +139,7 @@ async function loadProfile() {
       suggestions.value = res.profile_suggestions?.length ? res.profile_suggestions : buildDefaultSuggestions()
       return
     }
-  } catch { /* fallback to AI */ }
-
-  try {
-    const aiRes = await getProfileFromAI(username)
-    if (aiRes.exists && aiRes.profile && Object.keys(aiRes.profile).length > 0) {
-      profileExists.value = true
-      profileData.value = aiRes.profile
-      radarValues.value = calcRadar(aiRes.profile)
-      suggestions.value = aiRes.profile.profile_suggestions?.length ? aiRes.profile.profile_suggestions : buildDefaultSuggestions()
-      return
-    }
-  } catch { /* use default */ }
+  } catch { /* not found */ }
 
   suggestions.value = buildDefaultSuggestions()
   loading.value = false
@@ -167,13 +157,24 @@ function buildDefaultSuggestions() {
   ]
 }
 
-function refreshSuggestions() {
-  suggestions.value = [
-    '针对薄弱知识点，每天做3道相关编程练习',
-    '结合视频教程和官方文档构建知识体系',
-    '参与开源项目，在实际场景中巩固所学',
-    '使用AI智能体进行自适应题目练习和纠错',
-  ]
+async function refreshSuggestions() {
+  const userId = userStore.userInfo?.id
+  if (!userId) return
+  try {
+    const res: any = await request.post('/profile/generate-suggestions', { userId })
+    if (res?.suggestions?.length) {
+      suggestions.value = res.suggestions
+      console.log('[画像] ✅ AI 建议已刷新:', res.suggestions)
+    }
+  } catch (e) {
+    console.warn('[画像] ⚠️ AI 建议生成失败，使用本地:', e)
+    suggestions.value = [
+      '针对薄弱知识点，每天做3道相关编程练习',
+      '结合视频教程和官方文档构建知识体系',
+      '参与开源项目，在实际场景中巩固所学',
+      '使用AI智能体进行自适应题目练习和纠错',
+    ]
+  }
 }
 
 function initRadarChart() {

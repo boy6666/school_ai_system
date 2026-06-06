@@ -1,5 +1,9 @@
 <template>
-  <el-container class="layout-container">
+  <!-- 引导层：新用户先完成画像采集 -->
+  <OnboardOverlay v-if="showOnboard" @done="onOnboardDone" />
+
+  <!-- 主系统 -->
+  <el-container class="layout-container" v-else>
     <el-aside width="200px" class="aside">
       <div class="logo">EduAgent</div>
       <el-menu
@@ -47,15 +51,28 @@
       <el-main><router-view /></el-main>
     </el-container>
   </el-container>
-</template>
+  </template>
 
 <script setup lang="ts">
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { ElMessage } from 'element-plus'
+import OnboardOverlay from '@/views/student/OnboardOverlay.vue'
 
 const router = useRouter()
 const userStore = useUserStore()
+
+const onboardKey = localStorage.getItem('tutor_init_done')
+console.log('[DEBUG] StudentLayout mounted')
+console.log('[DEBUG] tutor_init_done in localStorage:', onboardKey)
+const showOnboard = ref(!onboardKey)
+console.log('[DEBUG] showOnboard =', showOnboard.value)
+
+const onOnboardDone = () => {
+  console.log('[DEBUG] onOnboardDone called')
+  showOnboard.value = false
+}
 
 const handleCommand = (command: string) => {
   if (command === 'profile') {

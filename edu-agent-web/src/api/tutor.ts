@@ -13,10 +13,12 @@ export interface TutorReply {
   resourceDir: string
 }
 
-export function sendTutorMessage(message: string, sessionId?: string) {
+export function sendTutorMessage(message: string, sessionId?: string, isOnboarding?: boolean, profile?: any) {
   return request.post<unknown, TutorReply>('/tutor/chat', {
     message,
-    sessionId
+    sessionId,
+    isOnboarding: isOnboarding || false,
+    profile: profile || undefined
   })
 }
 

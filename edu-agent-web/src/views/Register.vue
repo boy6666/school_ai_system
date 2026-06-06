@@ -44,18 +44,18 @@ const rules = {
 }
 
 const handleRegister = async () => {
-  await formRef.value.validate()
+  try {
+    await formRef.value.validate()
+  } catch {
+    return
+  }
   loading.value = true
   try {
-    const res = await request.post('/auth/register', form)
-    if (res.code === 200) {
-      ElMessage.success('注册成功，请登录')
-      router.push('/login')
-    } else {
-      ElMessage.error(res.message || '注册失败')
-    }
+    await request.post('/auth/register', form)
+    ElMessage.success('注册成功，请登录')
+    router.push('/login')
   } catch (error) {
-    const msg = error.response?.data?.message || error.message || '注册失败，请重试'
+    const msg = error?.response?.data?.message || error?.message || '注册失败，请重试'
     ElMessage.error(msg)
   } finally {
     loading.value = false

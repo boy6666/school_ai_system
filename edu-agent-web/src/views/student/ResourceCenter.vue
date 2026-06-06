@@ -1,21 +1,47 @@
 <template>
   <div class="resource-page">
     <main class="main-area">
-      <div class="page-title">
+      <div class="page-title" v-if="!curCat">
         <h2>📚 Java 程序设计</h2>
         <p>选择章节，点击右侧卡片开始学习</p>
       </div>
-      <div class="chapter-list">
-        <div v-for="ch in chapters" :key="ch.id" class="chapter-card" @click="goChapter(ch.id)">
+
+      <!-- 章节列表 -->
+      <div class="chapter-list" v-if="!curCat">
+        <div v-for="cat in cats" :key="cat.category" class="chapter-card" @click="enterCat(cat)">
           <div class="ch-left">
-            <div class="ch-num">{{ ch.id }}</div>
+            <div class="ch-num">{{ cats.indexOf(cat) + 1 }}</div>
           </div>
           <div class="ch-body">
-            <h3>{{ ch.label }} · {{ ch.title }}</h3>
-            <p>{{ ch.desc }}</p>
+            <h3>{{ cat.label }}</h3>
+            <p>{{ cat.count }} 个小节</p>
           </div>
           <div class="ch-arrow">→</div>
         </div>
+      </div>
+
+      <!-- 小节列表 -->
+      <div class="chapter-list" v-if="curCat && !curNote">
+        <div class="back" @click="curCat=null">← 返回</div>
+        <div class="page-title">
+          <h2>{{ curCat.label }}</h2>
+        </div>
+        <div v-for="n in notes" :key="n.id" class="chapter-card" @click="enterNote(n)">
+          <div class="ch-left" style="background:#5b8def">
+            <span>📄</span>
+          </div>
+          <div class="ch-body">
+            <h3>{{ n.title }}</h3>
+          </div>
+          <div class="ch-arrow">→</div>
+        </div>
+      </div>
+
+      <!-- 文章内容 -->
+      <div v-if="curNote" class="content-area">
+        <div class="back" @click="curNote=null">← 小节</div>
+        <h2>{{ curNote.title }}</h2>
+        <div class="md" v-html="html"></div>
       </div>
     </main>
 
@@ -30,15 +56,18 @@
 </template>
 
 <script setup lang="ts">
-import { useRouter } from 'vue-router'
+import { ref, computed, onMounted } from 'vue'
+import { marked } from 'marked'
+import hljs from 'highlight.js'
+import 'highlight.js/styles/github.css'
+import { getCategories, getNotes, getNoteDetail } from '@/api/notes'
 
-const router = useRouter()
+marked.setOptions({ breaks: true, gfm: true, highlight: (c: string, l: string) => l && hljs.getLanguage(l) ? hljs.highlight(c, { language: l }).value : hljs.highlightAuto(c).value })
 
-const chapters = [
-  { id: 1, label: '第1章', title: 'Java 基础语法', desc: '变量、数据类型、运算符、流程控制、数组与方法' },
-  { id: 2, label: '第2章', title: '面向对象', desc: '类与对象、封装、继承、多态、抽象类与接口' },
-  { id: 3, label: '第3章', title: '集合框架', desc: 'List、Map、Set 接口及其常用实现类详解' },
-]
+const cats = ref<any[]>([])
+const curCat = ref<any>(null)
+const notes = ref<any[]>([])
+const curNote = ref<any>(null)
 
 const resourceCards = [
   { key: 'mindmap', label: '思维导图', icon: '🧠' },
@@ -47,8 +76,36 @@ const resourceCards = [
   { key: 'code', label: '代码案例', icon: '💻' },
 ]
 
-const goChapter = (id: number) => router.push(`/student/resources/${id}`)
-const goResource = (type: string) => router.push(`/student/resources/generate/${type}`)
+const html = computed(() => curNote.value?.content ? marked.parse(curNote.value.content) : '')
+
+const enterCat = async (cat: any) => {
+  curCat.value = cat
+  try {
+    const n = await getNotes(cat.category)
+    notes.value = Array.isArray(n) ? n : []
+  } catch { notes.value = [] }
+}
+
+const enterNote = async (item: any) => {
+  curNote.value = item
+  if (!item.content && item.id) {
+    try {
+      const d = await getNoteDetail(item.id)
+      if (d) curNote.value = d
+    } catch {}
+  }
+}
+
+const goResource = (key: string) => {
+  window.open(`/student/resources/generate/${key}`, '_self')
+}
+
+onMounted(async () => {
+  try {
+    const c = await getCategories()
+    if (Array.isArray(c)) cats.value = c
+  } catch {}
+})
 </script>
 
 <style scoped>
@@ -57,12 +114,10 @@ const goResource = (type: string) => router.push(`/student/resources/generate/${
   max-width: 1200px; margin: 0 auto;
   min-height: calc(100vh - 60px); background: #fff;
 }
-
 .main-area { flex: 1; }
 .page-title { margin-bottom: 28px; }
 .page-title h2 { font-size: 24px; margin: 0; color: #1a1a1a; font-weight: 700; }
 .page-title p { color: #999; margin: 6px 0 0; font-size: 14px; }
-
 .chapter-list { display: flex; flex-direction: column; gap: 14px; }
 .chapter-card {
   display: flex; align-items: center; gap: 18px;
@@ -71,43 +126,32 @@ const goResource = (type: string) => router.push(`/student/resources/generate/${
   cursor: pointer; transition: all .25s;
   box-shadow: 0 1px 3px rgba(0,0,0,.04);
 }
-.chapter-card:hover {
-  border-color: #4f8cff;
-  box-shadow: 0 6px 20px rgba(79,140,255,.12);
-  transform: translateX(4px);
-}
-.ch-left { flex-shrink: 0; }
-.ch-num {
-  width: 52px; height: 52px; border-radius: 14px;
-  background: linear-gradient(135deg, #4f8cff, #6ba3ff);
-  color: #fff; font-size: 20px; font-weight: 700;
+.chapter-card:hover { border-color: #4f8cff; transform: translateX(4px); }
+.ch-left {
+  width: 44px; height: 44px; border-radius: 12px;
+  background: #4f8cff; color: #fff;
   display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 15px; flex-shrink: 0;
 }
 .ch-body { flex: 1; }
-.ch-body h3 { margin: 0; font-size: 17px; color: #1a1a1a; font-weight: 600; }
-.ch-body p { margin: 6px 0 0; font-size: 13px; color: #999; line-height: 1.5; }
-.ch-arrow { color: #ccc; font-size: 22px; font-weight: 300; }
-
-.side-cards {
-  width: 140px; display: flex; flex-direction: column; gap: 14px;
-  padding-top: 80px;
-}
-.side-title {
-  font-size: 13px; color: #aaa; text-align: center;
-  text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;
-}
+.ch-body h3 { margin: 0; font-size: 16px; color: #1a1a1a; }
+.ch-body p { margin: 4px 0 0; font-size: 13px; color: #999; }
+.ch-arrow { font-size: 18px; color: #ccc; }
+.back { padding: 8px 0; cursor: pointer; color: #4f8cff; font-size: 14px; margin-bottom: 8px; }
+.back:hover { text-decoration: underline; }
+.content-area h2 { font-size: 22px; margin: 12px 0; }
+.md { line-height: 1.9; font-size: 15px; color: #333; }
+.md :deep(p) { margin: 10px 0; }
+.md :deep(pre) { background: #f6f8fa; padding: 18px; border-radius: 10px; overflow-x: auto; border: 1px solid #eee; }
+.md :deep(code) { font-size: 14px; }
+.side-cards { width: 150px; flex-shrink: 0; position: sticky; top: 32px; align-self: flex-start; }
+.side-title { font-size: 14px; font-weight: 600; color: #1a1a1a; margin-bottom: 14px; }
 .mini-card {
-  width: 120px; height: 110px; border-radius: 16px;
-  background: #fff; border: 1px solid #eee;
-  display: flex; flex-direction: column; align-items: center;
-  justify-content: center; cursor: pointer; transition: all .25s;
-  gap: 10px; box-shadow: 0 1px 3px rgba(0,0,0,.04);
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px 16px; border-radius: 12px; border: 1px solid #eee;
+  cursor: pointer; transition: all .2s; margin-bottom: 8px;
 }
-.mini-card:hover {
-  border-color: #4f8cff;
-  transform: translateY(-3px);
-  box-shadow: 0 8px 24px rgba(79,140,255,.15);
-}
-.mini-icon { font-size: 34px; }
-.mini-label { font-size: 13px; color: #555; font-weight: 500; }
+.mini-card:hover { border-color: #4f8cff; background: #f5f8ff; }
+.mini-icon { font-size: 22px; }
+.mini-label { font-size: 13px; font-weight: 500; color: #333; }
 </style>

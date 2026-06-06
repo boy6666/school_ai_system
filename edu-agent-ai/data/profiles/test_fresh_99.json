@@ -1,0 +1,11 @@
+{
+  "_onboarding_phase": "collecting",
+  "_onboarding_complete": false,
+  "initialized": true,
+  "_onboarding_log": [
+    {
+      "user": "开始",
+      "ai": "嗯，继续说，我在听～"
+    }
+  ]
+}

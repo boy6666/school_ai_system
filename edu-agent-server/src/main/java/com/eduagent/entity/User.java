@@ -17,6 +17,7 @@ public class User {
     private String avatar;
     private String role;
     private String status;
+    private Integer onboarded;
     private LocalDateTime lastLoginTime;
     private String lastLoginIp;
     @TableField(fill = FieldFill.INSERT)

@@ -47,6 +47,10 @@ const handleLogin = async () => {
     if (res.token) {
       userStore.setToken(res.token)
       userStore.setUserInfo(res.userInfo || {})
+      // 从后端确认引导状态
+      if (res.userInfo?.onboarded === 1) {
+        localStorage.setItem('tutor_init_done', '1')
+      }
       ElMessage.success('登录成功')
       const role = res?.userInfo?.role || ''
       if (role === 'admin') {

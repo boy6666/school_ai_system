@@ -7,6 +7,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.Collections;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Slf4j
 @Component
@@ -36,6 +37,26 @@ public class AiClient {
 
         ResponseEntity<AiChatResponse> response = restTemplate.postForEntity(url, entity, AiChatResponse.class);
         return response.getBody();
+    }
+
+    /**
+     * 通用 POST 调 AI 任意端点
+     */
+    public String post(String endpoint, Object body) {
+        String url = baseUrl + endpoint;
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            String json = mapper.writeValueAsString(body);
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            HttpEntity<String> entity = new HttpEntity<>(json, headers);
+            log.info("call AI: url={}", url);
+            ResponseEntity<String> response = restTemplate.postForEntity(url, entity, String.class);
+            return response.getBody();
+        } catch (Exception e) {
+            log.error("AI call failed: url={}", url, e);
+            return "{\"error\":\"" + e.getMessage() + "\"}";
+        }
     }
 
     public String healthCheck() {

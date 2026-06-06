@@ -1,0 +1,45 @@
+{
+  "_onboarding_phase": "complete",
+  "_onboarding_complete": true,
+  "initialized": true,
+  "knowledge_mastery": {
+    "level": "level_1",
+    "score": 40,
+    "evidence": [],
+    "last_updated": "2026-06-06T14:41:14.666859"
+  },
+  "learning_goal_clarity": {
+    "level": "level_1",
+    "score": 30,
+    "evidence": [],
+    "last_updated": "2026-06-06T14:41:14.666871"
+  },
+  "cognitive_adaptation": {
+    "level": "level_1",
+    "score": 35,
+    "evidence": [],
+    "last_updated": "2026-06-06T14:41:14.666875"
+  },
+  "mistake_avoidance": {
+    "level": "level_1",
+    "score": 35,
+    "evidence": [],
+    "last_updated": "2026-06-06T14:41:14.666881"
+  },
+  "learning_autonomy": {
+    "level": "level_1",
+    "score": 35,
+    "evidence": [],
+    "last_updated": "2026-06-06T14:41:14.666885"
+  },
+  "overall_level": {
+    "level": "level_1",
+    "score": 35,
+    "evidence": [],
+    "last_updated": "2026-06-06T14:41:14.666887"
+  },
+  "topic": "继承与接口",
+  "course": "编程基础或Java",
+  "knowledge_base": "了解基本概念但应用不熟练",
+  "pace": "中速"
+}

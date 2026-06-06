@@ -39,4 +39,11 @@ public class AuthController {
         authService.logout(userId);
         return Result.success();
     }
+
+    @PostMapping("/onboard-done")
+    public Result<Void> onboardDone() {
+        Long userId = (Long) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        authService.markOnboarded(userId);
+        return Result.success();
+    }
 }

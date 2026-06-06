@@ -1,15 +1,27 @@
+import sys
+
+# Windows GBK 编码兼容
+try:
+    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+except Exception:
+    pass
+
 from school_agent.agents.evaluation_agent import evaluate_learning, log_interaction
 from school_agent.agents.explain_agent import explain_agent
+from school_agent.agents.onboarding_agent import onboarding_agent
 from school_agent.agents.path_agent import path_agent
 from school_agent.agents.profile_agent import extract_profile, init_profile
 from school_agent.agents.quiz_agent import quiz_agent
+from school_agent.agents.mindmap_agent import mindmap_agent
+from school_agent.agents.reading_agent import reading_agent
+from school_agent.agents.code_agent import code_agent
 from school_agent.agents.resource_agent import resource_agent
 from school_agent.agents.retrieval_agent import retrieval_agent, retrieve_knowledge
 from school_agent.agents.router_agent import classify_intent, route_by_intent
 from school_agent.agents.safety_agent import route_after_safety, safety_postcheck, safety_precheck
 from school_agent.agents.tutor_agent import tutor_agent
 from school_agent.constants import (
-    INTENT_EXPLAIN, INTENT_QUIZ, INTENT_REJECT,
+    INTENT_EXPLAIN, INTENT_ONBOARDING, INTENT_QUIZ, INTENT_REJECT,
     INTENT_RESOURCE, INTENT_RETRIEVE, INTENT_TUTOR,
 )
 from school_agent.services.resource_store import save_resources
@@ -35,15 +47,36 @@ def finalize_output(state: dict) -> dict:
 
 class SimpleGraph:
     def invoke(self, input_state: dict, config: dict | None = None) -> dict:
+        print(f"\n{'='*60}")
+        print(f"[GRAPH] 开始执行流程")
+        print(f"[GRAPH] user_input: {str(input_state.get('user_input', ''))[:80]}")
+        print(f"[GRAPH] session_id: {input_state.get('session_id')}")
+
         state = dict(input_state)
-        for func in [init_profile, classify_intent, safety_precheck]:
-            state.update(func(state))
+
+        print(f"[GRAPH] Step 1: init_profile")
+        state.update(init_profile(state))
+        print(f"[GRAPH] Step 2: classify_intent")
+        state.update(classify_intent(state))
+        print(f"[GRAPH] 意图: {state.get('intent')}")
+        print(f"[GRAPH] Step 3: safety_precheck")
+        state.update(safety_precheck(state))
+
         if route_after_safety(state) == "reject":
+            print(f"[GRAPH] 安全审查未通过，直接结束")
             state.update(finalize_output(state))
             return state
+
+        print(f"[GRAPH] Step 4: retrieve_knowledge")
         state.update(retrieve_knowledge(state))
+
         intent = route_by_intent(state)
-        if intent == INTENT_EXPLAIN:
+        print(f"[GRAPH] Step 5: 执行智能体 = {intent}")
+
+        if intent == INTENT_ONBOARDING:
+            print(f"[GRAPH] → 调用 onboarding_agent（引导画像采集）")
+            state.update(onboarding_agent(state))
+        elif intent == INTENT_EXPLAIN:
             state.update(explain_agent(state))
         elif intent == INTENT_QUIZ:
             state.update(quiz_agent(state))
@@ -56,8 +89,13 @@ class SimpleGraph:
             state.update(tutor_agent(state))
         else:
             state.update(explain_agent(state))
+        print(f"[GRAPH] Step 6: 闭环节点 (安全→评估→画像→日志→输出)")
         for func in [safety_postcheck, evaluate_learning, extract_profile, log_interaction, finalize_output]:
             state.update(func(state))
+
+        print(f"[GRAPH] 流程完成")
+        print(f"[GRAPH] final_answer: {str(state.get('final_answer', ''))[:150]}")
+        print(f"{'='*60}\n")
         return state
 
 
@@ -76,6 +114,7 @@ def _build_langgraph():
     builder.add_node("classify_intent", classify_intent)
     builder.add_node("safety_precheck", safety_precheck)
     builder.add_node("retrieve_knowledge", retrieve_knowledge)
+    builder.add_node("onboarding_agent", onboarding_agent)
     builder.add_node("explain_agent", explain_agent)
     builder.add_node("quiz_agent", quiz_agent)
     builder.add_node("retrieval_agent", retrieval_agent)
@@ -92,12 +131,12 @@ def _build_langgraph():
     builder.add_edge("classify_intent", "safety_precheck")
     builder.add_conditional_edges("safety_precheck", route_after_safety, {"continue": "retrieve_knowledge", "reject": "finalize_output"})
     builder.add_conditional_edges("retrieve_knowledge", route_by_intent, {
-        INTENT_EXPLAIN: "explain_agent", INTENT_QUIZ: "quiz_agent",
+        INTENT_ONBOARDING: "onboarding_agent", INTENT_EXPLAIN: "explain_agent", INTENT_QUIZ: "quiz_agent",
         INTENT_RETRIEVE: "retrieval_agent", INTENT_RESOURCE: "resource_agent", INTENT_TUTOR: "tutor_agent",
     })
     builder.add_edge("resource_agent", "path_agent")
     builder.add_edge("path_agent", "safety_postcheck")
-    for node_name in ["explain_agent", "quiz_agent", "retrieval_agent", "tutor_agent"]:
+    for node_name in ["onboarding_agent", "explain_agent", "quiz_agent", "retrieval_agent", "tutor_agent"]:
         builder.add_edge(node_name, "safety_postcheck")
     builder.add_edge("safety_postcheck", "evaluate_learning")
     builder.add_edge("evaluate_learning", "extract_profile")

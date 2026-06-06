@@ -49,10 +49,11 @@ export const getProfileFromAI = async (studentId: string): Promise<{ student_id:
   return res.data
 }
 
-export const getProfile = (username: string): Promise<ProfileData> => {
-  return request.get(`/profile/${username}`)
+export const getProfile = (id: number): Promise<any> => {
+  console.log('[DEBUG] getProfile called with id =', id, '(type:', typeof id, ')')
+  return request.get(`/profile/${id}`)
 }
 
-export const saveProfile = (username: string, profile: Record<string, any>): Promise<any> => {
-  return request.post('/profile/save', { username, profile })
+export const saveProfile = (data: Record<string, any>): Promise<any> => {
+  return request.post('/profile', data)
 }

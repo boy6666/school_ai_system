@@ -8,26 +8,26 @@
           <div class="path-header">
             <div class="header-left">
               <h2>个性化学习路径</h2>
+              <div v-if="pathLoading" style="padding: 20px 0; color: #909399;">⏳ 正在生成学习路径...</div>
               <div class="meta">
                 <span class="label">目标：</span>
-                <span class="value">掌握神经网络基础原理并完成模型实践</span>
-                <el-button type="text" size="small" style="margin-left: 12px">编辑</el-button>
+                <span class="value">{{ goalText }}</span>
               </div>
               <div class="meta">
                 <span class="label">学习画像：</span>
-                <span class="value">逻辑分析型 · 基础较弱 · 目标导向</span>
-                <el-button type="text" size="small" style="margin-left: 12px">重新规划路径</el-button>
+                <span class="value">{{ profileText }}</span>
+                <el-button type="text" size="small" style="margin-left: 12px" @click="handleRegenerate" :loading="pathLoading">重新规划路径</el-button>
                 <el-button type="text" size="small">导出计划</el-button>
               </div>
             </div>
             <div class="header-right">
               <div class="stat">
                 <div class="stat-label">目标掌握度</div>
-                <div class="stat-value">≥85%</div>
+                <div class="stat-value">{{ targetMastery }}</div>
               </div>
               <div class="stat">
                 <div class="stat-label">预计完成时间</div>
-                <div class="stat-value">2025-06-18 <span class="small">(18天后)</span></div>
+                <div class="stat-value">{{ estimatedCompletion }}</div>
               </div>
             </div>
           </div>
@@ -43,18 +43,18 @@
             </el-tabs>
 
             <!-- 阶段描述 -->
-            <div class="stage-desc">基于学习画像、掌握度与目标，为你规划动态学习路线</div>
+            <div class="stage-desc">{{ stageDesc }}</div>
 
             <!-- 推荐学习时段 -->
             <div class="recommend-time">
-              <el-icon><Clock /></el-icon> 推荐学习时段：每天 19:00-21:00
+              <el-icon><Clock /></el-icon> 推荐学习时段：{{ recommendTime }}
             </div>
 
             <!-- 任务列表 -->
             <div class="task-list">
               <div v-for="(task, idx) in currentTasks" :key="idx" class="task-item" :class="task.status">
                 <div class="task-left">
-                  <el-checkbox v-model="task.checked" @change="handleTaskCheck(task)" :disabled="task.status === 'completed'">
+                  <el-checkbox v-model="task.checked" @change="handleTaskCheck(task)">
                     <span class="task-name">{{ task.name }}</span>
                   </el-checkbox>
                   <div class="task-meta">
@@ -84,16 +84,10 @@
             <el-card class="suggestion-card" shadow="never">
               <template #header>
                 <span>📌 路径调整建议</span>
-                <el-button type="text" style="float: right">更多 ></el-button>
               </template>
               <div class="suggestion-content">
                 <div class="suggestion-item">
-                  <span class="reason">检测到“反向传播算法”掌握度偏低（当前55%），建议：</span>
-                  <div class="actions">
-                    <el-tag size="small" type="danger">插入图解视频讲解（15分钟）</el-tag>
-                    <el-tag size="small">增加专项练习（20分钟）</el-tag>
-                    <el-tag size="small">延长本阶段学习时间（+30分钟）</el-tag>
-                  </div>
+                  <span class="reason">{{ suggestions }}</span>
                 </div>
               </div>
             </el-card>
@@ -103,16 +97,13 @@
               <el-col :span="12">
                 <el-card class="app-suggestion" shadow="never">
                   <template #header><span>应用建议</span></template>
-                  <div class="app-item">模型调优与超参数搜索 <span class="duration">90分钟</span></div>
-                  <div class="app-item">阶段测评 <span class="duration">60分钟</span></div>
-                  <div class="app-item">错题复盘与薄弱点强化 <span class="duration">30分钟</span></div>
+                  <div class="app-item">{{ applicationAdvice }}</div>
                 </el-card>
               </el-col>
               <el-col :span="12">
                 <el-card class="stage-test" shadow="never">
                   <template #header><span>阶段测评</span></template>
-                  <div class="test-item">知识点综合测评 <span class="duration">60分钟</span></div>
-                  <div class="test-item">错题复盘与薄弱点强化 <span class="duration">30分钟</span></div>
+                  <div class="test-item">{{ examAdvice }}</div>
                 </el-card>
               </el-col>
             </el-row>
@@ -127,15 +118,15 @@
           <template #header><span>当前概览</span></template>
           <div class="overview-stats">
             <div class="stat-circle">
-              <el-progress type="circle" :percentage="72" :width="100" :stroke-width="8" color="#409EFF" />
+              <el-progress type="circle" :percentage="masteryRate" :width="100" :stroke-width="8" color="#409EFF" />
               <div class="stat-label">当前掌握度</div>
             </div>
             <div class="stat-circle">
-              <el-progress type="circle" :percentage="18" :width="100" :stroke-width="8" color="#F56C6C" />
+              <el-progress type="circle" :percentage="learningRateVal" :width="100" :stroke-width="8" color="#F56C6C" />
               <div class="stat-label">学习中</div>
             </div>
             <div class="stat-circle">
-              <el-progress type="circle" :percentage="10" :width="100" :stroke-width="8" color="#909399" />
+              <el-progress type="circle" :percentage="unmasteredRate" :width="100" :stroke-width="8" color="#909399" />
               <div class="stat-label">未掌握</div>
             </div>
           </div>
@@ -185,10 +176,12 @@
         <el-card class="adjust-card" shadow="never" style="margin-top: 20px">
           <template #header>
             <span>动态调整记录</span>
-            <el-button type="text" style="float: right">更多 ></el-button>
           </template>
           <div class="adjust-list">
-            <div v-for="record in adjustRecords" :key="record.time" class="adjust-item">
+            <div v-if="adjustRecords.length === 0" class="adjust-item">
+              <div class="adjust-content">暂无调整记录</div>
+            </div>
+            <div v-for="(record, idx) in adjustRecords" :key="idx" class="adjust-item">
               <div class="adjust-time">{{ record.time }}</div>
               <div class="adjust-content">{{ record.content }}</div>
             </div>
@@ -200,89 +193,189 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
+import { getLearningPath, generateLearningPath } from '@/api/learning'
+import request from '@/utils/request'
 
 // 阶段
 const activeStage = ref('today')
 const activeResourceTab = ref('doc')
 const calendarDate = ref(new Date())
+const pathLoading = ref(false)
+const pathError = ref(false)
 
-// 各阶段任务数据（Mock）
-const tasksData = {
-  today: [
-    { name: '机器学习基础概念回顾', duration: '30分钟', status: 'completed', progress: 100, checked: true },
-    { name: '线性回归与损失函数', duration: '45分钟', status: 'completed', progress: 100, checked: true },
-    { name: '梯度下降原理与实现', duration: '45分钟', status: 'completed', progress: 100, checked: true },
-    { name: '反向传播算法详解', duration: '60分钟', status: 'in-progress', progress: 72, checked: false },
-    { name: '激活函数与优化器对比', duration: '45分钟', status: 'pending', progress: 0, checked: false }
-  ],
-  week: [
-    { name: '神经网络基础结构', duration: '60分钟', status: 'completed', progress: 100, checked: true },
-    { name: '前向传播与反向传播推导', duration: '90分钟', status: 'in-progress', progress: 55, checked: false },
-    { name: '使用PyTorch搭建MLP模型', duration: '90分钟', status: 'pending', progress: 0, checked: false },
-    { name: '训练模型并可视化损失曲线', duration: '90分钟', status: 'pending', progress: 0, checked: false }
-  ],
-  exam: [
-    { name: '知识点综合测评', duration: '60分钟', status: 'pending', progress: 0, checked: false },
-    { name: '错题复盘与薄弱点强化', duration: '30分钟', status: 'pending', progress: 0, checked: false }
-  ],
-  practice: [
-    { name: '模型调优与超参数搜索', duration: '90分钟', status: 'pending', progress: 0, checked: false },
-    { name: '阶段测评', duration: '60分钟', status: 'pending', progress: 0, checked: false }
-  ]
+// ===== 后端数据 =====
+const pathData = ref<any>(null)
+
+// ===== 从后端数据映射到模板字段 =====
+
+const stageNameToKey: Record<string, string> = {
+  '今日计划': 'today',
+  '本周路径': 'week',
+  '考试冲刺': 'exam',
+  '实践提升': 'practice'
 }
 
-const currentTasks = computed(() => tasksData[activeStage.value as keyof typeof tasksData] || [])
+const currentTasks = computed(() => {
+  if (!pathData.value?.stages) return []
+  const currentStage = pathData.value.stages.find((s: any) => stageNameToKey[s.name] === activeStage.value)
+  return (currentStage?.tasks || []).map((t: any) => ({
+    name: t.title,
+    duration: t.duration ? t.duration + '分钟' : '30分钟',
+    status: t.status === 2 ? 'completed' : t.status === 1 ? 'in-progress' : 'pending',
+    progress: t.progress || 0,
+    checked: t.status === 2
+  }))
+})
 
 const totalTasks = computed(() => currentTasks.value.length)
-const completedCount = computed(() => currentTasks.value.filter(t => t.status === 'completed').length)
-const overallProgress = computed(() => (completedCount.value / totalTasks.value) * 100)
-const totalHours = ref(15.6)
+const completedCount = computed(() => currentTasks.value.filter((t: any) => t.status === 'completed').length)
+const overallProgress = computed(() => {
+  if (totalTasks.value === 0) return 0
+  return Math.round((completedCount.value / totalTasks.value) * 100)
+})
+const totalHours = computed(() => pathData.value?.totalHours || 0)
 
-const handleTaskCheck = (task: any) => {
-  if (!task.checked) return
-  ElMessage.info(`任务 "${task.name}" 标记为已完成`)
-  task.status = 'completed'
-  task.progress = 100
+// 路径头部数据
+const goalText = computed(() => pathData.value?.goal || '加载中...')
+const targetMastery = computed(() => pathData.value?.targetMastery || '≥85%')
+const estimatedCompletion = computed(() => pathData.value?.estimatedCompletion || '')
+const profileText = computed(() => {
+  // 从画像数据生成描述
+  return '根据画像生成的学习路径'
+})
+
+// 建议 & 推荐
+const suggestions = computed(() => pathData.value?.suggestions || '暂无调整建议')
+const applicationAdvice = computed(() => pathData.value?.applicationAdvice || '暂无应用建议')
+const examAdvice = computed(() => pathData.value?.examAdvice || '暂无测评建议')
+const recommendTime = computed(() => pathData.value?.recommendTime || '每天 19:00-21:00')
+
+// 概览
+const masteryRate = computed(() => pathData.value?.masteryRate || 72)
+const learningRateVal = computed(() => pathData.value?.learningRate || 18)
+const unmasteredRate = computed(() => pathData.value?.unmasteredRate || 10)
+
+// 推荐资源
+const resources = computed(() => {
+  const r = pathData.value?.resources || {}
+  return {
+    doc: r.doc || [],
+    video: r.video || [],
+    exercise: r.exercise || [],
+    code: r.code || []
+  }
+})
+const currentResources = computed(() => resources.value[activeResourceTab.value as keyof typeof resources.value] || [])
+
+// 动态调整记录
+const adjustRecords = computed(() => pathData.value?.adjustRecords || [])
+
+// ===== 模板字段兼容 =====
+const stageDesc = computed(() => {
+  if (!pathData.value?.stages?.length) return '基于学习画像、掌握度与目标，为你规划动态学习路线'
+  const names = pathData.value.stages.map((s: any) => s.name).join('、')
+  return `基于学习画像，当前阶段：${names}`
+})
+
+// ===== 操作函数 =====
+/** 任务打勾/取消打勾：直接改 pathData 源数据触发响应式 + 进度条 + 画像更新 */
+const handleTaskCheck = (checkedTask: any) => {
+  // 找到 pathData 中的原始任务并修改
+  if (!pathData.value?.stages) return
+  const currentKey = stageNameToKey[activeStage.value] || activeStage.value
+  for (const stage of pathData.value.stages) {
+    if (stageNameToKey[stage.name] === currentKey || stage.name === activeStage.value) {
+      const hit = stage.tasks?.find((t: any) => t.title === checkedTask.name)
+      if (hit) {
+        if (checkedTask.checked) {
+          hit.status = 2
+          hit.progress = 100
+          ElMessage.success({
+            message: `✅ "${hit.title}" 已完成！`,
+            duration: 1500,
+            offset: 60
+          })
+          console.log(`[学习路径] ✅ 任务完成: ${hit.title}, 进度: ${completedCount.value}/${totalTasks.value}`)
+        } else {
+          hit.status = 0
+          hit.progress = 0
+          console.log(`[学习路径] ↩️ 任务取消: ${hit.title}, 进度: ${completedCount.value}/${totalTasks.value}`)
+        }
+      }
+      break
+    }
+  }
+
+  // 更新画像
+  const userInfoStr = localStorage.getItem('userInfo')
+  const userInfo = userInfoStr ? JSON.parse(userInfoStr) : null
+  const studentId = Number(userInfo?.id)
+  if (studentId) {
+    request.post('/profile/save', {
+      userId: studentId,
+      last_score: Math.round(overallProgress.value)
+    }).then(() => {
+      console.log(`[学习路径] ✅ 画像已更新: progress=${overallProgress.value}%`)
+    }).catch((e: any) => {
+      console.warn('[学习路径] ⚠️ 画像更新失败:', e)
+    })
+  }
 }
 
 const handleStageChange = () => {
-  // 切换阶段时重置选中状态等
+  // 切换阶段
 }
 
-// 日历标记数据（示例）
-const completedDays = ['2025-05-02', '2025-05-03', '2025-05-04']
-const plannedDays = ['2025-05-06', '2025-05-07']
-const needStrengthenDays = ['2025-05-05']
+// ===== 日历 =====
+const completedDays = ref<string[]>([])
+const plannedDays = ref<string[]>([])
+const needStrengthenDays = ref<string[]>([])
 
-const isCompletedDay = (date: string) => completedDays.includes(date)
-const isPlannedDay = (date: string) => plannedDays.includes(date)
-const isNeedStrengthenDay = (date: string) => needStrengthenDays.includes(date)
+const isCompletedDay = (date: string) => completedDays.value.includes(date)
+const isPlannedDay = (date: string) => plannedDays.value.includes(date)
+const isNeedStrengthenDay = (date: string) => needStrengthenDays.value.includes(date)
 
-// 推荐资源（根据当前阶段不同，可动态变化）
-const resources = {
-  doc: [
-    { name: '反向传播算法图解教程', duration: '约20分钟', time: '15:32' },
-    { name: '神经网络常见问题汇总', duration: '约15分钟', time: '18:45' }
-  ],
-  video: [
-    { name: '反向传播动画演示', duration: '20分钟', time: '15:32' },
-    { name: '梯度流动可视化解析', duration: '25分钟', time: '18:45' }
-  ],
-  exercise: [
-    { name: '反向传播计算题（基础）', duration: '40分钟', time: '15:32' },
-    { name: '梯度计算专项练习', duration: '30分钟', time: '18:45' }
-  ],
-  code: [
-    { name: '实现反向传播（PyTorch）', duration: '40分钟', time: '15:32' },
-    { name: '梯度检查与调试实验', duration: '30分钟', time: '18:45' }
-  ]
+// ===== 加载路径数据 =====
+const loadPath = async () => {
+  pathLoading.value = true
+  pathError.value = false
+  try {
+    const data = await getLearningPath()
+    if (data) {
+      pathData.value = data
+      console.log('[学习路径] ✅ 从后端加载成功:', data)
+    }
+  } catch (e) {
+    console.warn('[学习路径] ⚠️ 后端不可用，使用 mock 数据:', e)
+    pathError.value = true
+    // fallback mock 数据保持不变
+  } finally {
+    pathLoading.value = false
+  }
 }
-const currentResources = computed(() => resources[activeResourceTab.value as keyof typeof resources] || [])
 
-// 动态调整记录
-const adjustRecords = ref<any[]>([])
+/** 重新规划 */
+const handleRegenerate = async () => {
+  pathLoading.value = true
+  try {
+    const data = await generateLearningPath()
+    if (data) {
+      pathData.value = data
+      ElMessage.success('学习路径已重新生成！')
+    }
+  } catch (e) {
+    console.warn('[学习路径] 重新生成失败:', e)
+    ElMessage.error('生成失败，请重试')
+  } finally {
+    pathLoading.value = false
+  }
+}
+
+onMounted(() => {
+  loadPath()
+})
 </script>
 
 <style scoped>
@@ -468,6 +561,31 @@ const adjustRecords = ref<any[]>([])
   font-size: 12px;
   color: #909399;
 }
+/* ===== 任务完成动画 ===== */
+.task-item.completed {
+  animation: taskComplete 0.6s ease-in-out;
+}
+.task-item.completed .task-name {
+  color: #67c23a !important;
+  font-weight: 600;
+}
+.task-item .task-left .el-checkbox {
+  margin-right: 0;
+}
+.task-item .task-left .el-checkbox .el-checkbox__label {
+  font-weight: 500;
+}
+.task-item.completed .task-left .el-checkbox .el-checkbox__label {
+  text-decoration: line-through;
+  color: #a8abb2;
+}
+@keyframes taskComplete {
+  0% { background-color: transparent; transform: scale(1); }
+  30% { background-color: #f0f9eb; transform: scale(1.01); }
+  60% { background-color: #ecfdf3; }
+  100% { background-color: transparent; transform: scale(1); }
+}
+
 .adjust-list {
   max-height: 300px;
   overflow-y: auto;

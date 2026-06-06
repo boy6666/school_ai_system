@@ -112,6 +112,16 @@ public class AuthServiceImpl implements AuthService {
         log.info("用户登出: userId={}", userId);
     }
 
+    @Override
+    public void markOnboarded(Long userId) {
+        User user = userMapper.selectById(userId);
+        if (user != null) {
+            user.setOnboarded(1);
+            userMapper.updateById(user);
+            log.info("引导完成: userId={}", userId);
+        }
+    }
+
     private UserInfoVO toUserInfoVO(User user) {
         return UserInfoVO.builder()
                 .id(user.getId())
@@ -121,6 +131,7 @@ public class AuthServiceImpl implements AuthService {
                 .phone(user.getPhone())
                 .avatar(user.getAvatar())
                 .role(user.getRole())
+                .onboarded(user.getOnboarded())
                 .createTime(user.getCreateTime())
                 .lastLoginTime(user.getLastLoginTime())
                 .build();

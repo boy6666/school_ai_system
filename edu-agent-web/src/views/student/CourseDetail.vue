@@ -144,6 +144,67 @@
           </div>
         </div>
 
+        <!-- ========== 学习资源（右侧面板）========== -->
+        <div class="side-card resource-side-card">
+          <div class="resource-side-header">
+            <h3>学习资源</h3>
+            <span class="chapter-tag">{{ currentChapter?.title }}</span>
+          </div>
+
+          <div v-if="resLoading" class="mini-empty" style="padding:20px 0;text-align:center;">
+            AI 生成中...
+          </div>
+
+          <div v-if="!resLoading">
+            <div
+              v-for="res in learningResources"
+              :key="res.type"
+              class="res-mini-card"
+              :class="{ 'is-loading': res.isLoadingAdj }"
+            >
+              <!-- AI 生成中状态 -->
+              <div v-if="res.isLoadingAdj" class="res-loading">
+                <span class="res-loading-icon">🤖</span>
+                <span class="res-loading-text">AI 生成中...</span>
+              </div>
+
+              <!-- 正常显示 -->
+              <div v-if="!res.isLoadingAdj" class="res-content-area">
+                <div class="res-mini-top">
+                  <span class="res-icon">{{ res.icon }}</span>
+                  <div class="res-mini-info">
+                    <strong>{{ res.title }}</strong>
+                    <span :class="['diff-tag', res.diffClass]">{{ res.difficulty }}</span>
+                  </div>
+                </div>
+
+                <p class="res-mini-summary">{{ res.summary }}</p>
+
+                <div class="res-mini-actions">
+                  <button class="view-btn" @click="viewFullResource(res.type)">查看</button>
+                  <!-- 评价按钮：点击后触发 AI 重新生成 -->
+                  <div class="diff-btns">
+                    <button
+                      class="diff-btn"
+                      onclick="console.log('>>> onclick 原始测试 太简单 被点击'); alert('测试点击');"
+                      title="内容太简单了，生成难一点"
+                    >太简单</button>
+                    <button
+                      class="diff-btn"
+                      @click="adjustResDifficulty(res.type, 'down')"
+                      title="内容太难了，生成简单一点"
+                    >太困难</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="resource-side-footer">
+            <span>AI 根据你的画像生成，点击「简单/困难」调整难度</span>
+          </div>
+        </div>
+
         <div class="side-card">
           <h3>学习建议</h3>
           <p class="suggestion">
@@ -169,6 +230,9 @@ import type {
   CourseChapter,
   CourseDetail
 } from '@/api/course'
+
+import { adjustDifficulty } from '@/api/resource'
+import { useUserStore } from '@/stores/user'
 
 const route = useRoute()
 const router = useRouter()
@@ -443,6 +507,133 @@ const getChapterStatusText = (status: CourseChapter['status']) => {
   }
 
   return map[status]
+}
+
+// ===== 学习资源状态 =====
+interface LearningResource {
+  type: string
+  icon: string
+  title: string
+  summary: string
+  difficulty: string   // 展示用: 简单/适合/困难
+  diffClass: string    // CSS class
+  diffAdjust: string   // '' | 'up' | 'down' — 最后点击的方向
+  isLoadingAdj: boolean
+}
+
+// 假数据 — 每种资源类型的简短预览，后期接入 DB 后替换为 AI 生成内容
+const mockResources: Record<string, Omit<LearningResource, 'diffAdjust' | 'isLoadingAdj'>> = {
+  mindmap: {
+    type: 'mindmap',
+    icon: '🧠',
+    title: '思维导图',
+    summary: '当前章节知识结构图，梳理核心概念与知识点之间的关系。',
+    difficulty: '适合',
+    diffClass: 'medium'
+  },
+  quiz: {
+    type: 'quiz',
+    icon: '📝',
+    title: '练习题目',
+    summary: '基于本章重点设计的自测题，帮助巩固学习效果。',
+    difficulty: '适合',
+    diffClass: 'medium'
+  },
+  reading: {
+    type: 'reading',
+    icon: '📖',
+    title: '拓展阅读',
+    summary: '与本章相关的延伸材料，拓宽知识视野。',
+    difficulty: '适合',
+    diffClass: 'medium'
+  },
+  code: {
+    type: 'code',
+    icon: '💻',
+    title: '代码案例',
+    summary: '可运行的 Java 示例代码，动手实践本章知识点。',
+    difficulty: '适合',
+    diffClass: 'medium'
+  }
+}
+
+const userStore = useUserStore()
+const resLoading = ref(false)
+const learningResources = ref<LearningResource[]>(
+  Object.values(mockResources).map(r => ({
+    ...r,
+    diffAdjust: '',
+    isLoadingAdj: false
+  }))
+)
+
+/** 查看完整资源 → 跳转到 ResourceGenerate 页 */
+const viewFullResource = (type: string) => {
+  router.push(`/student/resources/generate/${type}`)
+}
+
+/** 调整资源难度：调后端 API → AI 生成 → 存 DB → 读 DB → 返回 */
+const adjustResDifficulty = async (type: string, direction: 'up' | 'down') => {
+  console.log(`>>> DEBUG 按钮被点击 type=${type} direction=${direction}`)
+  const res = learningResources.value.find(r => r.type === type)
+  if (!res || res.isLoadingAdj) return
+  console.log(`[前端 Debug] type=${type}, direction=${direction}, currentDifficulty=${res.difficulty}`)
+
+  res.isLoadingAdj = true
+  res.diffAdjust = direction
+
+  const studentId = Number(userStore.userInfo?.id) || 9
+  const chapterTitle = currentChapter.value?.title || '通用'
+
+  console.log(`[前端 Debug] 请求参数: studentId=${studentId}, chapterTitle=${chapterTitle}`)
+
+  try {
+    const result = await adjustDifficulty({
+      studentId,
+      type,
+      chapterName: chapterTitle,
+      title: chapterTitle,
+      direction,
+      currentDifficulty: res.difficulty
+    })
+
+    console.log(`[前端 Debug] 后端返回:`, result)
+    console.log(`[前端 Debug] 返回 difficulty=${result.difficulty}, exists=${result.exists}, content长度=${result.content?.length || 0}`)
+
+    // 更新显示
+    if (result.content) {
+      res.difficulty = result.difficulty
+      // 更新 diffClass
+      if (result.difficulty === '简单') res.diffClass = 'easy'
+      else if (result.difficulty === '困难') res.diffClass = 'hard'
+      else res.diffClass = 'medium'
+      // 更新摘要（用内容前 30 字）
+      const clean = result.content.replace(/[#*`\n]/g, ' ').trim()
+      res.summary = clean.length > 40 ? clean.slice(0, 40) + '...' : clean
+      console.log(`[前端 Debug] ✅ 更新成功: difficulty=${res.difficulty}, summary=${res.summary}`)
+    } else {
+      console.warn(`[前端 Debug] ⚠️ 后端返回 content 为空`)
+    }
+  } catch (error: any) {
+    console.warn(`[前端 Debug] ❌ 后端 API 调用失败，回退到本地假数据`, error)
+    // 假数据阶段：本地循环切换难度
+    const levels = ['简单', '适合', '困难']
+    const idx = levels.indexOf(res.difficulty)
+    let newIdx: number
+    if (direction === 'up') {
+      newIdx = Math.min(idx + 1, levels.length - 1)
+    } else {
+      newIdx = Math.max(idx - 1, 0)
+    }
+    res.difficulty = levels[newIdx]
+    if (res.difficulty === '简单') res.diffClass = 'easy'
+    else if (res.difficulty === '困难') res.diffClass = 'hard'
+    else res.diffClass = 'medium'
+    console.log(`[前端 Debug] ⚠️ 本地假数据切换: ${levels[idx]} → ${res.difficulty}`)
+  } finally {
+    res.isLoadingAdj = false
+    console.log(`[前端 Debug] ===== 难度调整结束 =====\n`)
+  }
 }
 
 const getTaskStatusText = (status: string) => {
@@ -762,6 +953,203 @@ textarea {
 .task-status.done {
   color: #15803d;
   background: #ecfdf3;
+}
+
+/* ===== 学习资源（右侧面板）===== */
+
+/* AI 生成中加载状态 */
+.res-mini-card.is-loading {
+  background: linear-gradient(135deg, #eef5ff 0%, #f7faff 100%);
+  border-color: #1769ff;
+}
+
+.res-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 24px 0;
+}
+
+.res-loading-icon {
+  font-size: 24px;
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+.res-loading-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1769ff;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.15); opacity: 0.7; }
+}
+.resource-side-card {
+  padding: 16px;
+}
+
+.resource-side-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  gap: 8px;
+}
+
+.resource-side-header h3 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.chapter-tag {
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: #eef5ff;
+  color: #1769ff;
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px;
+}
+
+.res-mini-card {
+  padding: 12px;
+  margin-bottom: 10px;
+  border-radius: 14px;
+  background: #f7faff;
+  border: 1px solid transparent;
+  transition: border-color 0.2s;
+}
+
+.res-mini-card:last-child {
+  margin-bottom: 0;
+}
+
+.res-mini-card:hover {
+  border-color: #d0e1ff;
+}
+
+.res-mini-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.res-icon {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.res-mini-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.res-mini-info strong {
+  font-size: 13px;
+}
+
+.diff-tag {
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.diff-tag.easy {
+  color: #16a34a;
+  background: #ecfdf3;
+}
+
+.diff-tag.medium {
+  color: #1769ff;
+  background: #eef5ff;
+}
+
+.diff-tag.hard {
+  color: #d97706;
+  background: #fff7ed;
+}
+
+.res-mini-summary {
+  margin: 6px 0 0 26px;
+  color: #75849a;
+  font-size: 12px;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.res-mini-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid #e8eef7;
+}
+
+.view-btn {
+  border: none;
+  border-radius: 8px;
+  padding: 4px 12px;
+  background: #1769ff;
+  color: #fff;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.diff-btns {
+  display: flex;
+  gap: 4px;
+}
+
+.diff-btn {
+  border: 1px solid #dbe4f3;
+  border-radius: 8px;
+  padding: 3px 10px;
+  background: #fff;
+  color: #667085;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.diff-btn:hover {
+  border-color: #1769ff;
+  color: #1769ff;
+}
+
+.diff-btn.active {
+  background: #1769ff;
+  border-color: #1769ff;
+  color: #fff;
+}
+
+.diff-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.resource-side-footer {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid #eef2f8;
+  text-align: center;
+}
+
+.resource-side-footer span {
+  color: #a0afc0;
+  font-size: 11px;
+  line-height: 1.5;
 }
 
 @media (max-width: 1180px) {

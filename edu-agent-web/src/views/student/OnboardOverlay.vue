@@ -42,9 +42,23 @@
 
 <script setup lang="ts">
 import { ref, onMounted, nextTick } from 'vue'
-import { sendTutorMessage } from '@/api/tutor'
+import axios from 'axios'
 import request from '@/utils/request'
+import { useUserStore } from '@/stores/user'
 
+const aiClient = axios.create({ baseURL: '/ai', timeout: 60000 })
+
+async function callAI(message: string, sessionId: string, profile: any) {
+  const res = await aiClient.post('/chat', {
+    user_input: message,
+    student_id: String(userStore.userInfo?.id || ''),
+    session_id: sessionId,
+    profile: profile
+  })
+  return res.data
+}
+
+const userStore = useUserStore()
 const emit = defineEmits(['done'])
 
 const input = ref('')
@@ -73,8 +87,8 @@ const send = async () => {
   await scrollToBottom()
 
   try {
-    const result = await sendTutorMessage(msg, sessionId.value, true, onboardProfile.value)
-    const answer = result?.answer || result?.finalAnswer || ''
+    const result = await callAI(msg, sessionId.value, onboardProfile.value)
+    const answer = result?.final_answer || ''
     if (result?.profile) {
       onboardProfile.value = { ...onboardProfile.value, ...result.profile }
     }
@@ -104,25 +118,25 @@ const send = async () => {
 
 const finish = async () => {
   finishing.value = true
+  // 将 AI 收集的画像保存到 Java 后端 MySQL
   try {
-    const suggestionsStr = localStorage.getItem('onboard_suggestions')
-    const body: any = {}
-    if (suggestionsStr) {
-      try { body.suggestions = JSON.parse(suggestionsStr) } catch {}
-    }
-    await request.post('/learning/init', body)
+    await request.post('/profile', { ...onboardProfile.value, studentId: userStore.userInfo?.id })
+  } catch {}
+  // 通知后端引导完成
+  try {
+    await request.post('/auth/onboard-done')
   } catch {}
   emit('done')
 }
 
-// 挂载时自动发"开始"信号 → 后端 onboarding_agent Phase 1 返回欢迎语
+// 挂载时自动发"开始"信号 → AI 引导智能体返回欢迎语
 onMounted(async () => {
   loading.value = true
   await scrollToBottom()
 
   try {
-    const result = await sendTutorMessage('开始', sessionId.value, true, onboardProfile.value)
-    const answer = result?.answer || result?.finalAnswer || ''
+    const result = await callAI('开始', sessionId.value, onboardProfile.value)
+    const answer = result?.final_answer || ''
     if (result?.profile) {
       onboardProfile.value = { ...onboardProfile.value, ...result.profile }
     }
@@ -142,34 +156,67 @@ onMounted(async () => {
 <style scoped>
 .onboard-overlay {
   position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-  z-index: 9999; background: linear-gradient(135deg, var(--accent) 0%, #3a2a99 100%);
+  z-index: 9999; background: linear-gradient(145deg, #667eea 0%, #764ba2 100%);
   display: flex; flex-direction: column;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 .onboard-header {
-  text-align: center; padding: 12px; color: var(--on-dark);
+  text-align: center; padding: 24px 20px 12px; color: #fff;
+  flex-shrink: 0;
 }
-.onboard-header h2 { margin: 0; font-size: 24px; }
-.onboard-header p { margin: 4px 0 0; font-size: 12px; opacity: 0.85; }
+.onboard-header h2 { margin: 0; font-size: 26px; font-weight: 700; letter-spacing: -0.5px; }
+.onboard-header p { margin: 6px 0 0; font-size: 13px; opacity: 0.8; }
 
 .onboard-chat {
-  flex: 1; overflow-y: auto; padding: 16px 24px;
-  max-width: 116px; width: 100%; margin: 0 auto;
+  flex: 1; overflow-y: auto; padding: 20px 24px;
+  max-width: 700px; width: 100%; margin: 0 auto;
+  display: flex; flex-direction: column; gap: 12px;
 }
-.msg { display: flex; gap: 8px; margin-bottom: 16px; }
+.msg { display: flex; gap: 10px; align-items: flex-start; animation: fadeUp .25s ease; }
 .msg.user { flex-direction: row-reverse; }
-.msg-avatar { width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,.2); display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
-.msg-bubble {
-  max-width: 75%; padding: 12px 16px; border-radius: 12px;
-  font-size: 14px; line-height: 1.7; white-space: pre-wrap;
+.msg-avatar {
+  width: 36px; height: 36px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; flex-shrink: 0;
+  background: rgba(255,255,255,.15);
+  backdrop-filter: blur(4px);
 }
-.msg.assistant .msg-bubble { background: var(--bg); color: var(--text-h); border-bottom-left-radius: 4px; }
-.msg.user .msg-bubble { background: var(--accent); color: var(--on-dark); border-bottom-right-radius: 4px; }
-.typing { color: var(--text); font-style: italic; }
+.msg-bubble {
+  max-width: 70%; padding: 12px 18px; border-radius: 16px;
+  font-size: 14.5px; line-height: 1.7; white-space: pre-wrap;
+  box-shadow: 0 1px 4px rgba(0,0,0,.06);
+}
+.msg.assistant .msg-bubble {
+  background: rgba(255,255,255,.95); color: #1d1d1f;
+  border-bottom-left-radius: 4px;
+}
+.msg.user .msg-bubble {
+  background: #fff; color: #1d1d1f;
+  border-bottom-right-radius: 4px;
+}
+.typing { color: #999; font-style: italic; font-size: 13px; }
 
 .onboard-input {
-  padding: 16px 24px; max-width: 116px; width: 100%; margin: 0 auto 16px;
+  padding: 16px 24px 24px; max-width: 700px; width: 100%;
+  margin: 0 auto; flex-shrink: 0;
 }
-.onboard-footer {
-  text-align: center; padding: 16px;
+.onboard-input :deep(.el-input__wrapper) {
+  background: rgba(255,255,255,.95);
+  border-radius: 24px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.08);
+}
+.onboard-input :deep(.el-input-group__append) { background: transparent; border: none; }
+.onboard-input :deep(.el-button--primary) { border-radius: 20px; }
+
+.onboard-footer { text-align: center; padding: 0 16px 24px; flex-shrink: 0; }
+.onboard-footer :deep(.el-button--success) {
+  border-radius: 24px; padding: 12px 40px; font-size: 16px;
+  background: #34c759; border: none; font-weight: 600;
+}
+.onboard-footer :deep(.el-button--success:hover) { opacity: .9; }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 </style>

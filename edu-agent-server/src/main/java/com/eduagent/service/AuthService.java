@@ -9,4 +9,5 @@ public interface AuthService {
     LoginVO register(RegisterRequest request);
     LoginVO refreshToken(String refreshToken);
     void logout(Long userId);
+    void markOnboarded(Long userId);
 }

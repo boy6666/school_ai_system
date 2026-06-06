@@ -3,7 +3,10 @@ import { ref } from 'vue'
 
 export const useUserStore = defineStore('user', () => {
   const token = ref(localStorage.getItem('token') || '')
-  const userInfo = ref<any>(null)
+
+  const savedUserInfo = localStorage.getItem('userInfo')
+  const userInfo = ref<any>(savedUserInfo ? JSON.parse(savedUserInfo) : null)
+  console.log('[DEBUG] userStore init, userInfo from localStorage:', savedUserInfo)
 
   const setToken = (newToken: string) => {
     token.value = newToken
@@ -11,8 +14,10 @@ export const useUserStore = defineStore('user', () => {
   }
 
   const setUserInfo = (info: any) => {
+    console.log('[DEBUG] setUserInfo called with:', JSON.stringify(info))
     userInfo.value = info
     if (info?.role) localStorage.setItem('role', info.role)
+    localStorage.setItem('userInfo', JSON.stringify(info))
   }
 
   const logout = () => {

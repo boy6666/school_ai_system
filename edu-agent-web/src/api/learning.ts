@@ -40,3 +40,15 @@ export function getEvaluation() { return request.get<unknown, any>('/learning/ev
 export function initLearning(message?: string) {
   return request.post<unknown, any>('/learning/init', { message: message || '你好，我是新用户' })
 }
+
+// ===== 学习路径（AI 生成版）=====
+
+/** 获取当前学习路径（DB缓存优先，无缓存则AI自动生成） */
+export function getLearningPath() {
+  return request.get<unknown, any>('/student/learning-path/current')
+}
+
+/** AI 重新生成学习路径 → 存 DB → 读 DB → 返回 */
+export function generateLearningPath() {
+  return request.post<unknown, any>('/student/learning-path/generate')
+}

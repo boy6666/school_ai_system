@@ -20,6 +20,10 @@ public class StudentProfile {
     private String cognitiveStyle;
     private String pace;
     private Integer lastScore;
+    private String profileData;
+    private String profileSuggestions;
+    private String lastSuggestion;
+    private String overallType;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
 }

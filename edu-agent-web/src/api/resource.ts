@@ -1,59 +1,70 @@
-import axios from 'axios'
-
-const aiClient = axios.create({
-  baseURL: '/ai',
-  timeout: 120000,
-})
+import request from '@/utils/request'
 
 export interface GenerateParams {
-  chapter: string       // 章节名，如 "Java 基础语法"
-  topic: string         // 知识点，如 "变量与数据类型"
-  resourceType: string  // mindmap | quiz | reading | code
-  level: string         // basic | medium | advanced
+  chapter: string
+  topic: string
+  resourceType: string
+  level: string
 }
 
 export interface GeneratedContent {
   content: string
   resourceType: string
   chapter: string
+  exists?: boolean
 }
 
-// 思维导图
-export async function generateMindmap(params: GenerateParams): Promise<GeneratedContent> {
-  const res = await aiClient.post('/resource/generate', {
-    ...params,
-    resourceType: 'mindmap',
-    prompt: `请为"${params.chapter}"章节生成一份Mermaid思维导图。难度：${params.level}。只返回graph TD开头的Mermaid代码。`
+async function generateViaBackend(type: string, title: string, chapterName: string, difficulty: string, studentId: any): Promise<GeneratedContent> {
+  const res = await request.post<unknown, any>('/resources/generate', {
+    studentId, type, title, chapterName, difficulty
   })
-  return { content: res.data.content || res.data.final_answer || '', resourceType: 'mindmap', chapter: params.chapter }
+  return { content: res?.content || '', resourceType: type, chapter: chapterName, exists: res?.exists }
 }
 
-// 练习题目
-export async function generateQuiz(params: GenerateParams): Promise<GeneratedContent> {
-  const res = await aiClient.post('/resource/generate', {
-    ...params,
-    resourceType: 'quiz',
-    prompt: `请为"${params.chapter}"章节生成5道练习题(含答案)。难度：${params.level}。返回JSON数组，每题包含type/question/options/answer/explanation。`
-  })
-  return { content: res.data.content || res.data.final_answer || '[]', resourceType: 'quiz', chapter: params.chapter }
+export async function generateMindmap(params: GenerateParams, studentId?: any): Promise<GeneratedContent> {
+  return generateViaBackend('mindmap', params.topic, params.chapter, params.level, studentId)
 }
 
-// 拓展阅读
-export async function generateReading(params: GenerateParams): Promise<GeneratedContent> {
-  const res = await aiClient.post('/resource/generate', {
-    ...params,
-    resourceType: 'reading',
-    prompt: `请为"${params.chapter}"章节生成一份拓展阅读材料(约500字)。难度：${params.level}。包含进阶概念、实际应用场景和推荐学习资源。`
-  })
-  return { content: res.data.content || res.data.final_answer || '', resourceType: 'reading', chapter: params.chapter }
+export async function generateQuiz(params: GenerateParams, studentId?: any): Promise<GeneratedContent> {
+  return generateViaBackend('quiz', params.topic, params.chapter, params.level, studentId)
 }
 
-// 代码案例
-export async function generateCode(params: GenerateParams): Promise<GeneratedContent> {
-  const res = await aiClient.post('/resource/generate', {
-    ...params,
-    resourceType: 'code',
-    prompt: `请为"${params.chapter}"章节生成一个Java代码案例(可运行)。难度：${params.level}。包含注释说明核心逻辑，代码量约30-80行。`
-  })
-  return { content: res.data.content || res.data.final_answer || '', resourceType: 'code', chapter: params.chapter }
+export async function generateReading(params: GenerateParams, studentId?: any): Promise<GeneratedContent> {
+  return generateViaBackend('reading', params.topic, params.chapter, params.level, studentId)
+}
+
+export async function generateCode(params: GenerateParams, studentId?: any): Promise<GeneratedContent> {
+  return generateViaBackend('code', params.topic, params.chapter, params.level, studentId)
+}
+
+export interface AdjustDifficultyParams {
+  studentId: number
+  type: string        // mindmap / quiz / reading / code
+  chapterName: string
+  title: string
+  direction: 'up' | 'down'   // up=生成更难(用户说简单), down=生成更简单(用户说困难)
+  currentDifficulty: string   // 当前难度 "简单"/"适合"/"困难"
+}
+
+export interface AdjustDifficultyResult {
+  id: number
+  content: string
+  difficulty: string
+  exists: boolean
+}
+
+/**
+ * 调整资源难度
+ * 用户觉得太简单 → direction=up (生成更难)
+ * 用户觉得太困难 → direction=down (生成更简单)
+ * AI 生成 → 存 DB → 读 DB → 返回
+ */
+export async function adjustDifficulty(params: AdjustDifficultyParams): Promise<AdjustDifficultyResult> {
+  const res = await request.post<unknown, any>('/resources/adjust-difficulty', params)
+  return {
+    id: res?.id || 0,
+    content: res?.content || '',
+    difficulty: res?.difficulty || params.currentDifficulty,
+    exists: res?.exists || false
+  }
 }

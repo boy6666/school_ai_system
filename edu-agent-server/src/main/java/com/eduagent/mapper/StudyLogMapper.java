@@ -17,4 +17,7 @@ public interface StudyLogMapper extends BaseMapper<StudyLog> {
     
     @Select("SELECT SUM(duration_sec) FROM study_logs WHERE student_id = #{studentId}")
     Integer totalDuration(Long studentId);
+    
+    @Select("SELECT module, SUM(duration_sec) as total FROM study_logs WHERE student_id = #{studentId} GROUP BY module ORDER BY total DESC")
+    List<Map<String, Object>> moduleSummary(Long studentId);
 }

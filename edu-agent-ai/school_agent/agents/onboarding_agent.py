@@ -1,3 +1,9 @@
+import sys
+try:
+    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+except Exception:
+    pass
+
 """引导智能体 — 自然对话式画像采集。
 
 通过自然聊天逐步了解学生，推断六维画像：
@@ -150,7 +156,8 @@ def onboarding_agent(state: dict) -> dict:
 
     # Phase 1: 首次对话 → 欢迎语
     if not onboarding_phase:
-        log("ONBOARD", "Phase 1: welcome")
+        print(f"\n  [ONBOARD] === Phase 1: 欢迎语 ===")
+        print(f"  [ONBOARD] 用户首次进入引导，返回预设欢迎语（不走 LLM）")
         profile["_onboarding_phase"] = "started"
         profile["_onboarding_complete"] = False
         profile["initialized"] = True
@@ -182,7 +189,17 @@ def onboarding_agent(state: dict) -> dict:
 
     prompt += f"学生最新说：{user_input}\n\n请分析并返回JSON。"
 
-    resp = call_llm(prompt, system=ONBOARDING_SYSTEM)
+    print(f"\n  [ONBOARD] === Phase 2: 调用 LLM ===")
+    print(f"  [ONBOARD] 当前画像摘要:")
+    print(f"  [ONBOARD] {dim_context[:200]}")
+    print(f"  [ONBOARD] 发送给 LLM 的 prompt (前300字):")
+    print(f"  [ONBOARD] {prompt[:300]}")
+    print(f"  [ONBOARD] 完整 prompt 长度: {len(prompt)} 字")
+
+    resp = call_llm(prompt, system_prompt=ONBOARDING_SYSTEM)
+
+    print(f"  [ONBOARD] LLM 原始返回:")
+    print(f"  [ONBOARD] {resp[:500]}")
 
     # 解析 LLM 输出
     try:
@@ -190,7 +207,14 @@ def onboarding_agent(state: dict) -> dict:
         if raw.startswith("```"):
             raw = raw.split("\n", 1)[-1].rsplit("```", 1)[0]
         result = json.loads(raw)
+        print(f"  [ONBOARD] JSON 解析成功")
+        print(f"  [ONBOARD] reply: {result.get('reply', '')[:100]}")
+        print(f"  [ONBOARD] complete: {result.get('complete')}")
+        dims = result.get('dimensions', {})
+        if dims:
+            print(f"  [ONBOARD] 更新维度: { {k: v.get('score') for k, v in dims.items()} }")
     except json.JSONDecodeError:
+        print(f"  [ONBOARD] ❌ JSON 解析失败, 使用 fallback")
         log("ONBOARD", "LLM output parse failed, using fallback")
         result = {
             "reply": "嗯，继续说，我在听～",
@@ -223,6 +247,13 @@ def onboarding_agent(state: dict) -> dict:
     is_complete = result.get("complete", False) or _check_complete(dimension_changes, profile)
 
     if is_complete:
+        print(f"\n  [ONBOARD] === Phase 3: 画像采集完成 ===")
+        print(f"  [ONBOARD] 最终维度:")
+        for dim_key in DIMENSION_KEYS:
+            d = profile.get(dim_key, {})
+            if isinstance(d, dict):
+                print(f"  [ONBOARD]   {dim_key}: level={d.get('level')}, score={d.get('score')}")
+        print(f"  [ONBOARD] 开始生成学习路径 + 资源...")
         log("ONBOARD", "Phase 3: complete")
         profile["_onboarding_phase"] = "complete"
         profile["_onboarding_complete"] = True
