@@ -4,6 +4,8 @@ import com.eduagent.agent.AiClient;
 import com.eduagent.agent.AiChatResponse;
 import com.eduagent.entity.Conversation;
 import com.eduagent.mapper.ConversationMapper;
+import com.eduagent.mapper.StudentProfileMapper;
+import com.eduagent.entity.StudentProfile;
 import com.eduagent.service.TutorService;
 import com.eduagent.vo.TutorReplyVO;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -13,7 +15,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.Map;
+import java.util.HashMap;
 
 @Slf4j
 @Service
@@ -22,6 +29,7 @@ public class TutorServiceImpl implements TutorService {
 
     private final AiClient aiClient;
     private final ConversationMapper conversationMapper;
+    private final StudentProfileMapper studentProfileMapper;
     private final ObjectMapper objectMapper;
 
     @Override
@@ -29,8 +37,47 @@ public class TutorServiceImpl implements TutorService {
     public TutorReplyVO chat(Long studentId, String message, String sessionId) {
         log.info("智能辅导: studentId={}, message={}", studentId, message);
 
-        // 调用 Python AI 引擎
-        AiChatResponse aiResp = aiClient.chat(String.valueOf(studentId), sessionId, message);
+        // 从 MySQL 读取学生画像
+        Map<String, Object> profileMap = new HashMap<>();
+        try {
+            StudentProfile sp = studentProfileMapper.findByStudentId(studentId);
+            if (sp != null) {
+                profileMap.put("course", sp.getCourse());
+                profileMap.put("topic", sp.getTopic());
+                profileMap.put("knowledge_base", sp.getKnowledgeBase());
+                profileMap.put("weaknesses", sp.getWeaknesses());
+                profileMap.put("pace", sp.getPace());
+                profileMap.put("resource_preference", sp.getResourcePreference());
+                profileMap.put("last_score", sp.getLastScore());
+            }
+        } catch (Exception e) {
+            log.warn("读取画像失败: {}", e.getMessage());
+        }
+
+        // 调用 Python AI 引擎（带画像）
+        AiChatResponse aiResp = aiClient.chat(String.valueOf(studentId), sessionId, message, profileMap);
+
+        // AI 返回后，把画像变更写回 MySQL
+        try {
+            Map<String, Object> updatedProfile = aiResp.getProfile();
+            if (updatedProfile != null && !updatedProfile.isEmpty()) {
+                StudentProfile sp = studentProfileMapper.findByStudentId(studentId);
+                if (sp == null) {
+                    sp = new StudentProfile();
+                    sp.setStudentId(studentId);
+                }
+                if (updatedProfile.containsKey("topic")) sp.setTopic((String) updatedProfile.get("topic"));
+                if (updatedProfile.containsKey("course")) sp.setCourse((String) updatedProfile.get("course"));
+                if (updatedProfile.containsKey("knowledge_base")) sp.setKnowledgeBase((String) updatedProfile.get("knowledge_base"));
+                if (updatedProfile.containsKey("weaknesses")) sp.setWeaknesses((String) updatedProfile.get("weaknesses"));
+                if (updatedProfile.containsKey("pace")) sp.setPace((String) updatedProfile.get("pace"));
+                if (updatedProfile.containsKey("last_score")) sp.setLastScore((Integer) updatedProfile.get("last_score"));
+                studentProfileMapper.insertOrUpdate(sp);
+                log.info("画像已同步到 MySQL: studentId={}", studentId);
+            }
+        } catch (Exception e) {
+            log.warn("画像写回 MySQL 失败: {}", e.getMessage());
+        }
 
         // 保存对话记录
         Conversation conv = new Conversation();
@@ -66,6 +113,23 @@ public class TutorServiceImpl implements TutorService {
                 .evaluation(evalSummary)
                 .resourceDir(aiResp.getResourceDir())
                 .build();
+    }
+
+    @Override
+    public List<Map<String, Object>> getSessions(Long studentId) {
+        List<Map<String, Object>> sessions = new ArrayList<>();
+        List<Conversation> convs = conversationMapper.selectByStudentId(studentId);
+        Set<String> seen = new HashSet<>();
+        for (Conversation c : convs) {
+            if (c.getSessionId() != null && seen.add(c.getSessionId())) {
+                Map<String, Object> s = new HashMap<>();
+                s.put("sessionId", c.getSessionId());
+                s.put("title", c.getQuestion() != null && c.getQuestion().length() > 20 ? c.getQuestion().substring(0, 20) + "..." : c.getQuestion());
+                s.put("time", c.getCreateTime() != null ? c.getCreateTime().toString() : "");
+                sessions.add(s);
+            }
+        }
+        return sessions;
     }
 
     @Override

@@ -13,6 +13,11 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
+      '/ai': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+        rewrite: (path: string) => path.replace(/^\/ai/, '')
+      },
       '/api': {
         target: 'http://localhost:8080',
         changeOrigin: true,

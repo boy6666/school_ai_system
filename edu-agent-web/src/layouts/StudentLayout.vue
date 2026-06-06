@@ -12,9 +12,6 @@
         <el-menu-item index="/student/dashboard">
           <el-icon><HomeFilled /></el-icon><span>首页</span>
         </el-menu-item>
-        <el-menu-item index="/student/profile/chat">
-          <el-icon><ChatDotRound /></el-icon><span>学习画像</span>
-        </el-menu-item>
         <el-menu-item index="/student/resources">
           <el-icon><MagicStick /></el-icon><span>资源生成</span>
         </el-menu-item>
@@ -23,6 +20,9 @@
         </el-menu-item>
         <el-menu-item index="/student/tutor">
           <el-icon><Service /></el-icon><span>智能辅导</span>
+        </el-menu-item>
+        <el-menu-item index="/student/profile">
+          <el-icon><ChatDotRound /></el-icon><span>学习画像</span>
         </el-menu-item>
         <el-menu-item index="/student/report">
           <el-icon><DataAnalysis /></el-icon><span>学习报告</span>
@@ -59,7 +59,7 @@ const userStore = useUserStore()
 
 const handleCommand = (command: string) => {
   if (command === 'profile') {
-    router.push('/student/profile')
+    router.push('/student/profile/settings')
   } else if (command === 'logout') {
     userStore.logout()
     router.push('/login')
@@ -75,4 +75,6 @@ const handleCommand = (command: string) => {
 .header { background-color: #fff; border-bottom: 1px solid #e6e6e6; display: flex; justify-content: flex-end; align-items: center; padding: 0 20px; }
 .user-dropdown-trigger { display: flex; align-items: center; cursor: pointer; }
 .user-name { margin-right: 5px; }
+
+.el-main { background: #f5f6f8 !important; padding: 0 !important; }
 </style>

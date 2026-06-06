@@ -1,21 +1,10 @@
-import json
-from pathlib import Path
-from typing import Any, Dict
+import json, os
+from school_agent.config import LEARNING_LOGS_DIR
+from datetime import datetime
 
-from school_agent.config import LEARNING_LOG_DIR
-from school_agent.utils.time_utils import now_iso
-
-
-def append_learning_log(student_id: str, event: Dict[str, Any]) -> str:
-    LEARNING_LOG_DIR.mkdir(parents=True, exist_ok=True)
-    path = LEARNING_LOG_DIR / f"{student_id}.jsonl"
-
-    payload = {
-        "time": now_iso(),
-        **event,
-    }
-
-    with path.open("a", encoding="utf-8") as f:
-        f.write(json.dumps(payload, ensure_ascii=False) + "\n")
-
-    return str(path)
+def append_log(student_id: str, session_id: str, log_entry: dict):
+    path = os.path.join(LEARNING_LOGS_DIR, f"{student_id}.jsonl")
+    os.makedirs(LEARNING_LOGS_DIR, exist_ok=True)
+    log_entry["timestamp"] = datetime.now().isoformat()
+    with open(path, "a", encoding="utf-8") as f:
+        f.write(json.dumps(log_entry, ensure_ascii=False) + "\n")

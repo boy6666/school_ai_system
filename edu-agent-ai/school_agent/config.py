@@ -1,31 +1,19 @@
 import os
-from pathlib import Path
 
-try:
-    from dotenv import load_dotenv
-except Exception:  # pragma: no cover
-    load_dotenv = None
+# OpenAI / LLM 配置
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+OPENAI_BASE_URL = os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1")
+LLM_MODEL = os.getenv("LLM_MODEL", "gpt-4o-mini")
+LLM_TEMPERATURE = float(os.getenv("LLM_TEMPERATURE", "0.7"))
+LLM_MAX_TOKENS = int(os.getenv("LLM_MAX_TOKENS", "2048"))
 
+# 数据路径
+DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data")
+KNOWLEDGE_BASE_DIR = os.path.join(DATA_DIR, "knowledge_base")
+LEARNING_LOGS_DIR = os.path.join(DATA_DIR, "learning_logs")
+PROFILES_DIR = os.path.join(DATA_DIR, "profiles")
+QUESTION_BANK_DIR = os.path.join(DATA_DIR, "question_bank")
+RESOURCES_DIR = os.path.join(DATA_DIR, "resources")
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-DATA_DIR = PROJECT_ROOT / "data"
-PROFILE_DIR = DATA_DIR / "profiles"
-KNOWLEDGE_BASE_DIR = DATA_DIR / "knowledge_base"
-QUESTION_BANK_DIR = DATA_DIR / "question_bank"
-LEARNING_LOG_DIR = DATA_DIR / "learning_logs"
-RESOURCE_DIR = DATA_DIR / "resources"
-PROMPT_DIR = Path(__file__).resolve().parent / "prompts"
-
-if load_dotenv:
-    load_dotenv(PROJECT_ROOT / ".env")
-
-MODEL_NAME = os.getenv("MODEL_NAME", "星火API测试体验")
-BASE_URL = os.getenv("BASE_URL", "https://maas-api.cn-huabei-1.xf-yun.com/v2")
-API_KEY = os.getenv("API_KEY", "")
-
-TEMPERATURE = float(os.getenv("TEMPERATURE", "0"))
-MAX_TOKENS = int(os.getenv("MAX_TOKENS", "1024"))
-MAX_KB_CHARS = int(os.getenv("MAX_KB_CHARS", "1800"))
-
-# 没有 API_KEY 时默认 mock，保证演示和测试流程不会卡住。
-USE_MOCK_LLM = os.getenv("USE_MOCK_LLM", "1" if not API_KEY else "0") == "1"
+# 日志
+LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")

@@ -25,3 +25,13 @@ export function getTutorHistory(sessionId?: string) {
     params: { sessionId }
   })
 }
+
+export interface TutorSession {
+  sessionId: string
+  title: string
+  time: string
+}
+
+export function getSessions() {
+  return request.get<unknown, TutorSession[]>('/tutor/sessions')
+}

@@ -4,6 +4,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.Map;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -27,4 +29,6 @@ public class Result<T> {
     public static <T> Result<T> error(String message) {
         return new Result<>(500, message, null);
     }
+
+    public <T> Result<T>  success(String 画像保存成功, Map<String, Object> saved) {return new Result<>(500, message, null);}
 }

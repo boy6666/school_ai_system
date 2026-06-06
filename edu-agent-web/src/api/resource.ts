@@ -1,104 +1,59 @@
-import request from '@/utils/request'
+import axios from 'axios'
 
-export type ResourceType =
-  | '文档'
-  | 'PPT'
-  | '视频'
-  | '动画'
-  | '题库'
-  | '代码案例'
-  | '实验项目'
-  | '拓展阅读'
-  | '思维导图'
+const aiClient = axios.create({
+  baseURL: '/ai',
+  timeout: 120000,
+})
 
-export type ResourceDifficulty = '入门' | '基础' | '进阶' | '高级'
-
-export type ResourceSortType = 'hot' | 'new' | 'score'
-
-export interface ResourceListQuery {
-  keyword?: string
-  type?: string
-  difficulty?: string
-  courseId?: string
-  sort?: ResourceSortType
-  page?: number
-  pageSize?: number
+export interface GenerateParams {
+  chapter: string       // 章节名，如 "Java 基础语法"
+  topic: string         // 知识点，如 "变量与数据类型"
+  resourceType: string  // mindmap | quiz | reading | code
+  level: string         // basic | medium | advanced
 }
 
-export interface ResourceListItem {
-  id: number
-  title: string
-  type: ResourceType
-  difficulty: ResourceDifficulty
-  description: string
-  rating: number
-  views: number
-  updateTime: string
-  cover: string
-  favorite: boolean
-
-  courseId: string
-  courseName: string
-  chapterName: string
-  tags: string[]
-  fileSize: string
-}
-
-export interface ResourceListResponse {
-  list: ResourceListItem[]
-  total: number
-  recommended: ResourceListItem[]
-  hotTags: string[]
-}
-
-export interface ResourceChapter {
-  id: number
-  title: string
-  desc: string
-  duration: string
-}
-
-export interface ResourceReview {
-  id: number
-  name: string
-  score: number
+export interface GeneratedContent {
   content: string
+  resourceType: string
+  chapter: string
 }
 
-export interface ResourceDetailItem extends ResourceListItem {
-  chapterCount: number
-  duration: string
-  teacher: string
-  progress: number
-  goals: string[]
-  suitableFor: string[]
-  chapters: ResourceChapter[]
-  reviews: ResourceReview[]
-}
-
-export function getResourceList(params: ResourceListQuery) {
-  return request.get<unknown, ResourceListResponse>('/resources', {
-    params
+// 思维导图
+export async function generateMindmap(params: GenerateParams): Promise<GeneratedContent> {
+  const res = await aiClient.post('/resource/generate', {
+    ...params,
+    resourceType: 'mindmap',
+    prompt: `请为"${params.chapter}"章节生成一份Mermaid思维导图。难度：${params.level}。只返回graph TD开头的Mermaid代码。`
   })
+  return { content: res.data.content || res.data.final_answer || '', resourceType: 'mindmap', chapter: params.chapter }
 }
 
-export function getResourceDetail(id: number) {
-  return request.get<unknown, ResourceDetailItem>(`/resources/${id}`)
+// 练习题目
+export async function generateQuiz(params: GenerateParams): Promise<GeneratedContent> {
+  const res = await aiClient.post('/resource/generate', {
+    ...params,
+    resourceType: 'quiz',
+    prompt: `请为"${params.chapter}"章节生成5道练习题(含答案)。难度：${params.level}。返回JSON数组，每题包含type/question/options/answer/explanation。`
+  })
+  return { content: res.data.content || res.data.final_answer || '[]', resourceType: 'quiz', chapter: params.chapter }
 }
 
-export function getRelatedResources(id: number) {
-  return request.get<unknown, ResourceListItem[]>(`/resources/${id}/related`)
+// 拓展阅读
+export async function generateReading(params: GenerateParams): Promise<GeneratedContent> {
+  const res = await aiClient.post('/resource/generate', {
+    ...params,
+    resourceType: 'reading',
+    prompt: `请为"${params.chapter}"章节生成一份拓展阅读材料(约500字)。难度：${params.level}。包含进阶概念、实际应用场景和推荐学习资源。`
+  })
+  return { content: res.data.content || res.data.final_answer || '', resourceType: 'reading', chapter: params.chapter }
 }
 
-export function updateResourceFavorite(id: number, favorite: boolean) {
-  return request.post<unknown, { favorite: boolean }>(
-    `/resources/${id}/favorite`,
-    { favorite }
-  )
-}
-
-export function addResourceToPlan(id: number) {
-  return request.post<unknown, { success: boolean }>(
-    `/resources/${id}/plan`
-  )
+// 代码案例
+export async function generateCode(params: GenerateParams): Promise<GeneratedContent> {
+  const res = await aiClient.post('/resource/generate', {
+    ...params,
+    resourceType: 'code',
+    prompt: `请为"${params.chapter}"章节生成一个Java代码案例(可运行)。难度：${params.level}。包含注释说明核心逻辑，代码量约30-80行。`
+  })
+  return { content: res.data.content || res.data.final_answer || '', resourceType: 'code', chapter: params.chapter }
 }

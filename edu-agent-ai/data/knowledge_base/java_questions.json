@@ -1,0 +1,2305 @@
+{
+  "total": 300,
+  "chapters": [
+    {
+      "id": 1,
+      "name": "Java 简介",
+      "tag": "java-intro",
+      "levels": [
+        {
+          "level": "basic",
+          "name": "基础补齐",
+          "questions": [
+            {
+              "id": 1,
+              "text": "Java 语言最初是由哪个公司开发的？",
+              "options": ["Microsoft", "Oracle", "Sun Microsystems", "IBM"],
+              "answer": "C"
+            },
+            {
+              "id": 2,
+              "text": "Java 程序的源文件扩展名是什么？",
+              "options": [".class", ".java", ".jar", ".exe"],
+              "answer": "B"
+            },
+            {
+              "id": 3,
+              "text": "Java 平台标准版的缩写是？",
+              "options": ["Java EE", "Java SE", "Java ME", "Java FX"],
+              "answer": "B"
+            },
+            {
+              "id": 4,
+              "text": "Java 语言是哪一年正式推出的？",
+              "options": ["1990", "1995", "1998", "2000"],
+              "answer": "B"
+            },
+            {
+              "id": 5,
+              "text": "以下哪个不是 Java 的三个体系之一？",
+              "options": ["Java SE", "Java EE", "Java AE", "Java ME"],
+              "answer": "C"
+            }
+          ]
+        },
+        {
+          "level": "intermediate",
+          "name": "稳步提升",
+          "questions": [
+            {
+              "id": 6,
+              "text": "Java 语言中，JVM 的作用是什么？",
+              "options": ["编译 Java 代码", "解释执行字节码", "管理数据库连接", "创建图形界面"],
+              "answer": "B"
+            },
+            {
+              "id": 7,
+              "text": "下列哪个特性是 Java 丢弃而 C++ 中有的？",
+              "options": ["自动垃圾回收", "多继承", "面向对象", "跨平台"],
+              "answer": "B"
+            },
+            {
+              "id": 8,
+              "text": "Java 语言支持什么机制来实现分布式应用？",
+              "options": ["RMI", "JMS", "JDBC", "JNDI"],
+              "answer": "A"
+            },
+            {
+              "id": 9,
+              "text": "Java 的字节码被运行在什么之上？",
+              "options": ["CPU", "操作系统", "Java 虚拟机（JVM）", "浏览器"],
+              "answer": "C"
+            },
+            {
+              "id": 10,
+              "text": "以下关于 Java 的说法，正确的是？",
+              "options": ["Java 是纯面向对象的", "Java 不支持多线程", "Java 是解释型语言，没有编译过程", "Java 是单平台语言"],
+              "answer": "A"
+            }
+          ]
+        },
+        {
+          "level": "advanced",
+          "name": "拔尖拓展",
+          "questions": [
+            {
+              "id": 11,
+              "text": "JIT 编译器的主要作用是？",
+              "options": ["将字节码提前编译成本地代码以提高执行效率", "检查语法错误", "管理内存分配", "加载类文件"],
+              "answer": "A"
+            },
+            {
+              "id": 12,
+              "text": "Java 语言中，哪个机制使得程序能够动态载入所需要的类？",
+              "options": ["垃圾回收", "类加载器", "异常处理", "多线程"],
+              "answer": "B"
+            },
+            {
+              "id": 13,
+              "text": "以下关于 Java 的体系结构中立性的描述，正确的是？",
+              "options": ["Java 源代码可以在任何平台运行", "Java 字节码可以在任何有 JVM 的平台运行", "Java 编译器是平台相关的", "Java 程序依赖操作系统 API"],
+              "answer": "B"
+            },
+            {
+              "id": 14,
+              "text": "Java 语言中，用于实现线程间同步的关键字是？",
+              "options": ["volatile", "synchronized", "transient", "native"],
+              "answer": "B"
+            },
+            {
+              "id": 15,
+              "text": "以下哪个事件标志着 Java 在企业级开发中的重要地位？",
+              "options": ["JDK 1.0 发布", "J2EE 平台发布", "Java SE 8 发布", "Oracle 收购 Sun"],
+              "answer": "B"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Java 开发环境配置",
+      "tag": "java-setup",
+      "levels": [
+        {
+          "level": "basic",
+          "name": "基础补齐",
+          "questions": [
+            {
+              "id": 1,
+              "text": "配置 Java 环境时，需要设置哪个环境变量指向 JDK 安装目录？",
+              "options": ["PATH", "CLASSPATH", "JAVA_HOME", "JRE_HOME"],
+              "answer": "C"
+            },
+            {
+              "id": 2,
+              "text": "检查 Java 版本的正确命令是？",
+              "options": ["java --version", "javac -version", "java -version", "java version"],
+              "answer": "C"
+            },
+            {
+              "id": 3,
+              "text": "以下哪个是 Java 开发工具包（JDK）的必含组件？",
+              "options": ["JRE", "Apache Tomcat", "MySQL", "Eclipse"],
+              "answer": "A"
+            },
+            {
+              "id": 4,
+              "text": "在 Windows 系统中，环境变量 PATH 的作用是？",
+              "options": ["指定 Java 类路径", "指定系统可执行文件的搜索路径", "指定 JDK 安装路径", "指定 JRE 路径"],
+              "answer": "B"
+            },
+            {
+              "id": 5,
+              "text": "编译 Java 源文件的命令是？",
+              "options": ["java", "javac", "jar", "javadoc"],
+              "answer": "B"
+            }
+          ]
+        },
+        {
+          "level": "intermediate",
+          "name": "稳步提升",
+          "questions": [
+            {
+              "id": 6,
+              "text": "CLASSPATH 环境变量在 JDK 1.5 以上版本中，默认包含当前目录吗？",
+              "options": ["包含", "不包含", "需要手动设置", "只有设置后才包含"],
+              "answer": "A"
+            },
+            {
+              "id": 7,
+              "text": "以下哪个 IDE 是由 JetBrains 公司开发的？",
+              "options": ["Eclipse", "NetBeans", "IntelliJ IDEA", "Visual Studio Code"],
+              "answer": "C"
+            },
+            {
+              "id": 8,
+              "text": "在 Linux 系统中，设置 JAVA_HOME 环境变量通常在哪个文件中配置？",
+              "options": ["/etc/passwd", "/etc/fstab", "~/.bashrc 或 /etc/profile", "~/.ssh/config"],
+              "answer": "C"
+            },
+            {
+              "id": 9,
+              "text": "运行一个已编译的 Java 程序，类名为 Hello，命令是？",
+              "options": ["java Hello.class", "java Hello", "javac Hello", "run Hello"],
+              "answer": "B"
+            },
+            {
+              "id": 10,
+              "text": "以下哪个工具不是 JDK 自带的？",
+              "options": ["javac", "java", "javap", "maven"],
+              "answer": "D"
+            }
+          ]
+        },
+        {
+          "level": "advanced",
+          "name": "拔尖拓展",
+          "questions": [
+            {
+              "id": 11,
+              "text": "在 Windows 10 中配置 PATH 时，将 %JAVA_HOME%\\bin 和 %JAVA_HOME%\\jre\\bin 分开添加的原因是？",
+              "options": ["避免路径过长", "因为 Windows 10 不支持连续变量", "防止重复", "为了兼容性"],
+              "answer": "A"
+            },
+            {
+              "id": 12,
+              "text": "JVM 的 -Xmx 参数用于什么？",
+              "options": ["设置初始堆大小", "设置最大堆大小", "设置栈大小", "设置元空间大小"],
+              "answer": "B"
+            },
+            {
+              "id": 13,
+              "text": "以下哪个命令可以查看 JVM 运行时参数？",
+              "options": ["jps", "jstat", "jinfo", "jmap"],
+              "answer": "C"
+            },
+            {
+              "id": 14,
+              "text": "IntelliJ IDEA 中，项目 SDK 的设置位于哪个菜单？",
+              "options": ["File -> Project Structure", "File -> Settings", "View -> Tool Windows", "Run -> Edit Configurations"],
+              "answer": "A"
+            },
+            {
+              "id": 15,
+              "text": "在 Maven 项目中，Java 编译版本通过哪个属性配置？",
+              "options": ["maven.compiler.source", "java.version", "jdk.version", "compiler.level"],
+              "answer": "A"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "Java 变量类型",
+      "tag": "java-variables",
+      "levels": [
+        {
+          "level": "basic",
+          "name": "基础补齐",
+          "questions": [
+            {
+              "id": 1,
+              "text": "在方法内部声明的变量称为？",
+              "options": ["成员变量", "局部变量", "静态变量", "实例变量"],
+              "answer": "B"
+            },
+            {
+              "id": 2,
+              "text": "以下哪个关键字用于声明类变量（静态变量）？",
+              "options": ["final", "static", "private", "volatile"],
+              "answer": "B"
+            },
+            {
+              "id": 3,
+              "text": "成员变量在没有显式初始化时，其默认值是什么？",
+              "options": ["null", "0", "取决于类型", "编译错误"],
+              "answer": "C"
+            },
+            {
+              "id": 4,
+              "text": "以下哪个是合法的变量名？",
+              "options": ["2var", "var-name", "_value", "class"],
+              "answer": "C"
+            },
+            {
+              "id": 5,
+              "text": "局部变量的作用域是？",
+              "options": ["整个类", "整个包", "声明它的代码块内", "整个方法"],
+              "answer": "C"
+            }
+          ]
+        },
+        {
+          "level": "intermediate",
+          "name": "稳步提升",
+          "questions": [
+            {
+              "id": 6,
+              "text": "以下代码输出结果？\nint a = 10;\n{ int a = 20; }",
+              "options": ["10", "20", "编译错误", "运行时异常"],
+              "answer": "C"
+            },
+            {
+              "id": 7,
+              "text": "实例变量和局部变量的区别，正确的是？",
+              "options": ["实例变量有默认值，局部变量没有", "局部变量有默认值，实例变量没有", "两者都有默认值", "两者都没有默认值"],
+              "answer": "A"
+            },
+            {
+              "id": 8,
+              "text": "以下哪个修饰符不能用于局部变量？",
+              "options": ["final", "static", "var (Java 10+)", "无修饰符"],
+              "answer": "B"
+            },
+            {
+              "id": 9,
+              "text": "在 Java 中，参数变量传递时，基本数据类型采用什么传递方式？",
+              "options": ["值传递", "引用传递", "地址传递", "共享传递"],
+              "answer": "A"
+            },
+            {
+              "id": 10,
+              "text": "以下代码输出什么？\npublic class Test {\n    static int x = 10;\n    public static void main(String[] args) {\n        int x = 20;\n        System.out.println(Test.x);\n    }\n}",
+              "options": ["10", "20", "编译错误", "0"],
+              "answer": "A"
+            }
+          ]
+        },
+        {
+          "level": "advanced",
+          "name": "拔尖拓展",
+          "questions": [
+            {
+              "id": 11,
+              "text": "以下关于 Java 变量内存分配的说法，正确的是？",
+              "options": ["局部变量存储在堆中", "实例变量存储在栈中", "静态变量存储在方法区", "所有变量都存储在栈中"],
+              "answer": "C"
+            },
+            {
+              "id": 12,
+              "text": "在 Java 中，boolean 类型单独使用时占用的位数是？",
+              "options": ["1 位", "8 位", "32 位", "不确定（依赖于 JVM 实现）"],
+              "answer": "D"
+            },
+            {
+              "id": 13,
+              "text": "以下代码中，变量 i 和 j 的 final 修饰的区别？\nfinal int i; i=5;\nfinal int j=5; j=6;",
+              "options": ["都正确", "都错误", "第一段正确，第二段错误", "第一段错误，第二段正确"],
+              "answer": "C"
+            },
+            {
+              "id": 14,
+              "text": "在 Java 中，char 类型可以存储中文字符吗？",
+              "options": ["可以，因为 char 是 16 位 Unicode", "不可以，只能存储 ASCII", "可以，但需要设置编码", "只能存储英文"],
+              "answer": "A"
+            },
+            {
+              "id": 15,
+              "text": "关于 var 局部变量类型推断（Java 10+），以下哪个说法正确？",
+              "options": ["var 可以用于成员变量", "var 可以用于方法参数", "var 声明的变量必须立即初始化", "var 可以用于返回类型"],
+              "answer": "C"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "name": "Java 基本数据类型",
+      "tag": "java-primitives",
+      "levels": [
+        {
+          "level": "basic",
+          "name": "基础补齐",
+          "questions": [
+            {
+              "id": 1,
+              "text": "Java 中，int 类型占多少字节？",
+              "options": ["1", "2", "4", "8"],
+              "answer": "C"
+            },
+            {
+              "id": 2,
+              "text": "以下哪个是 Java 的浮点型默认类型？",
+              "options": ["float", "double", "long", "int"],
+              "answer": "B"
+            },
+            {
+              "id": 3,
+              "text": "boolean 类型的可能取值是？",
+              "options": ["0 和 1", "true 和 false", "True 和 False", "yes 和 no"],
+              "answer": "B"
+            },
+            {
+              "id": 4,
+              "text": "以下字面量中，哪个是 long 类型？",
+              "options": ["123", "123L", "123.0", "123F"],
+              "answer": "B"
+            },
+            {
+              "id": 5,
+              "text": "char 类型在内存中占多少位？",
+              "options": ["8", "16", "32", "64"],
+              "answer": "B"
+            }
+          ]
+        },
+        {
+          "level": "intermediate",
+          "name": "稳步提升",
+          "questions": [
+            {
+              "id": 6,
+              "text": "以下代码输出什么？\nint a = 128;\nbyte b = (byte) a;\nSystem.out.println(b);",
+              "options": ["128", "-128", "0", "编译错误"],
+              "answer": "B"
+            },
+            {
+              "id": 7,
+              "text": "以下哪个不是 Java 的基本数据类型？",
+              "options": ["byte", "short", "Integer", "char"],
+              "answer": "C"
+            },
+            {
+              "id": 8,
+              "text": "以下代码中，哪个会发生编译错误？",
+              "options": ["float f = 3.14;", "double d = 3.14;", "float f = 3.14f;", "double d = 3.14d;"],
+              "answer": "A"
+            },
+            {
+              "id": 9,
+              "text": "short 类型的取值范围是？",
+              "options": ["-128 ~ 127", "-32768 ~ 32767", "-2147483648 ~ 2147483647", "0 ~ 65535"],
+              "answer": "B"
+            },
+            {
+              "id": 10,
+              "text": "以下赋值正确的是？",
+              "options": ["int i = 10L;", "long l = 10;", "float f = 10.0;", "double d = 10f;"],
+              "answer": "B"
+            }
+          ]
+        },
+        {
+          "level": "advanced",
+          "name": "拔尖拓展",
+          "questions": [
+            {
+              "id": 11,
+              "text": "Java 中，浮点数 float 的精度大约是几位有效数字？",
+              "options": ["6-7", "15-16", "3-4", "9-10"],
+              "answer": "A"
+            },
+            {
+              "id": 12,
+              "text": "以下哪个表达式的值是 true？",
+              "options": ["(0.1 + 0.2) == 0.3", "0.1f + 0.2f == 0.3f", "0.1 + 0.2 == 0.3", "以上都不对"],
+              "answer": "D"
+            },
+            {
+              "id": 13,
+              "text": "char 类型可以自动转换为以下哪种类型？",
+              "options": ["byte", "short", "int", "以上都可以"],
+              "answer": "C"
+            },
+            {
+              "id": 14,
+              "text": "以下代码输出什么？\nSystem.out.println(Byte.MIN_VALUE);",
+              "options": ["-128", "-127", "0", "255"],
+              "answer": "A"
+            },
+            {
+              "id": 15,
+              "text": "关于基本类型的包装类，说法错误的是？",
+              "options": ["Integer 是 int 的包装类", "自动装箱和拆箱是 Java 5 引入的", "包装类对象不可变", "Integer 比较时可以直接使用 =="],
+              "answer": "D"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "name": "Java 修饰符",
+      "tag": "java-modifiers",
+      "levels": [
+        {
+          "level": "basic",
+          "name": "基础补齐",
+          "questions": [
+            {
+              "id": 1,
+              "text": "以下哪个访问修饰符的可见范围最小？",
+              "options": ["public", "protected", "default", "private"],
+              "answer": "D"
+            },
+            {
+              "id": 2,
+              "text": "默认访问修饰符（无修饰符）的可见范围是？",
+              "options": ["仅当前类", "同一包内", "所有类", "子类"],
+              "answer": "B"
+            },
+            {
+              "id": 3,
+              "text": "以下哪个修饰符可以使变量成为常量？",
+              "options": ["static", "final", "abstract", "volatile"],
+              "answer": "B"
+            },
+            {
+              "id": 4,
+              "text": "抽象方法不能使用以下哪个修饰符？",
+              "options": ["public", "protected", "private", "default"],
+              "answer": "C"
+            },
+            {
+              "id": 5,
+              "text": "以下哪个修饰符用于保证线程安全？",
+              "options": ["transient", "volatile", "synchronized", "native"],
+              "answer": "C"
+            }
+          ]
+        },
+        {
+          "level": "intermediate",
+          "name": "稳步提升",
+          "questions": [
+            {
+              "id": 6,
+              "text": "protected 成员可以被哪些类访问？",
+              "options": ["仅子类", "同一包和不同包的子类", "所有类", "仅同一包"],
+              "answer": "B"
+            },
+            {
+              "id": 7,
+              "text": "以下哪个修饰符可以用于局部变量？",
+              "options": ["public", "protected", "private", "final"],
+              "answer": "D"
+            },
+            {
+              "id": 8,
+              "text": "以下哪个不是非访问修饰符？",
+              "options": ["static", "final", "abstract", "public"],
+              "answer": "D"
+            },
+            {
+              "id": 9,
+              "text": "如果一个类包含抽象方法，那么这个类必须是？",
+              "options": ["final 类", "抽象类", "接口", "普通类"],
+              "answer": "B"
+            },
+            {
+              "id": 10,
+              "text": "以下关于 static 的说法，正确的是？",
+              "options": ["static 方法可以访问非 static 成员", "static 方法中不能使用 this", "static 代码块在对象创建时执行", "static 变量属于实例"],
+              "answer": "B"
+            }
+          ]
+        },
+        {
+          "level": "advanced",
+          "name": "拔尖拓展",
+          "questions": [
+            {
+              "id": 11,
+              "text": "以下代码编译是否通过？\nclass A { protected void m() {} }\nclass B extends A { private void m() {} }",
+              "options": ["通过", "不通过，因为子类访问修饰符比父类更严格", "不通过，因为方法名相同", "通过，但会有警告"],
+              "answer": "B"
+            },
+            {
+              "id": 12,
+              "text": "transient 修饰符的作用是？",
+              "options": ["使变量在序列化时被忽略", "使变量变为常量", "使变量同步", "使变量可变"],
+              "answer": "A"
+            },
+            {
+              "id": 13,
+              "text": "volatile 关键字能保证原子性吗？",
+              "options": ["能保证", "不能保证，只能保证可见性", "能保证有序性和原子性", "不能保证任何特性"],
+              "answer": "B"
+            },
+            {
+              "id": 14,
+              "text": "以下哪个修饰符不能修饰类（外部类）？",
+              "options": ["public", "abstract", "final", "private"],
+              "answer": "D"
+            },
+            {
+              "id": 15,
+              "text": "strictfp 修饰符的作用是？",
+              "options": ["保证浮点运算结果的平台一致性", "强制使用 IEEE 754 标准", "提高浮点运算速度", "A 和 B"],
+              "answer": "D"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "name": "Java 运算符",
+      "tag": "java-operators",
+      "levels": [
+        {
+          "level": "basic",
+          "name": "基础补齐",
+          "questions": [
+            {
+              "id": 1,
+              "text": "下列代码输出结果是什么？\nint a = 5, b = 2;\nSystem.out.println(a / b);",
+              "options": ["2.5", "2", "2.0", "3"],
+              "answer": "B"
+            },
+            {
+              "id": 2,
+              "text": "以下哪个是逻辑与运算符？",
+              "options": ["&", "&&", "|", "||"],
+              "answer": "B"
+            },
+            {
+              "id": 3,
+              "text": "表达式 (3 > 2) ? 10 : 20 的结果是？",
+              "options": ["10", "20", "true", "false"],
+              "answer": "A"
+            },
+            {
+              "id": 4,
+              "text": "以下哪个是赋值运算符？",
+              "options": ["==", "!=", "=", "?:"],
+              "answer": "C"
+            },
+            {
+              "id": 5,
+              "text": "以下哪个运算符用于取模（求余数）？",
+              "options": ["/", "%", "//", "mod"],
+              "answer": "B"
+            }
+          ]
+        },
+        {
+          "level": "intermediate",
+          "name": "稳步提升",
+          "questions": [
+            {
+              "id": 6,
+              "text": "以下代码执行后，x 的值是多少？\nint x = 10;\nx += 5;",
+              "options": ["10", "15", "5", "105"],
+              "answer": "B"
+            },
+            {
+              "id": 7,
+              "text": "位运算符中，哪个是按位异或？",
+              "options": ["&", "|", "^", "~"],
+              "answer": "C"
+            },
+            {
+              "id": 8,
+              "text": "以下哪个运算符是短路逻辑或？",
+              "options": ["|", "||", "&", "&&"],
+              "answer": "B"
+            },
+            {
+              "id": 9,
+              "text": "表达式 10 / 3 * 3 的结果是？",
+              "options": ["9", "10", "9.0", "10.0"],
+              "answer": "A"
+            },
+            {
+              "id": 10,
+              "text": "以下代码输出什么？\nint a = 0;\nSystem.out.println(a++);\nSystem.out.println(++a);",
+              "options": ["0 1", "1 1", "0 2", "1 2"],
+              "answer": "C"
+            }
+          ]
+        },
+        {
+          "level": "advanced",
+          "name": "拔尖拓展",
+          "questions": [
+            {
+              "id": 11,
+              "text": "以下代码中，短路运算导致的结果是？\nint a = 5;\nboolean b = (a > 10) && (++a > 0);\nSystem.out.println(a);",
+              "options": ["5", "6", "false", "编译错误"],
+              "answer": "A"
+            },
+            {
+              "id": 12,
+              "text": "以下哪个表达式的值是 true？",
+              "options": ["3 >> 1 == 1", "3 >>> 1 == 1", "3 << 1 == 6", "以上都是"],
+              "answer": "D"
+            },
+            {
+              "id": 13,
+              "text": "运算符优先级最高的是？",
+              "options": ["()", "++", "*", "&&"],
+              "answer": "A"
+            },
+            {
+              "id": 14,
+              "text": "以下代码输出什么？\nint x = 5;\nint y = x++ + ++x;\nSystem.out.println(y);",
+              "options": ["10", "11", "12", "13"],
+              "answer": "C"
+            },
+            {
+              "id": 15,
+              "text": "以下哪个是 Java 中特有的无符号右移运算符？",
+              "options": [">>", "<<", ">>>", ">>="],
+              "answer": "C"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "name": "Java 条件语句",
+      "tag": "java-if-else",
+      "levels": [
+        {
+          "level": "basic",
+          "name": "基础补齐",
+          "questions": [
+            {
+              "id": 1,
+              "text": "在 if-else 语句中，如果 if 的条件为 false，则执行？",
+              "options": ["if 语句块", "else 语句块", "继续执行下一行", "抛出异常"],
+              "answer": "B"
+            },
+            {
+              "id": 2,
+              "text": "以下哪个是正确的嵌套 if 写法？",
+              "options": ["if (x>0) { if (y>0) { } }", "if (x>0) if (y>0)", "两者都可", "两者都错"],
+              "answer": "C"
+            },
+            {
+              "id": 3,
+              "text": "条件语句中，布尔表达式必须返回什么类型？",
+              "options": ["int", "boolean", "String", "Object"],
+              "answer": "B"
+            },
+            {
+              "id": 4,
+              "text": "以下代码输出结果？\nint a = 10;\nif (a = 5) { System.out.println(\"true\"); }",
+              "options": ["true", "false", "编译错误", "运行时异常"],
+              "answer": "C"
+            },
+            {
+              "id": 5,
+              "text": "if 语句后面如果不加花括号，则默认包含几条语句？",
+              "options": ["0 条", "1 条", "2 条", "所有语句"],
+              "answer": "B"
+            }
+          ]
+        },
+        {
+          "level": "intermediate",
+          "name": "稳步提升",
+          "questions": [
+            {
+              "id": 6,
+              "text": "下列代码输出结果？\nint score = 75;\nif (score >= 90) {\n    System.out.print(\"A\");\n} else if (score >= 80) {\n    System.out.print(\"B\");\n} else if (score >= 70) {\n    System.out.print(\"C\");\n} else {\n    System.out.print(\"D\");\n}",
+              "options": ["A", "B", "C", "D"],
+              "answer": "C"
+            },
+            {
+              "id": 7,
+              "text": "以下关于 else 的说法正确的是？",
+              "options": ["每个 if 必须跟一个 else", "else 必须与最近的 if 配对", "else 可以独立存在", "else 后面不能有花括号"],
+              "answer": "B"
+            },
+            {
+              "id": 8,
+              "text": "以下代码输出什么？\nint x = 10;\nif (x > 5)\n    if (x < 15)\n        System.out.print(\"A\");\nelse\n        System.out.print(\"B\");",
+              "options": ["A", "B", "AB", "无输出"],
+              "answer": "A"
+            },
+            {
+              "id": 9,
+              "text": "switch 语句中，以下哪个类型不能用作表达式的类型？",
+              "options": ["int", "char", "long", "String (Java 7+)"],
+              "answer": "C"
+            },
+            {
+              "id": 10,
+              "text": "switch 语句中，break 的作用是？",
+              "options": ["跳出 switch 块", "继续执行下一个 case", "结束程序", "跳过 default"],
+              "answer": "A"
+            }
+          ]
+        },
+        {
+          "level": "advanced",
+          "name": "拔尖拓展",
+          "questions": [
+            {
+              "id": 11,
+              "text": "以下代码输出什么？\nint a = 2;\nswitch (a) {\n    case 1: System.out.print(\"A\");\n    case 2: System.out.print(\"B\");\n    default: System.out.print(\"C\");\n}",
+              "options": ["B", "BC", "ABC", "B C"],
+              "answer": "B"
+            },
+            {
+              "id": 12,
+              "text": "以下哪个是 Java 12 中 switch 表达式的新特性？",
+              "options": ["使用 -> 代替 :", "不需要 break", "可以返回值", "以上都是"],
+              "answer": "D"
+            },
+            {
+              "id": 13,
+              "text": "以下代码输出什么？\nint i = 0;\nif (i = 0) {\n    System.out.print(\"A\");\n} else {\n    System.out.print(\"B\");\n}",
+              "options": ["A", "B", "编译错误", "运行时异常"],
+              "answer": "C"
+            },
+            {
+              "id": 14,
+              "text": "以下代码输出什么？\nboolean flag = false;\nif (flag = true) {\n    System.out.println(\"true\");\n} else {\n    System.out.println(\"false\");\n}",
+              "options": ["true", "false", "编译错误", "无输出"],
+              "answer": "A"
+            },
+            {
+              "id": 15,
+              "text": "以下哪个是 switch 表达式中的 yield 关键字的作用？",
+              "options": ["返回值", "跳出循环", "抛出异常", "结束方法"],
+              "answer": "A"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "name": "Java 循环结构",
+      "tag": "java-loops",
+      "levels": [
+        {
+          "level": "basic",
+          "name": "基础补齐",
+          "questions": [
+            {
+              "id": 1,
+              "text": "while 循环的循环体至少执行几次？",
+              "options": ["0 次", "1 次", "至少 1 次", "无限次"],
+              "answer": "A"
+            },
+            {
+              "id": 2,
+              "text": "do-while 循环的循环体至少执行几次？",
+              "options": ["0 次", "1 次", "至少 1 次", "取决于条件"],
+              "answer": "B"
+            },
+            {
+              "id": 3,
+              "text": "以下哪个是增强 for 循环的正确语法？",
+              "options": ["for (int i=0; i<arr.length; i++)", "for (int i : arr)", "for (i in arr)", "foreach (int i in arr)"],
+              "answer": "B"
+            },
+            {
+              "id": 4,
+              "text": "在循环中，break 语句的作用是？",
+              "options": ["跳过本次循环剩余语句，开始下一次迭代", "退出当前循环", "结束程序", "继续执行循环"],
+              "answer": "B"
+            },
+            {
+              "id": 5,
+              "text": "在循环中，continue 语句的作用是？",
+              "options": ["退出整个循环", "跳过本次循环剩余语句，开始下一次迭代", "结束程序", "暂停循环"],
+              "answer": "B"
+            }
+          ]
+        },
+        {
+          "level": "intermediate",
+          "name": "稳步提升",
+          "questions": [
+            {
+              "id": 6,
+              "text": "下列代码输出次数？\nfor (int i=0; i<3; i++) {\n    if (i==1) continue;\n    System.out.print(i);\n}",
+              "options": ["012", "02", "0", "012 但不换行"],
+              "answer": "B"
+            },
+            {
+              "id": 7,
+              "text": "以下代码输出什么？\nint i = 0;\nwhile (i < 3) {\n    System.out.print(i);\n    i++;\n}",
+              "options": ["012", "123", "0 1 2", "0 1 2 3"],
+              "answer": "A"
+            },
+            {
+              "id": 8,
+              "text": "以下代码输出什么？\nint i = 0;\ndo {\n    System.out.print(i);\n    i++;\n} while (i < 3);",
+              "options": ["012", "123", "0 1 2", "0 1 2 3"],
+              "answer": "A"
+            },
+            {
+              "id": 9,
+              "text": "以下代码输出什么？\nfor (int i = 0; i < 5; i++) {\n    if (i == 3) break;\n    System.out.print(i);\n}",
+              "options": ["0123", "012", "01234", "1234"],
+              "answer": "B"
+            },
+            {
+              "id": 10,
+              "text": "增强 for 循环能否修改数组元素的值？",
+              "options": ["可以", "不可以", "取决于元素类型", "只能修改引用类型"],
+              "answer": "B"
+            }
+          ]
+        },
+        {
+          "level": "advanced",
+          "name": "拔尖拓展",
+          "questions": [
+            {
+              "id": 11,
+              "text": "以下代码输出什么？\nouter: for (int i = 0; i < 3; i++) {\n    for (int j = 0; j < 3; j++) {\n        if (i == 1 && j == 1) break outer;\n        System.out.print(i + \"\" + j + \" \");\n    }\n}",
+              "options": ["00 01 02 10", "00 01 02 10 11", "00 01 02 10 11 12 20 21 22", "00 01 02 10 12 20 21 22"],
+              "answer": "A"
+            },
+            {
+              "id": 12,
+              "text": "以下哪个是无限循环的正确写法？",
+              "options": ["for(;;)", "while(true)", "do {} while(true);", "以上都是"],
+              "answer": "D"
+            },
+            {
+              "id": 13,
+              "text": "以下代码输出什么？\nint i = 0;\nfor (System.out.print(\"A\"); i < 2; System.out.print(\"B\")) {\n    System.out.print(\"C\");\n    i++;\n}",
+              "options": ["ACBCB", "ACBACB", "ABCABC", "ACBBC"],
+              "answer": "A"
+            },
+            {
+              "id": 14,
+              "text": "以下代码执行后，x 的值是多少？\nint x = 0;\nfor (int i = 0; i < 10; i++) {\n    if (i % 2 == 0) continue;\n    x++;\n}",
+              "options": ["5", "4", "10", "0"],
+              "answer": "A"
+            },
+            {
+              "id": 15,
+              "text": "以下代码输出什么？\nString[] arr = {\"A\", \"B\", \"C\"};\nfor (String s : arr) {\n    s = s.toLowerCase();\n}\nSystem.out.println(arr[0]);",
+              "options": ["a", "A", "null", "编译错误"],
+              "answer": "B"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "name": "Java 方法",
+      "tag": "java-methods",
+      "levels": [
+        {
+          "level": "basic",
+          "name": "基础补齐",
+          "questions": [
+            {
+              "id": 1,
+              "text": "方法的返回值类型为 void 表示？",
+              "options": ["返回 null", "不返回任何值", "返回 0", "返回空字符串"],
+              "answer": "B"
+            },
+            {
+              "id": 2,
+              "text": "以下哪个是方法重载的正确条件？",
+              "options": ["方法名相同，返回类型不同", "方法名相同，参数列表不同", "方法名相同，修饰符不同", "方法名相同，参数名不同"],
+              "answer": "B"
+            },
+            {
+              "id": 3,
+              "text": "在 Java 中，命令行参数通过哪个数组传递给 main 方法？",
+              "options": ["String[] args", "int[] args", "String args", "Object[] args"],
+              "answer": "A"
+            },
+            {
+              "id": 4,
+              "text": "以下哪个是构造方法的特性？",
+              "options": ["有返回值类型", "方法名与类名不同", "在 new 对象时自动调用", "必须显式调用"],
+              "answer": "C"
+            },
+            {
+              "id": 5,
+              "text": "方法的定义必须包含以下哪部分？",
+              "options": ["返回值类型", "方法名", "参数列表", "以上都是"],
+              "answer": "D"
+            }
+          ]
+        },
+        {
+          "level": "intermediate",
+          "name": "稳步提升",
+          "questions": [
+            {
+              "id": 6,
+              "text": "关于可变参数（varargs），正确的是？",
+              "options": ["一个方法可以有多个可变参数", "可变参数必须放在参数列表最后", "可变参数不能为 null", "可变参数只能用于 int 类型"],
+              "answer": "B"
+            },
+            {
+              "id": 7,
+              "text": "以下代码的输出是什么？\npublic class Test {\n    public static void change(int x) { x = 10; }\n    public static void main(String[] args) {\n        int a = 5;\n        change(a);\n        System.out.println(a);\n    }\n}",
+              "options": ["5", "10", "0", "编译错误"],
+              "answer": "A"
+            },
+            {
+              "id": 8,
+              "text": "以下代码的输出是什么？\npublic class Test {\n    public static void change(int[] arr) { arr[0] = 10; }\n    public static void main(String[] args) {\n        int[] a = {5};\n        change(a);\n        System.out.println(a[0]);\n    }\n}",
+              "options": ["5", "10", "0", "编译错误"],
+              "answer": "B"
+            },
+            {
+              "id": 9,
+              "text": "以下哪个是合法的 main 方法签名？",
+              "options": ["public static void main(String[] args)", "public static void main(String args[])", "public static void main(String... args)", "以上都是"],
+              "answer": "D"
+            },
+            {
+              "id": 10,
+              "text": "以下关于方法的重写（Override）的说法，正确的是？",
+              "options": ["重写的方法可以有不同的返回类型", "重写的方法可以降低访问权限", "重写的方法必须与父类方法签名相同", "重写的方法可以抛出更宽泛的异常"],
+              "answer": "C"
+            }
+          ]
+        },
+        {
+          "level": "advanced",
+          "name": "拔尖拓展",
+          "questions": [
+            {
+              "id": 11,
+              "text": "以下代码中，哪个是递归方法的正确实现？",
+              "options": ["int fact(int n) { return n * fact(n-1); }", "int fact(int n) { if (n==1) return 1; else return n * fact(n-1); }", "int fact(int n) { return n * fact(n); }", "int fact(int n) { if (n==0) return 0; else return n * fact(n-1); }"],
+              "answer": "B"
+            },
+            {
+              "id": 12,
+              "text": "以下关于静态方法的说法，错误的是？",
+              "options": ["静态方法可以直接通过类名调用", "静态方法不能访问非静态成员", "静态方法中可以使用 this", "静态方法可以被重载"],
+              "answer": "C"
+            },
+            {
+              "id": 13,
+              "text": "以下代码输出什么？\npublic class Test {\n    static { System.out.print(\"A\"); }\n    { System.out.print(\"B\"); }\n    public Test() { System.out.print(\"C\"); }\n    public static void main(String[] args) {\n        new Test();\n    }\n}",
+              "options": ["ABC", "BAC", "ACB", "BCA"],
+              "answer": "A"
+            },
+            {
+              "id": 14,
+              "text": "以下代码中，方法重载能否通过返回值类型区分？",
+              "options": ["能", "不能", "在特定条件下能", "取决于编译器"],
+              "answer": "B"
+            },
+            {
+              "id": 15,
+              "text": "以下关于 finalize 方法的描述，正确的是？",
+              "options": ["在对象被垃圾回收前调用", "可以手动调用强制垃圾回收", "Java 9 以后推荐使用", "以上都是"],
+              "answer": "C"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "name": "Java 数组",
+      "tag": "java-arrays",
+      "levels": [
+        {
+          "level": "basic",
+          "name": "基础补齐",
+          "questions": [
+            {
+              "id": 1,
+              "text": "声明数组的正确方式是？",
+              "options": ["int[] arr;", "int arr[];", "两者都正确", "两者都错误"],
+              "answer": "C"
+            },
+            {
+              "id": 2,
+              "text": "创建数组 `int[] arr = new int[5];`，则 arr 的长度是多少？",
+              "options": ["4", "5", "6", "不确定"],
+              "answer": "B"
+            },
+            {
+              "id": 3,
+              "text": "数组的索引从几开始？",
+              "options": ["0", "1", "由数组类型决定", "由 JVM 决定"],
+              "answer": "A"
+            },
+            {
+              "id": 4,
+              "text": "以下哪个属性可以获取数组的长度？",
+              "options": ["length()", "size()", "length", "getLength()"],
+              "answer": "C"
+            },
+            {
+              "id": 5,
+              "text": "二维数组 `int[][] arr = new int[3][4];` 有多少个元素？",
+              "options": ["7", "12", "3", "4"],
+              "answer": "B"
+            }
+          ]
+        },
+        {
+          "level": "intermediate",
+          "name": "稳步提升",
+          "questions": [
+            {
+              "id": 6,
+              "text": "下列哪个方法可以对数组进行升序排序？",
+              "options": ["Arrays.sort(arr)", "Arrays.order(arr)", "arr.sort()", "Collections.sort(arr)"],
+              "answer": "A"
+            },
+            {
+              "id": 7,
+              "text": "增强 for 循环遍历数组时，不能直接做什么？",
+              "options": ["读取元素值", "修改数组元素（基本类型）", "遍历所有元素", "使用 break"],
+              "answer": "B"
+            },
+            {
+              "id": 8,
+              "text": "以下代码输出什么？\nint[] arr = {1,2,3};\nint[] arr2 = arr;\narr2[0] = 5;\nSystem.out.println(arr[0]);",
+              "options": ["1", "5", "编译错误", "运行时异常"],
+              "answer": "B"
+            },
+            {
+              "id": 9,
+              "text": "以下哪个是数组复制的方法？",
+              "options": ["System.arraycopy()", "Arrays.copyOf()", "clone()", "以上都是"],
+              "answer": "D"
+            },
+            {
+              "id": 10,
+              "text": "以下哪个是二维数组的正确初始化？",
+              "options": ["int[][] arr = {{1,2},{3,4}};", "int[][] arr = new int[2][2]; arr[0][0]=1;", "int[][] arr = new int[2][]; arr[0]=new int[2];", "以上都是"],
+              "answer": "D"
+            }
+          ]
+        },
+        {
+          "level": "advanced",
+          "name": "拔尖拓展",
+          "questions": [
+            {
+              "id": 11,
+              "text": "以下代码输出什么？\nint[][] arr = new int[2][];\narr[0] = new int[2];\narr[1] = new int[3];\nSystem.out.println(arr.length + arr[0].length + arr[1].length);",
+              "options": ["5", "7", "6", "8"],
+              "answer": "B"
+            },
+            {
+              "id": 12,
+              "text": "以下哪个方法可以二分查找数组中指定元素？",
+              "options": ["Arrays.binarySearch()", "Arrays.search()", "Array.binarySearch()", "Collections.binarySearch()"],
+              "answer": "A"
+            },
+            {
+              "id": 13,
+              "text": "以下代码输出什么？\nint[] arr = {1,2,3};\nint[] arr2 = Arrays.copyOf(arr, 5);\nSystem.out.println(arr2.length);",
+              "options": ["3", "5", "0", "编译错误"],
+              "answer": "B"
+            },
+            {
+              "id": 14,
+              "text": "以下代码中，哪个会抛出 ArrayIndexOutOfBoundsException？",
+              "options": ["int[] arr = new int[0]; arr[0] = 1;", "int[] arr = new int[1]; arr[0] = 1;", "int[] arr = new int[1]; arr[1] = 1;", "int[] arr = new int[0]; System.out.println(arr.length);"],
+              "answer": "C"
+            },
+            {
+              "id": 15,
+              "text": "以下关于 Arrays.asList() 的说法，正确的是？",
+              "options": ["返回一个可修改的 List", "返回一个固定大小的 List", "返回的 List 支持 add 操作", "返回的 List 是 ArrayList 类型"],
+              "answer": "B"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "name": "Java String 类",
+      "tag": "java-string",
+      "levels": [
+        {
+          "level": "basic",
+          "name": "基础补齐",
+          "questions": [
+            {
+              "id": 1,
+              "text": "下列哪种方式创建的字符串会存储在字符串常量池中？",
+              "options": ["new String(\"hello\")", "\"hello\"", "String.valueOf(\"hello\")", "以上都是"],
+              "answer": "B"
+            },
+            {
+              "id": 2,
+              "text": "获取字符串长度的正确方法是？",
+              "options": ["length()", "getLength()", "length", "size()"],
+              "answer": "A"
+            },
+            {
+              "id": 3,
+              "text": "以下哪个方法可以比较两个字符串内容是否相等（区分大小写）？",
+              "options": ["equals()", "equalsIgnoreCase()", "compareTo()", "=="],
+              "answer": "A"
+            },
+            {
+              "id": 4,
+              "text": "String 类的特点是什么？",
+              "options": ["可变", "不可变", "线程不安全", "可被继承"],
+              "answer": "B"
+            },
+            {
+              "id": 5,
+              "text": "以下哪个方法可以将字符串转换为字符数组？",
+              "options": ["toCharArray()", "getChars()", "toArray()", "chars()"],
+              "answer": "A"
+            }
+          ]
+        },
+        {
+          "level": "intermediate",
+          "name": "稳步提升",
+          "questions": [
+            {
+              "id": 6,
+              "text": "将字符串 \"Hello\" 和 \"World\" 连接，以下哪个效率较高？",
+              "options": ["\"Hello\" + \"World\"", "\"Hello\".concat(\"World\")", "new StringBuilder(\"Hello\").append(\"World\").toString()", "三者效率近似"],
+              "answer": "A"
+            },
+            {
+              "id": 7,
+              "text": "以下代码输出什么？\nString s1 = \"abc\";\nString s2 = new String(\"abc\");\nSystem.out.println(s1 == s2);",
+              "options": ["true", "false", "编译错误", "运行时异常"],
+              "answer": "B"
+            },
+            {
+              "id": 8,
+              "text": "以下哪个方法可以提取子字符串？",
+              "options": ["substring()", "substr()", "slice()", "sub()"],
+              "answer": "A"
+            },
+            {
+              "id": 9,
+              "text": "以下代码输出什么？\nString str = \"  Hello  \";\nSystem.out.println(str.trim());",
+              "options": ["Hello", "  Hello  ", "Hello  ", "  Hello"],
+              "answer": "A"
+            },
+            {
+              "id": 10,
+              "text": "以下哪个方法用于替换字符串中的所有匹配字符？",
+              "options": ["replace()", "replaceAll()", "replaceFirst()", "以上都是"],
+              "answer": "D"
+            }
+          ]
+        },
+        {
+          "level": "advanced",
+          "name": "拔尖拓展",
+          "questions": [
+            {
+              "id": 11,
+              "text": "以下代码输出什么？\nString s1 = \"abc\";\nString s2 = \"ab\" + \"c\";\nSystem.out.println(s1 == s2);",
+              "options": ["true", "false", "编译错误", "运行时异常"],
+              "answer": "A"
+            },
+            {
+              "id": 12,
+              "text": "以下代码输出什么？\nString s1 = \"abc\";\nString s2 = \"ab\";\nString s3 = s2 + \"c\";\nSystem.out.println(s1 == s3);",
+              "options": ["true", "false", "编译错误", "运行时异常"],
+              "answer": "B"
+            },
+            {
+              "id": 13,
+              "text": "以下哪个方法可以将字符串拆分为数组？",
+              "options": ["split()", "divide()", "separate()", "break()"],
+              "answer": "A"
+            },
+            {
+              "id": 14,
+              "text": "以下代码输出什么？\nString str = \"Java\";\nString str2 = str.intern();\nSystem.out.println(str == str2);",
+              "options": ["true", "false", "编译错误", "取决于 JVM"],
+              "answer": "A"
+            },
+            {
+              "id": 15,
+              "text": "以下关于 String 的不可变性的说法，错误的是？",
+              "options": ["String 类被声明为 final", "String 的字符数组是 final 的", "每次修改 String 都会创建新对象", "String 的不可变性使其线程不安全"],
+              "answer": "D"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "name": "Java StringBuffer 和 StringBuilder 类",
+      "tag": "java-string-buffer-builder",
+      "levels": [
+        {
+          "level": "basic",
+          "name": "基础补齐",
+          "questions": [
+            {
+              "id": 1,
+              "text": "以下哪个类是线程安全的？",
+              "options": ["String", "StringBuilder", "StringBuffer", "以上都是"],
+              "answer": "C"
+            },
+            {
+              "id": 2,
+              "text": "一般情况下，单线程字符串拼接推荐使用？",
+              "options": ["String", "StringBuffer", "StringBuilder", "字符数组"],
+              "answer": "C"
+            },
+            {
+              "id": 3,
+              "text": "下列哪个方法可以在字符串末尾添加内容？",
+              "options": ["append()", "insert()", "add()", "concat()"],
+              "answer": "A"
+            },
+            {
+              "id": 4,
+              "text": "将 StringBuffer 对象转为 String 应该使用？",
+              "options": ["toString()", "toCharArray()", "getString()", "valueOf()"],
+              "answer": "A"
+            },
+            {
+              "id": 5,
+              "text": "StringBuilder 的初始默认容量是多少？",
+              "options": ["16", "32", "64", "0"],
+              "answer": "A"
+            }
+          ]
+        },
+        {
+          "level": "intermediate",
+          "name": "稳步提升",
+          "questions": [
+            {
+              "id": 6,
+              "text": "以下代码输出什么？\nStringBuilder sb = new StringBuilder(\"abc\");\nsb.reverse();\nSystem.out.println(sb);",
+              "options": ["abc", "cba", "编译错误", "运行时异常"],
+              "answer": "B"
+            },
+            {
+              "id": 7,
+              "text": "以下哪个方法可以在指定位置插入字符串？",
+              "options": ["append()", "insert()", "setCharAt()", "replace()"],
+              "answer": "B"
+            },
+            {
+              "id": 8,
+              "text": "以下代码输出什么？\nStringBuffer sb = new StringBuffer(\"Hello\");\nsb.delete(1, 3);\nSystem.out.println(sb);",
+              "options": ["Hlo", "Heo", "Helo", "Hl"],
+              "answer": "A"
+            },
+            {
+              "id": 9,
+              "text": "以下代码输出什么？\nStringBuilder sb = new StringBuilder();\nsb.append(\"A\").append(\"B\").append(\"C\");\nSystem.out.println(sb.length());",
+              "options": ["3", "4", "5", "0"],
+              "answer": "A"
+            },
+            {
+              "id": 10,
+              "text": "以下哪个方法可以设置 StringBuilder 的容量？",
+              "options": ["setCapacity()", "ensureCapacity()", "reserve()", "allocate()"],
+              "answer": "B"
+            }
+          ]
+        },
+        {
+          "level": "advanced",
+          "name": "拔尖拓展",
+          "questions": [
+            {
+              "id": 11,
+              "text": "以下代码中，哪个会影响性能？",
+              "options": ["new StringBuilder().append(\"a\")", "new StringBuilder(\"a\")", "new StringBuffer().append(\"a\")", "以上性能相同"],
+              "answer": "B"
+            },
+            {
+              "id": 12,
+              "text": "以下代码输出什么？\nStringBuilder sb = new StringBuilder(\"ABCDE\");\nsb.replace(1, 3, \"XYZ\");\nSystem.out.println(sb);",
+              "options": ["AXYZDE", "AXYZCDE", "AXYZBCDE", "AXYZE"],
+              "answer": "A"
+            },
+            {
+              "id": 13,
+              "text": "以下代码输出什么？\nStringBuffer sb = new StringBuffer(\"Hello\");\nsb.setCharAt(1, 'a');\nSystem.out.println(sb);",
+              "options": ["Hallo", "Hello", "Hallo", "Hallo"],
+              "answer": "A"
+            },
+            {
+              "id": 14,
+              "text": "以下哪个方法是 StringBuilder 特有的（StringBuffer 没有）？",
+              "options": ["append()", "insert()", "reverse()", "以上都有"],
+              "answer": "D"
+            },
+            {
+              "id": 15,
+              "text": "以下代码输出什么？\nStringBuilder sb = new StringBuilder();\nsb.append(\"Hello\").append(\" \").append(\"World\");\nSystem.out.println(sb.indexOf(\"o\"));",
+              "options": ["4", "5", "6", "7"],
+              "answer": "A"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 13,
+      "name": "Java 对象和类",
+      "tag": "java-object-class",
+      "levels": [
+        {
+          "level": "basic",
+          "name": "基础补齐",
+          "questions": [
+            {
+              "id": 1,
+              "text": "下列哪项是面向对象的三大特性之一？",
+              "options": ["模块化", "继承", "多文件", "递归"],
+              "answer": "B"
+            },
+            {
+              "id": 2,
+              "text": "创建对象时使用哪个关键字？",
+              "options": ["class", "new", "this", "super"],
+              "answer": "B"
+            },
+            {
+              "id": 3,
+              "text": "一个 Java 源文件中最多可以有几个 public 类？",
+              "options": ["0", "1", "2", "任意多个"],
+              "answer": "B"
+            },
+            {
+              "id": 4,
+              "text": "以下哪个是构造方法的正确声明？",
+              "options": ["void MyClass() { }", "MyClass() { }", "public MyClass() { }", "B 和 C 都是"],
+              "answer": "D"
+            },
+            {
+              "id": 5,
+              "text": "以下哪个是封装（Encapsulation）的体现？",
+              "options": ["将变量声明为 private，提供 public getter/setter", "使用继承", "方法重载", "使用抽象类"],
+              "answer": "A"
+            }
+          ]
+        },
+        {
+          "level": "intermediate",
+          "name": "稳步提升",
+          "questions": [
+            {
+              "id": 6,
+              "text": "关于 this 关键字，说法正确的是？",
+              "options": ["可以用于引用当前对象", "可以用于调用当前类的其他构造方法", "在静态方法中不能使用", "以上都对"],
+              "answer": "D"
+            },
+            {
+              "id": 7,
+              "text": "以下代码输出什么？\npublic class Test {\n    int x = 10;\n    Test() { this(5); }\n    Test(int x) { this.x = x; }\n    public static void main(String[] args) {\n        Test t = new Test();\n        System.out.println(t.x);\n    }\n}",
+              "options": ["10", "5", "0", "编译错误"],
+              "answer": "B"
+            },
+            {
+              "id": 8,
+              "text": "以下哪个是合法的包名？",
+              "options": ["com.example", "com/example", "com-example", "com.example.1test"],
+              "answer": "A"
+            },
+            {
+              "id": 9,
+              "text": "以下代码输出什么？\npublic class Test {\n    { System.out.print(\"A\"); }\n    static { System.out.print(\"B\"); }\n    Test() { System.out.print(\"C\"); }\n    public static void main(String[] args) {\n        new Test();\n        new Test();\n    }\n}",
+              "options": ["BACBAC", "BCABCA", "BABCAB", "ABBCCA"],
+              "answer": "A"
+            },
+            {
+              "id": 10,
+              "text": "以下哪个是内部类的正确说法？",
+              "options": ["内部类可以访问外部类的私有成员", "内部类不能有静态成员", "内部类可以用 private 修饰", "以上都是"],
+              "answer": "D"
+            }
+          ]
+        },
+        {
+          "level": "advanced",
+          "name": "拔尖拓展",
+          "questions": [
+            {
+              "id": 11,
+              "text": "以下代码编译是否通过？\nclass A {}\nclass B extends A {}\nclass C extends B {}\nA a = new C();\nB b = (B) a;",
+              "options": ["通过", "不通过，类型转换错误", "不通过，语法错误", "运行时异常"],
+              "answer": "A"
+            },
+            {
+              "id": 12,
+              "text": "以下哪个是匿名内部类的正确创建方式？",
+              "options": ["new Runnable() { public void run() {} }", "new Runnable()", "Runnable r = new Runnable();", "class MyRunnable implements Runnable {}"],
+              "answer": "A"
+            },
+            {
+              "id": 13,
+              "text": "以下关于静态内部类的说法，正确的是？",
+              "options": ["静态内部类可以访问外部类的静态成员", "静态内部类不需要外部类实例", "静态内部类可以有静态成员", "以上都是"],
+              "answer": "D"
+            },
+            {
+              "id": 14,
+              "text": "以下代码输出什么？\npublic class Outer {\n    int x = 10;\n    class Inner {\n        int x = 20;\n        void print() {\n            System.out.println(Outer.this.x);\n        }\n    }\n    public static void main(String[] args) {\n        Outer o = new Outer();\n        Outer.Inner i = o.new Inner();\n        i.print();\n    }\n}",
+              "options": ["10", "20", "编译错误", "0"],
+              "answer": "A"
+            },
+            {
+              "id": 15,
+              "text": "以下哪个是 Java 中对象的默认 toString() 方法返回的内容？",
+              "options": ["类名@哈希码", "对象的内存地址", "对象的字符串表示", "空字符串"],
+              "answer": "A"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 14,
+      "name": "Java 继承",
+      "tag": "java-inheritance",
+      "levels": [
+        {
+          "level": "basic",
+          "name": "基础补齐",
+          "questions": [
+            {
+              "id": 1,
+              "text": "Java 中一个子类可以继承多少个父类？",
+              "options": ["1 个", "2 个", "任意多个", "0 个"],
+              "answer": "A"
+            },
+            {
+              "id": 2,
+              "text": "哪个关键字用于实现接口的多继承？",
+              "options": ["extends", "implements", "inherit", "using"],
+              "answer": "B"
+            },
+            {
+              "id": 3,
+              "text": "子类构造方法中，如果没有显式调用 super(...)，则默认调用？",
+              "options": ["父类无参构造器", "父类有参构造器", "会编译错误", "调用父类私有构造器"],
+              "answer": "A"
+            },
+            {
+              "id": 4,
+              "text": "final 修饰的类有什么特性？",
+              "options": ["可以被子类继承", "不能有实例", "不能被继承", "必须被继承"],
+              "answer": "C"
+            },
+            {
+              "id": 5,
+              "text": "以下哪个是继承的优点？",
+              "options": ["提高代码复用性", "降低耦合性", "提高运行速度", "减少内存占用"],
+              "answer": "A"
+            }
+          ]
+        },
+        {
+          "level": "intermediate",
+          "name": "稳步提升",
+          "questions": [
+            {
+              "id": 6,
+              "text": "关于 super 关键字，正确的是？",
+              "options": ["可以访问父类的私有成员", "用于调用父类构造方法", "只能在子类的构造方法中使用", "可以代替 this"],
+              "answer": "B"
+            },
+            {
+              "id": 7,
+              "text": "以下代码输出什么？\nclass A { void m() { System.out.print(\"A\"); } }\nclass B extends A { void m() { System.out.print(\"B\"); } }\npublic class Test {\n    public static void main(String[] args) {\n        A a = new B();\n        a.m();\n    }\n}",
+              "options": ["A", "B", "AB", "编译错误"],
+              "answer": "B"
+            },
+            {
+              "id": 8,
+              "text": "以下哪个是方法重写的正确规则？",
+              "options": ["子类方法访问权限不能比父类更严格", "子类方法返回类型必须与父类相同", "子类方法不能抛出比父类更宽泛的异常", "以上都是"],
+              "answer": "D"
+            },
+            {
+              "id": 9,
+              "text": "以下代码输出什么？\nclass A { A() { System.out.print(\"A\"); } }\nclass B extends A { B() { System.out.print(\"B\"); } }\npublic class Test {\n    public static void main(String[] args) {\n        new B();\n    }\n}",
+              "options": ["AB", "BA", "A", "B"],
+              "answer": "A"
+            },
+            {
+              "id": 10,
+              "text": "以下哪个是 Java 中所有类的根父类？",
+              "options": ["Object", "Class", "System", "Throwable"],
+              "answer": "A"
+            }
+          ]
+        },
+        {
+          "level": "advanced",
+          "name": "拔尖拓展",
+          "questions": [
+            {
+              "id": 11,
+              "text": "以下代码输出什么？\nclass Parent {\n    static { System.out.print(\"P1\"); }\n    { System.out.print(\"P2\"); }\n    Parent() { System.out.print(\"P3\"); }\n}\nclass Child extends Parent {\n    static { System.out.print(\"C1\"); }\n    { System.out.print(\"C2\"); }\n    Child() { System.out.print(\"C3\"); }\n    public static void main(String[] args) {\n        new Child();\n    }\n}",
+              "options": ["P1 C1 P2 P3 C2 C3", "P1 P2 P3 C1 C2 C3", "C1 P1 C2 P2 C3 P3", "P1 P2 C1 C2 P3 C3"],
+              "answer": "A"
+            },
+            {
+              "id": 12,
+              "text": "以下代码编译是否通过？\nclass A { void m() { System.out.println(\"A\"); } }\nabstract class B extends A { abstract void m(); }",
+              "options": ["通过", "不通过，B 中的 abstract 方法不能重写具体方法", "不通过，B 必须实现 m", "通过，但会有警告"],
+              "answer": "B"
+            },
+            {
+              "id": 13,
+              "text": "以下关于 Object 类的 finalize() 方法，说法正确的是？",
+              "options": ["在垃圾回收前调用", "可以被重写", "Java 9 后已废弃", "以上都是"],
+              "answer": "D"
+            },
+            {
+              "id": 14,
+              "text": "以下代码输出什么？\nclass A { int x = 10; }\nclass B extends A { int x = 20; }\npublic class Test {\n    public static void main(String[] args) {\n        A a = new B();\n        System.out.println(a.x);\n    }\n}",
+              "options": ["10", "20", "编译错误", "0"],
+              "answer": "A"
+            },
+            {
+              "id": 15,
+              "text": "以下哪个不是多继承的替代方案？",
+              "options": ["接口", "内部类", "抽象类", "组合"],
+              "answer": "C"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 15,
+      "name": "Java 多态",
+      "tag": "java-polymorphism",
+      "levels": [
+        {
+          "level": "basic",
+          "name": "基础补齐",
+          "questions": [
+            {
+              "id": 1,
+              "text": "多态的三个必要条件是：继承、方法重写和？",
+              "options": ["方法重载", "父类引用指向子类对象", "抽象类", "接口"],
+              "answer": "B"
+            },
+            {
+              "id": 2,
+              "text": "向下转型（downcasting）之前，通常需要使用哪个运算符判断类型？",
+              "options": ["is", "instanceof", "typeof", "cast"],
+              "answer": "B"
+            },
+            {
+              "id": 3,
+              "text": "以下哪个不是多态的优点？",
+              "options": ["提高代码可扩展性", "增加代码耦合度", "提高可维护性", "允许通用处理"],
+              "answer": "B"
+            },
+            {
+              "id": 4,
+              "text": "以下代码输出什么？\nclass Animal { void eat() { System.out.println(\"Animal eat\"); } }\nclass Dog extends Animal { void eat() { System.out.println(\"Dog eat\"); } }\npublic class Test {\n    public static void main(String[] args) {\n        Animal a = new Dog();\n        a.eat();\n    }\n}",
+              "options": ["Animal eat", "Dog eat", "编译错误", "运行时异常"],
+              "answer": "B"
+            },
+            {
+              "id": 5,
+              "text": "多态中，成员变量在编译和运行时访问的是？",
+              "options": ["编译时看父类，运行时看父类", "编译时看子类，运行时看子类", "编译时看父类，运行时看子类", "编译时看子类，运行时看父类"],
+              "answer": "A"
+            }
+          ]
+        },
+        {
+          "level": "intermediate",
+          "name": "稳步提升",
+          "questions": [
+            {
+              "id": 6,
+              "text": "以下代码输出什么？\nclass A { static void m() { System.out.print(\"A\"); } }\nclass B extends A { static void m() { System.out.print(\"B\"); } }\npublic class Test {\n    public static void main(String[] args) {\n        A a = new B();\n        a.m();\n    }\n}",
+              "options": ["A", "B", "AB", "编译错误"],
+              "answer": "A"
+            },
+            {
+              "id": 7,
+              "text": "以下代码输出什么？\nclass A { void m() { System.out.print(\"A\"); } }\nclass B extends A { void m() { System.out.print(\"B\"); } }\npublic class Test {\n    public static void main(String[] args) {\n        ((B) new A()).m();\n    }\n}",
+              "options": ["A", "B", "编译错误", "运行时异常"],
+              "answer": "D"
+            },
+            {
+              "id": 8,
+              "text": "以下代码输出什么？\nclass A { int x = 10; }\nclass B extends A { int x = 20; }\npublic class Test {\n    public static void main(String[] args) {\n        A a = new B();\n        System.out.println(((B)a).x);\n    }\n}",
+              "options": ["10", "20", "编译错误", "0"],
+              "answer": "B"
+            },
+            {
+              "id": 9,
+              "text": "以下哪个是向上转型的正确格式？",
+              "options": ["Parent p = new Child();", "Child c = new Parent();", "Parent p = (Parent) new Child();", "Child c = (Child) new Parent();"],
+              "answer": "A"
+            },
+            {
+              "id": 10,
+              "text": "以下代码输出什么？\nclass A { void m() { System.out.print(\"A\"); } }\nclass B extends A { void m() { System.out.print(\"B\"); } }\npublic class Test {\n    public static void main(String[] args) {\n        A a = null;\n        a.m();\n    }\n}",
+              "options": ["A", "B", "编译错误", "运行时异常"],
+              "answer": "D"
+            }
+          ]
+        },
+        {
+          "level": "advanced",
+          "name": "拔尖拓展",
+          "questions": [
+            {
+              "id": 11,
+              "text": "以下代码输出什么？\nclass A { void m() { System.out.print(\"A\"); } }\nclass B extends A { void m() { System.out.print(\"B\"); super.m(); } }\npublic class Test {\n    public static void main(String[] args) {\n        new B().m();\n    }\n}",
+              "options": ["BA", "AB", "B", "A"],
+              "answer": "A"
+            },
+            {
+              "id": 12,
+              "text": "以下代码中，哪个是编译时多态？",
+              "options": ["方法重载", "方法重写", "向上转型", "向下转型"],
+              "answer": "A"
+            },
+            {
+              "id": 13,
+              "text": "以下关于多态的说法，错误的是？",
+              "options": ["多态是指同一个方法在不同对象上有不同表现", "多态仅通过继承实现", "多态可以提高代码的灵活性", "多态是面向对象的核心特征之一"],
+              "answer": "B"
+            },
+            {
+              "id": 14,
+              "text": "以下代码输出什么？\nclass A { int x = 10; }\nclass B extends A { int x = 20; void print() { System.out.println(x); } }\npublic class Test {\n    public static void main(String[] args) {\n        A a = new B();\n        ((B)a).print();\n    }\n}",
+              "options": ["10", "20", "编译错误", "0"],
+              "answer": "B"
+            },
+            {
+              "id": 15,
+              "text": "以下代码输出什么？\nclass A { void m() { System.out.print(\"A\"); } }\nclass B extends A { void m() throws Exception { System.out.print(\"B\"); } }",
+              "options": ["编译错误", "运行时异常", "AB", "B"],
+              "answer": "A"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 16,
+      "name": "Java 接口",
+      "tag": "java-interface",
+      "levels": [
+        {
+          "level": "basic",
+          "name": "基础补齐",
+          "questions": [
+            {
+              "id": 1,
+              "text": "在 Java 中，定义接口使用的关键字是？",
+              "options": ["class", "interface", "implements", "extends"],
+              "answer": "B"
+            },
+            {
+              "id": 2,
+              "text": "接口中的成员变量默认的修饰符是？",
+              "options": ["public static final", "private static final", "public abstract", "protected static"],
+              "answer": "A"
+            },
+            {
+              "id": 3,
+              "text": "类实现接口时使用哪个关键字？",
+              "options": ["extends", "implements", "import", "package"],
+              "answer": "B"
+            },
+            {
+              "id": 4,
+              "text": "接口中的方法默认是什么类型的？",
+              "options": ["public abstract", "private abstract", "default", "static"],
+              "answer": "A"
+            },
+            {
+              "id": 5,
+              "text": "以下哪个是接口的正确声明？",
+              "options": ["public interface MyInterface { }", "public class MyInterface { }", "public abstract MyInterface { }", "public final interface MyInterface { }"],
+              "answer": "A"
+            }
+          ]
+        },
+        {
+          "level": "intermediate",
+          "name": "稳步提升",
+          "questions": [
+            {
+              "id": 6,
+              "text": "一个类实现多个接口时，接口之间用什么符号分隔？",
+              "options": ["分号", "逗号", "空格", "冒号"],
+              "answer": "B"
+            },
+            {
+              "id": 7,
+              "text": "以下关于接口的说法，正确的是？",
+              "options": ["接口可以实例化对象", "接口中可以有非抽象方法（Java 8+）", "接口只能继承一个接口", "接口不能有静态方法"],
+              "answer": "B"
+            },
+            {
+              "id": 8,
+              "text": "以下哪个是 Java 8 中接口的新特性？",
+              "options": ["默认方法", "静态方法", "Lambda 表达式", "以上都是"],
+              "answer": "D"
+            },
+            {
+              "id": 9,
+              "text": "接口与抽象类的区别，错误的是？",
+              "options": ["抽象类可以有构造方法，接口没有", "接口只能有常量，抽象类可以有成员变量", "接口中的方法默认是 public abstract", "类可以实现多个抽象类"],
+              "answer": "D"
+            },
+            {
+              "id": 10,
+              "text": "以下代码编译是否通过？\ninterface A { void m(); }\nclass B implements A { void m() { } }",
+              "options": ["通过", "不通过，因为 m 需要 public 修饰", "不通过，接口方法必须用 abstract 修饰", "通过，但会有警告"],
+              "answer": "B"
+            }
+          ]
+        },
+        {
+          "level": "advanced",
+          "name": "拔尖拓展",
+          "questions": [
+            {
+              "id": 11,
+              "text": "以下代码输出什么？\ninterface A { default void m() { System.out.print(\"A\"); } }\ninterface B { default void m() { System.out.print(\"B\"); } }\nclass C implements A, B { public void m() { System.out.print(\"C\"); } }\npublic class Test {\n    public static void main(String[] args) {\n        new C().m();\n    }\n}",
+              "options": ["A", "B", "C", "编译错误"],
+              "answer": "C"
+            },
+            {
+              "id": 12,
+              "text": "以下代码输出什么？\ninterface A { void m(); }\nclass B implements A { public void m() { System.out.print(\"B\"); } }\npublic class Test {\n    public static void main(String[] args) {\n        A a = new B();\n        a.m();\n    }\n}",
+              "options": ["A", "B", "编译错误", "运行时异常"],
+              "answer": "B"
+            },
+            {
+              "id": 13,
+              "text": "以下哪个是标记接口（Marker Interface）？",
+              "options": ["Serializable", "Cloneable", "Remote", "以上都是"],
+              "answer": "D"
+            },
+            {
+              "id": 14,
+              "text": "以下关于接口中静态方法的说法，正确的是？",
+              "options": ["静态方法只能通过接口名调用", "静态方法可以被实现类继承", "静态方法可以被子接口继承", "静态方法必须用 default 修饰"],
+              "answer": "A"
+            },
+            {
+              "id": 15,
+              "text": "以下代码输出什么？\ninterface A { int x = 10; }\nclass B implements A { int x = 20; }\npublic class Test {\n    public static void main(String[] args) {\n        System.out.println(new B().x);\n    }\n}",
+              "options": ["10", "20", "编译错误", "0"],
+              "answer": "B"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 17,
+      "name": "Java Swing 教程",
+      "tag": "java-swing",
+      "levels": [
+        {
+          "level": "basic",
+          "name": "基础补齐",
+          "questions": [
+            {
+              "id": 1,
+              "text": "Swing 是 Java 的什么工具包？",
+              "options": ["数据库连接", "图形用户界面（GUI）", "网络编程", "多线程"],
+              "answer": "B"
+            },
+            {
+              "id": 2,
+              "text": "在 Swing 中，代表窗口的顶级容器类是？",
+              "options": ["JPanel", "JFrame", "JDialog", "JApplet"],
+              "answer": "B"
+            },
+            {
+              "id": 3,
+              "text": "以下哪个组件用于显示单行文本输入框？",
+              "options": ["JLabel", "JTextArea", "JTextField", "JPasswordField"],
+              "answer": "C"
+            },
+            {
+              "id": 4,
+              "text": "在 Swing 登录示例中，隐藏密码输入的组件是？",
+              "options": ["JTextField", "JPasswordField", "JLabel", "JButton"],
+              "answer": "B"
+            },
+            {
+              "id": 5,
+              "text": "为了让 Swing 窗口关闭时退出程序，通常设置：",
+              "options": ["frame.setSize()", "frame.setVisible(true)", "frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE)", "frame.pack()"],
+              "answer": "C"
+            }
+          ]
+        },
+        {
+          "level": "intermediate",
+          "name": "稳步提升",
+          "questions": [
+            {
+              "id": 6,
+              "text": "以下哪个是 Swing 中用于添加组件的容器类？",
+              "options": ["JPanel", "JFrame.getContentPane()", "JScrollPane", "以上都是"],
+              "answer": "D"
+            },
+            {
+              "id": 7,
+              "text": "以下哪个方法设置组件的布局管理器？",
+              "options": ["setLayout()", "setLayoutManager()", "setGrid()", "addLayout()"],
+              "answer": "A"
+            },
+            {
+              "id": 8,
+              "text": "以下哪个是 Swing 中处理事件的正确方式？",
+              "options": ["实现 ActionListener 接口", "继承 ActionAdapter 类", "使用匿名内部类", "以上都是"],
+              "answer": "D"
+            },
+            {
+              "id": 9,
+              "text": "以下哪个是 Swing 线程安全的最佳实践？",
+              "options": ["在 main 线程中直接更新 UI", "使用 SwingUtilities.invokeLater()", "使用 Thread.sleep()", "忽略线程问题"],
+              "answer": "B"
+            },
+            {
+              "id": 10,
+              "text": "以下哪个组件用于显示多行文本？",
+              "options": ["JTextField", "JTextArea", "JLabel", "JButton"],
+              "answer": "B"
+            }
+          ]
+        },
+        {
+          "level": "advanced",
+          "name": "拔尖拓展",
+          "questions": [
+            {
+              "id": 11,
+              "text": "以下哪个布局管理器将组件按东、西、南、北、中放置？",
+              "options": ["FlowLayout", "BorderLayout", "GridLayout", "BoxLayout"],
+              "answer": "B"
+            },
+            {
+              "id": 12,
+              "text": "以下哪个方法用于刷新 Swing 组件？",
+              "options": ["repaint()", "revalidate()", "updateUI()", "以上都是"],
+              "answer": "D"
+            },
+            {
+              "id": 13,
+              "text": "以下哪个是 Swing 中的模型-视图-控制器（MVC）模式的体现？",
+              "options": ["JTable 使用 TableModel", "JList 使用 ListModel", "JComboBox 使用 ComboBoxModel", "以上都是"],
+              "answer": "D"
+            },
+            {
+              "id": 14,
+              "text": "以下哪个是 Swing 中用于显示树形结构的组件？",
+              "options": ["JTree", "JTable", "JList", "JComboBox"],
+              "answer": "A"
+            },
+            {
+              "id": 15,
+              "text": "以下哪个方法可以设置 JFrame 的大小并居中？",
+              "options": ["setSize() + setLocationRelativeTo(null)", "setBounds()", "pack() + setLocationRelativeTo(null)", "setExtendedState()"],
+              "answer": "A"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 18,
+      "name": "Java 多线程编程",
+      "tag": "java-multithreading",
+      "levels": [
+        {
+          "level": "basic",
+          "name": "基础补齐",
+          "questions": [
+            {
+              "id": 1,
+              "text": "线程从新建状态进入就绪状态需要调用哪个方法？",
+              "options": ["run()", "start()", "sleep()", "wait()"],
+              "answer": "B"
+            },
+            {
+              "id": 2,
+              "text": "以下哪个是创建线程的正确方式？",
+              "options": ["继承 Thread 类并重写 run() 方法", "实现 Runnable 接口并实现 run() 方法", "实现 Callable 接口", "以上都是"],
+              "answer": "D"
+            },
+            {
+              "id": 3,
+              "text": "使当前线程暂停执行指定毫秒数的静态方法是？",
+              "options": ["wait()", "join()", "sleep()", "yield()"],
+              "answer": "C"
+            },
+            {
+              "id": 4,
+              "text": "线程的优先级范围是？",
+              "options": ["0 ~ 10", "1 ~ 10", "0 ~ 100", "1 ~ 100"],
+              "answer": "B"
+            },
+            {
+              "id": 5,
+              "text": "以下哪个关键字用于方法同步，保证线程安全？",
+              "options": ["volatile", "transient", "synchronized", "static"],
+              "answer": "C"
+            }
+          ]
+        },
+        {
+          "level": "intermediate",
+          "name": "稳步提升",
+          "questions": [
+            {
+              "id": 6,
+              "text": "以下代码输出什么？\nThread t = new Thread(() -> System.out.print(\"A\"));\nt.start();\nSystem.out.print(\"B\");",
+              "options": ["AB", "BA", "AB 或 BA", "编译错误"],
+              "answer": "C"
+            },
+            {
+              "id": 7,
+              "text": "以下哪个方法可以让当前线程等待另一个线程执行完毕？",
+              "options": ["join()", "yield()", "sleep()", "interrupt()"],
+              "answer": "A"
+            },
+            {
+              "id": 8,
+              "text": "以下关于 synchronized 的说法，正确的是？",
+              "options": ["可以修饰方法", "可以修饰代码块", "可以保证原子性和可见性", "以上都是"],
+              "answer": "D"
+            },
+            {
+              "id": 9,
+              "text": "以下哪个是线程的状态？",
+              "options": ["NEW", "RUNNABLE", "BLOCKED", "以上都是"],
+              "answer": "D"
+            },
+            {
+              "id": 10,
+              "text": "以下代码输出什么？\nclass MyThread extends Thread {\n    public void run() { System.out.print(\"A\"); }\n}\npublic class Test {\n    public static void main(String[] args) {\n        MyThread t = new MyThread();\n        t.run();\n    }\n}",
+              "options": ["A", "无输出", "编译错误", "运行时异常"],
+              "answer": "A"
+            }
+          ]
+        },
+        {
+          "level": "advanced",
+          "name": "拔尖拓展",
+          "questions": [
+            {
+              "id": 11,
+              "text": "以下哪个是死锁的必要条件？",
+              "options": ["互斥", "持有并等待", "不可剥夺", "以上都是"],
+              "answer": "D"
+            },
+            {
+              "id": 12,
+              "text": "以下哪个是 volatile 关键字的特性？",
+              "options": ["保证可见性", "禁止指令重排序", "不保证原子性", "以上都是"],
+              "answer": "D"
+            },
+            {
+              "id": 13,
+              "text": "以下代码输出什么？\nclass Counter {\n    int count = 0;\n    synchronized void increment() { count++; }\n}\n多个线程同时调用 increment()，count 最终值？",
+              "options": ["等于线程数", "可能小于线程数", "大于线程数", "不确定"],
+              "answer": "A"
+            },
+            {
+              "id": 14,
+              "text": "以下哪个是线程池的正确创建方式？",
+              "options": ["Executors.newFixedThreadPool()", "new ThreadPoolExecutor()", "Executors.newCachedThreadPool()", "以上都是"],
+              "answer": "D"
+            },
+            {
+              "id": 15,
+              "text": "以下哪个是 Callable 和 Runnable 的区别？",
+              "options": ["Callable 可以有返回值", "Callable 可以抛出异常", "Callable 需要 FutureTask 包装", "以上都是"],
+              "answer": "D"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 19,
+      "name": "Java 异常处理",
+      "tag": "java-exception",
+      "levels": [
+        {
+          "level": "basic",
+          "name": "基础补齐",
+          "questions": [
+            {
+              "id": 1,
+              "text": "所有异常类的父类是？",
+              "options": ["Error", "Throwable", "Exception", "RuntimeException"],
+              "answer": "B"
+            },
+            {
+              "id": 2,
+              "text": "下列哪个是检查性异常（Checked Exception）？",
+              "options": ["NullPointerException", "ArrayIndexOutOfBoundsException", "IOException", "ArithmeticException"],
+              "answer": "C"
+            },
+            {
+              "id": 3,
+              "text": "用于手动抛出异常的关键字是？",
+              "options": ["throws", "throw", "try", "catch"],
+              "answer": "B"
+            },
+            {
+              "id": 4,
+              "text": "无论是否发生异常，一定执行的代码块由哪个关键字定义？",
+              "options": ["catch", "finally", "final", "finalize"],
+              "answer": "B"
+            },
+            {
+              "id": 5,
+              "text": "以下哪个是运行时异常（Unchecked Exception）？",
+              "options": ["IOException", "SQLException", "ClassNotFoundException", "NullPointerException"],
+              "answer": "D"
+            }
+          ]
+        },
+        {
+          "level": "intermediate",
+          "name": "稳步提升",
+          "questions": [
+            {
+              "id": 6,
+              "text": "从 Java 7 开始，可以在一个 catch 块中捕获多个异常，多个异常类型之间用下列哪个符号分隔？",
+              "options": ["逗号", "分号", "竖线（|）", "与（&）"],
+              "answer": "C"
+            },
+            {
+              "id": 7,
+              "text": "以下代码输出什么？\ntry {\n    int[] arr = new int[5];\n    arr[5] = 10;\n} catch (ArrayIndexOutOfBoundsException e) {\n    System.out.print(\"A\");\n} finally {\n    System.out.print(\"B\");\n}",
+              "options": ["A", "AB", "B", "编译错误"],
+              "answer": "B"
+            },
+            {
+              "id": 8,
+              "text": "以下哪个方法可以打印异常的堆栈信息？",
+              "options": ["printStackTrace()", "getMessage()", "toString()", "getCause()"],
+              "answer": "A"
+            },
+            {
+              "id": 9,
+              "text": "以下代码输出什么？\ntry {\n    System.out.print(\"A\");\n    throw new Exception();\n} catch (Exception e) {\n    System.out.print(\"B\");\n} finally {\n    System.out.print(\"C\");\n}",
+              "options": ["ABC", "ACB", "AB", "A"],
+              "answer": "A"
+            },
+            {
+              "id": 10,
+              "text": "以下哪个是 try-with-resources 中资源自动关闭的条件？",
+              "options": ["实现 AutoCloseable 接口", "实现 Closeable 接口", "在 try 后的括号中声明", "以上都是"],
+              "answer": "D"
+            }
+          ]
+        },
+        {
+          "level": "advanced",
+          "name": "拔尖拓展",
+          "questions": [
+            {
+              "id": 11,
+              "text": "以下代码输出什么？\ntry {\n    return;\n} finally {\n    System.out.print(\"A\");\n}",
+              "options": ["A", "无输出", "编译错误", "运行时异常"],
+              "answer": "A"
+            },
+            {
+              "id": 12,
+              "text": "以下代码输出什么？\ntry {\n    throw new RuntimeException();\n} finally {\n    return;\n}",
+              "options": ["异常被捕获", "异常被抑制", "正常结束", "编译错误"],
+              "answer": "C"
+            },
+            {
+              "id": 13,
+              "text": "以下哪个是自定义异常的正确做法？",
+              "options": ["继承 Exception 类", "继承 RuntimeException 类", "提供构造方法", "以上都是"],
+              "answer": "D"
+            },
+            {
+              "id": 14,
+              "text": "以下代码输出什么？\ntry (FileReader fr = new FileReader(\"test.txt\")) {\n    // read\n} catch (IOException e) {\n    e.printStackTrace();\n}",
+              "options": ["自动关闭资源", "手动关闭资源", "需要 finally 关闭", "编译错误"],
+              "answer": "A"
+            },
+            {
+              "id": 15,
+              "text": "以下关于异常链的说法，正确的是？",
+              "options": ["可以使用 initCause() 设置原因", "构造方法可以传入 Throwable", "getCause() 获取原因", "以上都是"],
+              "answer": "D"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 20,
+      "name": "Java 流(Stream)、文件(File)和IO",
+      "tag": "java-io",
+      "levels": [
+        {
+          "level": "basic",
+          "name": "基础补齐",
+          "questions": [
+            {
+              "id": 1,
+              "text": "用于从文件读取字节数据的类是？",
+              "options": ["FileReader", "FileInputStream", "BufferedReader", "InputStreamReader"],
+              "answer": "B"
+            },
+            {
+              "id": 2,
+              "text": "创建目录时，如果需要同时创建不存在的父目录，应该使用 File 类的哪个方法？",
+              "options": ["mkdir()", "createDir()", "mkdirs()", "createNewFile()"],
+              "answer": "C"
+            },
+            {
+              "id": 3,
+              "text": "以下哪个类用于从控制台读取一行字符串？",
+              "options": ["Scanner", "BufferedReader 的 readLine()", "System.in.read()", "A 和 B 都可以"],
+              "answer": "D"
+            },
+            {
+              "id": 4,
+              "text": "以下哪个类用于写字符数据到文件？",
+              "options": ["FileWriter", "FileOutputStream", "DataOutputStream", "ObjectOutputStream"],
+              "answer": "A"
+            },
+            {
+              "id": 5,
+              "text": "以下哪个方法可以判断 File 对象是否为目录？",
+              "options": ["isFile()", "isDirectory()", "exists()", "canRead()"],
+              "answer": "B"
+            }
+          ]
+        },
+        {
+          "level": "intermediate",
+          "name": "稳步提升",
+          "questions": [
+            {
+              "id": 6,
+              "text": "将字节流转换为字符流，通常使用哪个类作为桥梁？",
+              "options": ["InputStreamReader / OutputStreamWriter", "FileReader / FileWriter", "BufferedInputStream / BufferedOutputStream", "DataInputStream / DataOutputStream"],
+              "answer": "A"
+            },
+            {
+              "id": 7,
+              "text": "以下代码输出什么？\nFile f = new File(\"test.txt\");\nSystem.out.println(f.exists());",
+              "options": ["true", "false", "编译错误", "运行时异常"],
+              "answer": "B"
+            },
+            {
+              "id": 8,
+              "text": "以下哪个是缓冲流的优点？",
+              "options": ["提高读写效率", "减少系统调用", "减少磁盘 I/O", "以上都是"],
+              "answer": "D"
+            },
+            {
+              "id": 9,
+              "text": "以下哪个类用于读取 Java 原始数据类型？",
+              "options": ["DataInputStream", "ObjectInputStream", "BufferedInputStream", "FileInputStream"],
+              "answer": "A"
+            },
+            {
+              "id": 10,
+              "text": "以下哪个是 RandomAccessFile 的特点？",
+              "options": ["支持随机读写", "可以设置文件指针", "既可以读也可以写", "以上都是"],
+              "answer": "D"
+            }
+          ]
+        },
+        {
+          "level": "advanced",
+          "name": "拔尖拓展",
+          "questions": [
+            {
+              "id": 11,
+              "text": "以下代码输出什么？\nFile f = new File(\"test\");\nf.mkdir();\nSystem.out.println(f.isDirectory());",
+              "options": ["true", "false", "编译错误", "运行时异常"],
+              "answer": "A"
+            },
+            {
+              "id": 12,
+              "text": "以下哪个是序列化接口？",
+              "options": ["Serializable", "Externalizable", "两者都是", "两者都不是"],
+              "answer": "C"
+            },
+            {
+              "id": 13,
+              "text": "以下哪个是 NIO 中的核心组件？",
+              "options": ["Channel", "Buffer", "Selector", "以上都是"],
+              "answer": "D"
+            },
+            {
+              "id": 14,
+              "text": "以下代码输出什么？\nFile f = new File(\"dir\");\nSystem.out.println(f.getAbsolutePath());",
+              "options": ["dir", "当前路径 + dir", "C:\\dir", "空字符串"],
+              "answer": "B"
+            },
+            {
+              "id": 15,
+              "text": "以下哪个是 Files 类（java.nio.file）中复制文件的方法？",
+              "options": ["Files.copy()", "Files.move()", "Files.delete()", "Files.read()"],
+              "answer": "A"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

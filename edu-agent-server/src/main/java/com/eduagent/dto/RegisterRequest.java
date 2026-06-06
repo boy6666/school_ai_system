@@ -15,7 +15,6 @@ public class RegisterRequest {
     @Size(min = 6, max = 30)
     private String password;
 
-    @NotBlank(message = "昵称不能为空")
     private String nickname;
 
     @Email(message = "邮箱格式不正确")

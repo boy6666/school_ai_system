@@ -17,12 +17,14 @@ const routes: RouteRecordRaw[] = [
     redirect: '/student/dashboard',
     children: [
       { path: 'dashboard', component: () => import('@/views/student/Dashboard.vue') },
-      { path: 'profile/chat', component: () => import('@/views/student/ProfileChat.vue') },
-      { path: 'profile/overview', component: () => import('@/views/student/ProfileOverview.vue') },
+      { path: 'profile/settings', component: () => import('@/views/student/Profile.vue') },
+        { path: 'profile/overview', component: () => import('@/views/student/ProfileOverview.vue') },
+      
       { path: 'courses', component: () => import('@/views/student/CourseCenter.vue') },
       { path: 'courses/:id', component: () => import('@/views/student/CourseDetail.vue') },
       { path: 'resources/generate', component: () => import('@/views/student/ResourceGenerate.vue') },
         { path: 'resources', component: () => import('@/views/student/ResourceCenter.vue') },
+        { path: 'resources/generate/:type', component: () => import('@/views/student/ResourceGenerate.vue') },
       { path: 'resources/:id', component: () => import('@/views/student/ResourceDetail.vue') },
       { path: 'path', component: () => import('@/views/student/LearningPath.vue') },
       { path: 'tutor', component: () => import('@/views/student/TutorChat.vue') },
@@ -32,7 +34,7 @@ const routes: RouteRecordRaw[] = [
       { path: 'projects', component: () => import('@/views/student/Projects.vue') },
       { path: 'messages', component: () => import('@/views/student/Messages.vue') },
       { path: 'settings', component: () => import('@/views/student/Settings.vue') },
-      { path: 'profile', component: () => import('@/views/student/Profile.vue') }
+      { path: 'profile', component: () => import('@/views/student/ProfileOverview.vue') }
     ]
   },
 

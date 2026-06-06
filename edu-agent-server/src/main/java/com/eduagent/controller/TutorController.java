@@ -10,6 +10,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/tutor")
@@ -17,6 +18,12 @@ import java.util.List;
 public class TutorController {
 
     private final TutorService tutorService;
+
+    @GetMapping("/sessions")
+    public Result<List<Map<String, Object>>> getSessions() {
+        Long userId = (Long) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        return Result.success(tutorService.getSessions(userId));
+    }
 
     @PostMapping("/chat")
     public Result<TutorReplyVO> chat(@Valid @RequestBody TutorRequest request) {

@@ -1,0 +1,243 @@
+================================================================================
+                  资源生成模块 - 后端分析与设计
+================================================================================
+
+一、分析设计
+
+1.1 功能需求
+----------------------------------------
+我们这个系统的资源生成模块主要是让学生能看课程笔记，然后针对每一章每一节，
+用 AI 帮忙生成配套的学习资源。具体的功能点是这么几个：
+
+第一是整个课程笔记的展示。我们在数据库里建了一张 java_notes 表，
+里面存了 Java 课程的所有笔记内容。笔记是按章节组织的，比如"03_控制结构"这种，
+每个章节下面有几个小节，小节就是具体的知识点，比如"for循环"、"if判断"这种。
+学生进来之后先看到 14 个章节的列表，点击某一个章节就能看到它下面的小节，
+再点进去就能看到具体的笔记内容了。笔记内容是 Markdown 格式的，前端要做渲染。
+
+第二是 AI 资源的生成。每个笔记页面右边有四个小卡片，分别是思维导图、
+练习题目、拓展阅读和代码案例。学生点哪个，前端就发请求到后端，
+后端再调 Python AI 引擎去生成对应的内容。AI 的 prompt 里会带上当前章节的名字，
+这样生成出来的内容就是针对这个知识点的。比如学生看的是"多线程"这一节，
+那生成的思维导图就是关于多线程的知识结构图。
+
+第三是个性化。我们在 student_profiles 表里存了每个学生的学习画像，
+包括他的基础水平（基础差、一般、比较好）、薄弱点、学习节奏这些。
+每次调 AI 的时候，后端先从数据库把当前登录学生的画像查出来，
+一起发给 AI。AI 拿到画像之后就会根据学生的水平来调整生成内容的难度。
+比如这个学生基础差，那生成的题目就简单一些，讲解就详细一些。
+
+第四是学习时长的统计。学生在看笔记或者看 AI 生成的资源的时候，
+前端会计时，离开页面的时候把停留的时长发到后端，后端存到 study_logs 表里。
+记录的信息包括是哪个模块（思维导图还是练习题）、停了多久、对应的是哪个知识点的。
+然后首页和学习报告那里就可以展示今天学了多长时间、每个模块分别花了多少时间。
+
+第五是学习路径。student_profiles 里存了画像，AI 可以基于画像给学生规划
+学习路径。比如这个学生 Java 基础薄弱，那他就应该先学基础语法，
+再学面向对象，跳过 GUI 这种不重要的章节直接学多线程。
+学习路径存在 learning_paths 表里，前端从后端读取展示。
+
+1.2 架构设计
+----------------------------------------
+我们用的是前后端分离的架构，前端 Vue3 跑在 5173 端口，后端 Spring Boot 跑在 8080，
+AI 引擎是 Python FastAPI 跑在 8000 端口。三个服务各跑各的，之间通过 HTTP 通信。
+
+后端的包结构是这样的：
+controller 层负责接收前端的 HTTP 请求，调 service 层做事，然后返回 JSON 给前端。
+service 层写具体的业务逻辑，比如查数据、调 AI、组装返回结果。
+mapper 层是 MyBatis-Plus 的接口，负责和 MySQL 交互，增删改查。
+entity 层是实体类，对应数据库里的表。
+
+具体到资源生成这块，我们用到的 Controller 有这几个：
+
+JavaNotesController 是专门处理课程笔记的。里面写了三个接口，
+一个是 GET /notes/categories 返回所有章节的列表，
+一个是 GET /notes?category=xxx 返回某个章节下的小节，
+一个是 GET /notes/{id} 返回某条笔记的完整内容。
+
+AdminController 是后台管理的，里面集成了用户管理、资源管理、
+AI 生成等功能。资源生成相关的接口是 POST /admin/resources/generate，
+这个接口的流程是先调 AI 生成资源文件，AI 把文件写到磁盘上，
+然后后端去读那些文件，把内容存到 MySQL 的 resources 表里。
+
+LearningPathController 是管学习路径和学习记录的。接口有
+GET /learning/path 查路径、GET /learning/summary 查学习时长统计、
+POST /learning/log 记录一次学习时长、POST /learning/regenerate 重新生成路径。
+
+跨服务通信的部分，后端通过 AiClient 这个类去调 Python AI。
+AiClient 里面用 RestTemplate 发 POST 请求到 http://localhost:8000/chat，
+把学生的消息和画像数据一起带过去。Python 那边跑的是一个 LangGraph 的多智能体系统，
+里面有 explain_agent、quiz_agent、resource_agent 这些，根据意图分类器来决定
+调用哪个智能体。AI 处理完之后把结果返回给后端，后端再返回给前端。
+
+数据库连接用的是 MyBatis-Plus，配置文件 application.yml 里写着
+数据库地址 localhost:3306，数据库名 edu_agent，用户名 root。
+连接池用的是 HikariCP，Spring Boot 默认带的。
+
+1.3 数据库设计
+----------------------------------------
+（上一条消息已经写过了，5 张表的结构不再重复）
+
+二、遇到的问题及解决方案
+
+（上一条消息已经写过了，5 个问题不再重复）
+
+三、总结
+----------------------------------------
+这次资源生成模块的开发，我从中学到了不少东西。
+
+首先是技术上的。以前对 MyBatis-Plus 的自动填充机制不太熟，
+这次碰到了 create_time 为 null 的报错才发现，原来 @TableField(fill = ...)
+需要配合 MetaObjectHandler 一起用，不然 MyBatis-Plus 不会自动帮你填时间。
+如果不想搞那么复杂，最简单的办法就是把注解去掉，代码里手动 set 一下就行了。
+
+然后是跨语言通信的问题。Java 和 Python 之间通过 JSON 通信，
+字段名必须严格对上。Java 这边用 @JsonProperty 注解来指定序列化后的字段名，
+Python 那边用 Pydantic 的字段名。两边如果有一个写错了，数据就传不过去，
+而且这种 bug 很难找，因为不会报编译错误，只是运行时 AI 收不到正确的数据。
+
+还有一个比较头疼的问题是 JSON 字符串在 Java 里拼接。Java 字符串里如果
+要表示双引号，必须用反斜杠转义。拼接出来的 JSON 字符串经常少一个引号
+或者多一个转义符，编译都通不过。后来我在 tags 字段那里反复改了好几次
+才搞对。
+
+另外，Spring Security 的认证也要注意。我们所有的 /learning/* 接口
+都是需要登录才能访问的，后端通过 SecurityContextHolder 拿到当前用户的 ID，
+然后根据这个 ID 去查对应的画像、路径、学习记录这些数据。
+这样不同学生看到的就是自己专属的内容，不会串数据。
+
+总的来说，这个模块的核心就是把课程内容存数据库，用 AI 生成个性化资源，
+然后记录学生的学习过程数据，最后在首页和报告页面展示出来。
+
+
+1.2.1 Entity 层（实体类）
+----------------------------------------
+Entity 层的每一个类对应数据库里的一张表，用 MyBatis-Plus 的注解来映射。
+
+以 JavaNotes 这个实体为例，它对应 java_notes 表：
+
+  @Data
+  @TableName("java_notes")
+  public class JavaNotes {
+      @TableId(type = IdType.AUTO)
+      private Integer id;
+      private String category;    // 章节，比如 "03_控制结构"
+      private String title;       // 小节标题
+      private String filename;    // 原始文件名
+      private String content;     // Markdown 正文
+      private LocalDateTime createdAt;
+  }
+
+@TableName 告诉 MyBatis-Plus 这个类映射哪张表，@TableId 标记主键，
+type = AUTO 表示自增。@Data 是 Lombok 的注解，自动生成 getter/setter/toString。
+
+Resource 实体对应 resources 表，字段比较多，有 title、type、content、
+rating、tags 这些。tags 用的是 JSON 类型，存一个字符串数组，
+比如 ["Java","文档","student001"]。content 是 LONGTEXT 类型，
+因为 AI 生成的思维导图代码或者大段阅读材料可能很长。
+
+StudentProfile 对应 student_profiles 表。之前在合并分支的时候出过问题，
+别人写的 StudentProfile 用的是 JPA 的注解（@Entity、@Column 这些），
+但我们项目用的是 MyBatis-Plus，根本找不到 jakarta.persistence 这个包。
+所以后来把注解全部换成了 MyBatis-Plus 的 @TableName、@TableId。
+
+StudyLog 对应 study_logs 表，字段比较简单，就 student_id、module、
+duration_sec、note_id、created_at 这几个。module 字段存的是字符串，
+比如 "mindmap"、"quiz"、"reading"、"code" 四种。
+
+LearningPath 对应 learning_paths 表。steps 字段是 JSON 类型，
+存的是一个数组，每个元素是一个学习步骤，包括步骤标题、是否完成、得分这些信息。
+
+1.2.2 Mapper 层（数据访问层）
+----------------------------------------
+Mapper 层是 MyBatis-Plus 提供的，只需要定义一个接口继承 BaseMapper 就行了，
+MyBatis-Plus 会自动生成基本的增删改查方法。如果需要复杂的 SQL，
+就在接口里写 @Select 或者 @Update 注解。
+
+以 JavaNotesMapper 为例：
+
+  @Mapper
+  public interface JavaNotesMapper extends BaseMapper<JavaNotes> {
+      @Select("SELECT DISTINCT category FROM java_notes ORDER BY category")
+      List<String> selectCategories();
+      
+      @Select("SELECT * FROM java_notes WHERE category = #{category} ORDER BY id")
+      List<JavaNotes> selectByCategory(String category);
+  }
+
+BaseMapper 自带了 selectById、insert、updateById、deleteById 这些方法。
+如果只是简单的单表查询，连接口都不用写，直接用 BaseMapper 的方法就可以了。
+但我们的业务场景需要按 category 去重查询章节列表，还有按 category 查小节，
+所以额外写了两个 @Select 注解的方法。
+
+StudyLogMapper 也是类似的：
+
+  @Mapper
+  public interface StudyLogMapper extends BaseMapper<StudyLog> {
+      @Select("SELECT module, SUM(duration_sec) as total FROM study_logs WHERE student_id = #{studentId} AND DATE(created_at) = CURDATE() GROUP BY module")
+      List<Map<String, Object>> todaySummary(Long studentId);
+      
+      @Select("SELECT SUM(duration_sec) FROM study_logs WHERE student_id = #{studentId}")
+      Integer totalDuration(Long studentId);
+  }
+
+todaySummary 这个查询是按 module 分组统计今天的学习时长，
+返回的是一个 List<Map>，每个 Map 里有两个 key：module 和 total。
+前端拿到之后就可以分别显示"思维导图花了 xx 分钟"、"练习题花了 xx 分钟"。
+
+StudentProfileMapper 稍微特殊一点，因为 student_profiles 表的主键是 id（自增），
+但我们通常是用 student_id 去查。所以额外写了一个 @Select 方法：
+
+  @Select("SELECT * FROM student_profiles WHERE student_id = #{studentId}")
+  StudentProfile findByStudentId(Long studentId);
+
+如果直接用 BaseMapper 的 selectById，那传的是 id 列的值，不是 student_id。
+
+1.2.3 Service 层（业务逻辑层）
+----------------------------------------
+Service 层又分接口和实现类。接口定义了业务方法，实现类写具体的逻辑。
+
+JavaNotesService 接口继承了 IService<JavaNotes>，IService 是 MyBatis-Plus 提供的，
+带了一堆内置方法，比如 save、updateById、list 这些。然后我们自己加了两个方法：
+
+  public interface JavaNotesService extends IService<JavaNotes> {
+      List<String> getCategories();
+      List<JavaNotes> getByCategory(String category);
+  }
+
+实现类 JavaNotesServiceImpl 继承 ServiceImpl<JavaNotesMapper, JavaNotes> 并实现接口：
+
+  @Service
+  public class JavaNotesServiceImpl extends ServiceImpl<JavaNotesMapper, JavaNotes> 
+          implements JavaNotesService {
+      @Override
+      public List<String> getCategories() {
+          return baseMapper.selectCategories();
+      }
+      @Override
+      public List<JavaNotes> getByCategory(String category) {
+          return baseMapper.selectByCategory(category);
+      }
+  }
+
+baseMapper 是 ServiceImpl 父类提供的，指向我们定义的 JavaNotesMapper，
+所以可以直接用。
+
+TutorServiceImpl 是智能辅导的业务逻辑，最复杂的一个。chat 方法里做的事有：
+第一步，从 MySQL 查学生的画像数据（StudentProfile）；
+第二步，把画像和用户消息打包发给 Python AI；
+第三步，等 AI 返回之后把结果存到 conversation 表；
+第四步，把 AI 返回的画像更新写回 MySQL。
+这个方法的逻辑比较多，而且涉及到跨服务调用和事务管理，
+是整个后端最核心的一段业务代码。
+
+AdminService 是后台管理的，之前因为合并代码导致有 10 个 AdminController，
+后来全部合并到一个 AdminController 里面，对应的 service 接口也做了统合。
+现在 AdminService 里包了用户管理、资源管理、系统设置、统计这些所有的后台功能。
+
+ResourceService 负责资源的增删改查和状态管理。
+SystemSettingService 管理系统配置项，比如 AI 的 base-url 等。
+
+Service 层的设计原则就是：Controller 只负责接收请求和返回结果，
+具体的业务逻辑全部交给 Service 去处理，Service 再调 Mapper 去操作数据库。
+这样每一层的职责都很清楚，修改其中一层的时候不影响其他层。

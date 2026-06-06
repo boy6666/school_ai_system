@@ -1,103 +1,113 @@
 <template>
-  <div class="resource-center">
-    <div class="page-header">
-      <h2>AI 多智能体 · 个性化学习资源</h2>
-      <p>讲解文档 + 思维导图 + 练习题目 + 拓展阅读 + 代码案例</p>
-      <el-button type="primary" size="large" @click="startGenerate" :loading="generating" style="margin-top:12px">
-        {{ generating ? '多智能体协作中...' : 'AI 生成资源' }}
-      </el-button>
-    </div>
-
-    <!-- 多智能体协作步骤 -->
-    <el-alert v-if="generating" title="智能体协作流程" type="info" :closable="false" style="margin-bottom:16px">
-      <template #default>
-        <div style="font-size:13px;color:#606266">
-          画像分析 → 意图识别 → 知识检索 → <strong>资源生成</strong> → 质量评估
+  <div class="resource-page">
+    <main class="main-area">
+      <div class="page-title">
+        <h2>📚 Java 程序设计</h2>
+        <p>选择章节，点击右侧卡片开始学习</p>
+      </div>
+      <div class="chapter-list">
+        <div v-for="ch in chapters" :key="ch.id" class="chapter-card" @click="goChapter(ch.id)">
+          <div class="ch-left">
+            <div class="ch-num">{{ ch.id }}</div>
+          </div>
+          <div class="ch-body">
+            <h3>{{ ch.label }} · {{ ch.title }}</h3>
+            <p>{{ ch.desc }}</p>
+          </div>
+          <div class="ch-arrow">→</div>
         </div>
-      </template>
-    </el-alert>
+      </div>
+    </main>
 
-    <div class="type-filter">
-      <el-radio-group v-model="activeType" size="default">
-        <el-radio-button value="">全部</el-radio-button>
-        <el-radio-button value="文档">讲解文档</el-radio-button>
-        <el-radio-button value="思维导图">思维导图</el-radio-button>
-        <el-radio-button value="题库">练习题目</el-radio-button>
-        <el-radio-button value="拓展阅读">拓展阅读</el-radio-button>
-        <el-radio-button value="代码案例">代码案例</el-radio-button>
-      </el-radio-group>
-    </div>
-
-    <div v-if="loading" style="text-align:center;padding:40px;color:#909399">加载中...</div>
-
-    <el-empty v-else-if="filteredResources.length === 0" description="暂无资源">
-      <el-button type="primary" @click="startGenerate">AI 生成资源</el-button>
-    </el-empty>
-
-    <el-row v-else :gutter="16">
-      <el-col v-for="item in filteredResources" :key="item.id" :span="8" style="margin-bottom:16px">
-        <el-card shadow="hover">
-          <el-tag :type="tagType(item.type)" size="small">{{ item.type }}</el-tag>
-          <div style="font-weight:bold;margin-top:8px">{{ item.title }}</div>
-          <div style="color:#909399;font-size:13px;margin-top:4px">{{ item.description || '' }}</div>
-        </el-card>
-      </el-col>
-    </el-row>
+    <aside class="side-cards">
+      <div class="side-title">学习资源</div>
+      <div v-for="card in resourceCards" :key="card.key" class="mini-card" @click="goResource(card.key)">
+        <div class="mini-icon">{{ card.icon }}</div>
+        <div class="mini-label">{{ card.label }}</div>
+      </div>
+    </aside>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
-import { ElMessage } from 'element-plus'
-import { getAdminResourceList, generateResources } from '@/api/admin'
+import { useRouter } from 'vue-router'
 
-const resources = ref<any[]>([])
-const loading = ref(false)
-const generating = ref(false)
-const activeType = ref('')
+const router = useRouter()
 
-const filteredResources = computed(() => {
-  if (!activeType.value) return resources.value
-  return resources.value.filter((r: any) => r.type === activeType.value)
-})
+const chapters = [
+  { id: 1, label: '第1章', title: 'Java 基础语法', desc: '变量、数据类型、运算符、流程控制、数组与方法' },
+  { id: 2, label: '第2章', title: '面向对象', desc: '类与对象、封装、继承、多态、抽象类与接口' },
+  { id: 3, label: '第3章', title: '集合框架', desc: 'List、Map、Set 接口及其常用实现类详解' },
+]
 
-const tagType = (type: string) => {
-  const map: Record<string, string> = {
-    '文档': 'success', '思维导图': 'warning', '题库': 'danger',
-    '拓展阅读': 'info', '代码案例': '',
-  }
-  return map[type] || ''
-}
+const resourceCards = [
+  { key: 'mindmap', label: '思维导图', icon: '🧠' },
+  { key: 'quiz', label: '练习题目', icon: '📝' },
+  { key: 'reading', label: '拓展阅读', icon: '📖' },
+  { key: 'code', label: '代码案例', icon: '💻' },
+]
 
-const loadResources = async () => {
-  loading.value = true
-  try {
-    const r = await getAdminResourceList({ page: 1, pageSize: 50 })
-    resources.value = r?.records || []
-  } catch { resources.value = [] }
-  loading.value = false
-}
-
-const startGenerate = async () => {
-  generating.value = true
-  try {
-    const res = await generateResources('9')
-    ElMessage.success(`生成完成！导入 ${res?.imported || 0} 个资源`)
-    await loadResources()
-  } catch (err: any) {
-    ElMessage.error('生成失败，请确认 AI 引擎正在运行')
-  } finally {
-    generating.value = false
-  }
-}
-
-onMounted(loadResources)
+const goChapter = (id: number) => router.push(`/student/resources/${id}`)
+const goResource = (type: string) => router.push(`/student/resources/generate/${type}`)
 </script>
 
 <style scoped>
-.resource-center { padding: 20px; max-width: 1200px; margin: 0 auto; }
-.page-header { text-align: center; margin-bottom: 20px; }
-.page-header h2 { margin: 0; }
-.page-header p { color: #909399; margin-top: 8px; }
-.type-filter { text-align: center; margin-bottom: 20px; }
+.resource-page {
+  display: flex; gap: 28px; padding: 32px 40px;
+  max-width: 1200px; margin: 0 auto;
+  min-height: calc(100vh - 60px); background: #fff;
+}
+
+.main-area { flex: 1; }
+.page-title { margin-bottom: 28px; }
+.page-title h2 { font-size: 24px; margin: 0; color: #1a1a1a; font-weight: 700; }
+.page-title p { color: #999; margin: 6px 0 0; font-size: 14px; }
+
+.chapter-list { display: flex; flex-direction: column; gap: 14px; }
+.chapter-card {
+  display: flex; align-items: center; gap: 18px;
+  padding: 22px 28px; background: #fff;
+  border-radius: 14px; border: 1px solid #eee;
+  cursor: pointer; transition: all .25s;
+  box-shadow: 0 1px 3px rgba(0,0,0,.04);
+}
+.chapter-card:hover {
+  border-color: #4f8cff;
+  box-shadow: 0 6px 20px rgba(79,140,255,.12);
+  transform: translateX(4px);
+}
+.ch-left { flex-shrink: 0; }
+.ch-num {
+  width: 52px; height: 52px; border-radius: 14px;
+  background: linear-gradient(135deg, #4f8cff, #6ba3ff);
+  color: #fff; font-size: 20px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+}
+.ch-body { flex: 1; }
+.ch-body h3 { margin: 0; font-size: 17px; color: #1a1a1a; font-weight: 600; }
+.ch-body p { margin: 6px 0 0; font-size: 13px; color: #999; line-height: 1.5; }
+.ch-arrow { color: #ccc; font-size: 22px; font-weight: 300; }
+
+.side-cards {
+  width: 140px; display: flex; flex-direction: column; gap: 14px;
+  padding-top: 80px;
+}
+.side-title {
+  font-size: 13px; color: #aaa; text-align: center;
+  text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;
+}
+.mini-card {
+  width: 120px; height: 110px; border-radius: 16px;
+  background: #fff; border: 1px solid #eee;
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; cursor: pointer; transition: all .25s;
+  gap: 10px; box-shadow: 0 1px 3px rgba(0,0,0,.04);
+}
+.mini-card:hover {
+  border-color: #4f8cff;
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(79,140,255,.15);
+}
+.mini-icon { font-size: 34px; }
+.mini-label { font-size: 13px; color: #555; font-weight: 500; }
 </style>

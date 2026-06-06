@@ -21,8 +21,12 @@ public class AiClient {
     }
 
     public AiChatResponse chat(String studentId, String sessionId, String message) {
+        return chat(studentId, sessionId, message, null);
+    }
+
+    public AiChatResponse chat(String studentId, String sessionId, String message, java.util.Map<String, Object> profile) {
         String url = baseUrl + "/chat";
-        AiChatRequest request = new AiChatRequest(message, studentId, sessionId);
+        AiChatRequest request = new AiChatRequest(message, studentId, sessionId, profile);
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
