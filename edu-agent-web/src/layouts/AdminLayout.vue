@@ -5,9 +5,6 @@
       <el-menu
           router
           :default-active="$route.path"
-          background-color="#304156"
-          text-color="#bfcbd9"
-          active-text-color="#409eff"
         >
           <el-menu-item index="/admin/dashboard">
             <el-icon><DataAnalysis /></el-icon>
@@ -29,10 +26,7 @@
             <el-icon><TrendCharts /></el-icon>
             <span>数据统计</span>
           </el-menu-item>
-          <el-menu-item index="/admin/agents">
-            <el-icon><Monitor /></el-icon>
-            <span>智能体管理</span>
-          </el-menu-item>
+
           <el-menu-item index="/admin/settings">
             <el-icon><Setting /></el-icon>
             <span>系统设置</span>
@@ -77,9 +71,16 @@ const handleCommand = (command: string) => {
 
 <style scoped>
 .layout-container { height: 100vh; }
-.aside { background-color: #304156; }
-.logo { height: 60px; line-height: 60px; text-align: center; color: white; font-size: 20px; font-weight: bold; }
-.header { background-color: #fff; border-bottom: 1px solid #e6e6e6; display: flex; justify-content: flex-end; align-items: center; padding: 0 20px; }
-.user-dropdown-trigger { display: flex; align-items: center; cursor: pointer; }
-.user-name { margin-right: 5px; }
+.aside { background-color: var(--brand-navy); }
+.logo { height: 60px; line-height: 60px; text-align: center; color: var(--on-dark); font-size: 18px; font-weight: 600; letter-spacing: -0.3px; }
+.header { background-color: var(--canvas); border-bottom: 1px solid var(--hairline); display: flex; justify-content: flex-end; align-items: center; padding: 0 var(--space-lg); }
+.user-dropdown-trigger { display: flex; align-items: center; cursor: pointer; gap: var(--space-xs); padding: var(--space-xs) 0; }
+.user-name { font: var(--text-sm-medium); color: var(--charcoal); }
+
+/* Override Element Plus menu styles */
+.aside .el-menu { background: var(--brand-navy) !important; border-right: none !important; }
+.aside .el-menu-item { background: transparent !important; color: var(--on-dark-muted) !important; border-radius: var(--radius-sm); margin: 2px var(--space-xs) !important; font: var(--text-sm-medium) !important; }
+.aside .el-menu-item:hover { background: rgba(255,255,255,0.06) !important; color: var(--on-dark) !important; }
+.aside .el-menu-item.is-active { background: var(--primary) !important; color: var(--on-dark) !important; }
+.aside .el-menu-item .el-icon { color: inherit !important; }
 </style>

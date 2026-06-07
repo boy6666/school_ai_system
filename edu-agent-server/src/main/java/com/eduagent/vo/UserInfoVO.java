@@ -19,6 +19,7 @@ public class UserInfoVO {
     private String avatar;
     private String role;
     private Integer onboarded;
+    private String status;
     private LocalDateTime createTime;
     private LocalDateTime lastLoginTime;
 }

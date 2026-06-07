@@ -21,12 +21,21 @@
 
         <!-- 学习回顾 -->
         <el-card class="card" shadow="never" style="margin-top:16px">
-          <template #header><span>📚 学习回顾</span></template>
-          <div v-if="reviewList.length" v-for="r in reviewList" :key="r.module" class="item">
-            <span>{{ labelMap[r.module] || r.module }}</span>
-            <span>{{ Math.round(r.total / 60) }} 分钟</span>
+          <template #header>
+            <span>📚 学习回顾</span>
+            <el-button type="text" style="float:right" @click="generateReview" :loading="reviewLoading" v-if="!reviewLoading">AI 生成</el-button>
+          </template>
+          <div v-if="reviewResult" class="ai-summary-box">
+            <div class="ai-summary-text">{{ reviewResult.feedback || reviewResult.summary }}</div>
+            <div v-if="reviewResult.focusNext" class="ai-summary-item">🎯 重点：{{ reviewResult.focusNext }}</div>
           </div>
-          <div v-else class="empty">暂无学习记录</div>
+          <div v-else>
+            <div v-if="reviewList.length" v-for="r in reviewList" :key="r.module" class="item">
+              <span>{{ labelMap[r.module] || r.module }}</span>
+              <span>{{ Math.round(r.total / 60) }} 分钟</span>
+            </div>
+            <div v-else class="empty">暂无学习记录</div>
+          </div>
         </el-card>
 
         <!-- 学习目标 -->
@@ -154,6 +163,18 @@ const summaryDims = computed(() => {
   return scores.length ? items.map((x, i) => ({ label: x.label, score: scores[i] || 0 })) : []
 })
 
+// AI 学习回顾
+const reviewLoading = ref(false)
+const reviewResult = ref<any>(null)
+async function generateReview() {
+  reviewLoading.value = true
+  try {
+    const res: any = await request.post('/dashboard/learning-review')
+    if (res) { reviewResult.value = res; console.log('[Dashboard] ✅ AI 学习回顾已生成:', res) }
+  } catch (e) { console.warn('[Dashboard] ⚠️ AI 回顾生成失败:', e) }
+  reviewLoading.value = false
+}
+
 const evalItems = computed(() => {
   const p = profile.value
   const e = evalData.value
@@ -219,6 +240,9 @@ onMounted(async () => {
   }).catch(() => {})
   request.get('/dashboard/ai-summary').then((res: any) => {
     if (res && res.summary) aiSummary.value = res
+  }).catch(() => {})
+  request.get('/dashboard/learning-review').then((res: any) => {
+    if (res && res.summary) reviewResult.value = res
   }).catch(() => {})
 })
 </script>

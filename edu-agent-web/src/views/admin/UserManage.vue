@@ -1,159 +1,112 @@
 <template>
-  <div class="user-manage">
-    <el-row :gutter="20">
-      <!-- 左侧用户列表（筛选+表格） -->
-      <el-col :span="14">
-        <el-card shadow="never">
-          <template #header>
-            <span>用户列表</span>
-            <el-button type="primary" size="small" style="float: right" @click="handleAdd">新增用户</el-button>
-          
-  <el-dialog v-model="dialogVisible" title="新增用户" width="400px">
-    <el-form :model="form" label-width="80px">
-      <el-form-item label="用户名"><el-input v-model="form.username" /></el-form-item>
-      <el-form-item label="密码"><el-input v-model="form.password" type="password" /></el-form-item>
-      <el-form-item label="昵称"><el-input v-model="form.nickname" /></el-form-item>
-      <el-form-item label="角色">
-        <el-select v-model="form.role" style="width:100%">
-          <el-option label="学生" value="student" />
-          <el-option label="教师" value="teacher" />
-          <el-option label="管理员" value="admin" />
-        </el-select>
-      </el-form-item>
-    </el-form>
-    <template #footer>
-      <el-button @click="dialogVisible = false">取消</el-button>
-      <el-button type="primary" @click="submitAdd">确定</el-button>
-    </template>
-  </el-dialog>
-
-</template>
-          <el-input v-model="searchKeyword" placeholder="搜索姓名/学号" prefix-icon="Search" clearable style="margin-bottom: 16px" />
-          <el-table :data="userList" stripe @row-click="handleRowClick">
-            <el-table-column prop="name" label="姓名" />
-            <el-table-column prop="role" label="身份" />
-            <el-table-column prop="college" label="学院" />
-            <el-table-column prop="email" label="邮箱" />
-          </el-table>
-          <el-pagination
-            v-model:current-page="currentPage"
-            v-model:page-size="pageSize"
-            :total="1256"
-            layout="total, prev, pager, next"
-            @current-change="fetchUsers"
-          />
-        </el-card>
-      </el-col>
-      <!-- 右侧用户详情 -->
-      <el-col :span="10">
-        <el-card shadow="never" v-if="selectedUser">
-          <template #header><span>用户详情</span></template>
-          <div class="user-detail">
-            <div class="detail-header">
-              <el-avatar :size="64" :src="selectedUser.avatar || 'https://cube.elemecdn.com/0/88/03b6d3b6a6f4e6b8b6c0e6b4d6b6e6b6.png'" />
-              <div class="header-info">
-                <h3>{{ selectedUser.name }}</h3>
-                <p>{{ selectedUser.role }} · {{ selectedUser.college }}</p>
-                <p>{{ selectedUser.email }}</p>
-              </div>
-            </div>
-            <el-divider />
-            <div class="info-section">
-              <div class="info-item"><span class="label">学号</span><span>{{ selectedUser.studentNo || '-' }}</span></div>
-              <div class="info-item"><span class="label">手机号</span><span>{{ selectedUser.phone || '-' }}</span></div>
-              <div class="info-item"><span class="label">注册时间</span><span>{{ selectedUser.registerTime }}</span></div>
-              <div class="info-item"><span class="label">最后登录</span><span>{{ selectedUser.lastLogin }}</span></div>
-              <div class="info-item"><span class="label">状态</span><el-tag :type="selectedUser.status === '启用' ? 'success' : 'danger'">{{ selectedUser.status }}</el-tag></div>
-              <div class="info-item"><span class="label">所属班级</span><span>{{ selectedUser.className }}</span></div>
-            </div>
-            <el-divider />
-            <div class="operation-log">
-              <div class="log-title">操作记录</div>
-              <el-table :data="operationLogs" size="small">
-                <el-table-column prop="action" label="操作" />
-                <el-table-column prop="time" label="操作记录" width="150" />
-              </el-table>
-            </div>
-          </div>
-        </el-card>
-        <el-empty v-else description="请点击左侧用户查看详情" />
-      </el-col>
-    </el-row>
+  <div class="user-page">
+    <section class="page-header">
+      <div>
+        <p class="eyebrow">管理后台</p>
+        <h1>用户管理</h1>
+        <p>管理系统中的所有用户，包含管理员、教师和学生。</p>
+      </div>
+      <button class="primary-btn" @click="showAddDialog">+ 添加用户</button>
+    </section>
+    <section class="filter-bar">
+      <input v-model="keyword" type="text" placeholder="搜索用户名、邮箱..." @keyup.enter="loadUsers" />
+      <select v-model="roleFilter"><option value="">全部角色</option><option value="admin">管理员</option><option value="teacher">教师</option><option value="student">学生</option></select>
+      <select v-model="statusFilter"><option value="">全部状态</option><option value="active">正常</option><option value="inactive">已停用</option></select>
+      <button @click="loadUsers">查询</button>
+    </section>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>ID</th><th>用户名</th><th>昵称</th><th>邮箱</th><th>角色</th><th>状态</th><th>创建时间</th><th>操作</th></tr>
+        </thead>
+        <tbody>
+          <tr v-if="loading"><td colspan="8" class="state-cell">加载中...</td></tr>
+          <tr v-else-if="!users.length"><td colspan="8" class="state-cell">暂无用户</td></tr>
+          <tr v-for="u in users" :key="u.id">
+            <td>{{ u.id }}</td>
+            <td><strong>{{ u.username }}</strong></td>
+            <td>{{ u.nickname || '-' }}</td>
+            <td>{{ u.email || '-' }}</td>
+            <td><span :class="['status-badge', u.role]">{{ {admin:'管理员',teacher:'教师',student:'学生'}[u.role] || u.role }}</span></td>
+            <td><span :class="['status-badge', u.status === 'active' ? 'active' : 'inactive']">{{ u.status === 'active' ? '正常' : '已停用' }}</span></td>
+            <td>{{ u.createTime ? u.createTime.replace('T',' ').substring(0,16) : '-' }}</td>
+            <td class="action-cell">
+              <button class="text-btn" @click="toggleStatus(u)">{{ u.status === 'active' ? '停用' : '启用' }}</button>
+              <button class="text-btn danger" @click="delUser(u)">删除</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="pagination" v-if="total > pageSize">
+      <button :disabled="page<=1" @click="page=1;loadUsers()">«</button>
+      <button :disabled="page<=1" @click="page--;loadUsers()">‹</button>
+      <button v-for="p in pageNums" :key="p" :class="['page-btn',{active:p===page}]" @click="page=p;loadUsers()">{{ p }}</button>
+      <button :disabled="page>=maxPage" @click="page++;loadUsers()">›</button>
+      <button :disabled="page>=maxPage" @click="page=maxPage;loadUsers()">»</button>
+      <span class="page-info">{{ total }} 条</span>
+    </div>
+    <div v-if="dialogVisible" class="dialog-mask" @click.self="dialogVisible=false">
+      <div class="dialog">
+        <h3>添加用户</h3>
+        <div class="form-grid">
+          <label>用户名 <input v-model="form.username" type="text" placeholder="必填" /></label>
+          <label>昵称 <input v-model="form.nickname" type="text" /></label>
+          <label>邮箱 <input v-model="form.email" type="email" /></label>
+          <label>密码 <input v-model="form.password" type="password" placeholder="必填" /></label>
+          <label>角色 <select v-model="form.role"><option value="student">学生</option><option value="teacher">教师</option><option value="admin">管理员</option></select></label>
+        </div>
+        <div class="dialog-actions">
+          <button class="outline-btn" @click="dialogVisible=false">取消</button>
+          <button class="primary-btn" @click="submitAdd">确定</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
-
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import { getUserList, deleteUser } from '@/api/admin'
-import { register } from '@/api/auth'
-
-const searchKeyword = ref('')
-const currentPage = ref(1)
-const pageSize = ref(10)
-const selectedUser = ref<any>(null)
-
-const userList = ref<any[]>([])
-const loading = ref(false)
-const total = ref(0)
-
-// 新增用户弹窗
-const dialogVisible = ref(false)
-const form = ref({ username: '', password: '', nickname: '', role: 'student' })
-
-const loadUsers = async () => {
-  loading.value = true
-  try {
-    const r = await getUserList({ page: currentPage.value, pageSize: pageSize.value, keyword: searchKeyword.value || undefined })
-    userList.value = r?.records || []
-    total.value = r?.total || 0
-  } catch { userList.value = []; total.value = 0 }
-  loading.value = false
-}
-
-const handleAdd = () => {
-  form.value = { username: '', password: '', nickname: '', role: 'student' }
-  dialogVisible.value = true
-}
-
-const submitAdd = async () => {
-  if (!form.value.username || !form.value.password) {
-    ElMessage.warning('用户名和密码必填')
-    return
-  }
-  try {
-    await register(form.value)
-    ElMessage.success('创建成功')
-    dialogVisible.value = false
-    loadUsers()
-  } catch (err: any) {
-    ElMessage.error(err?.response?.data?.message || '创建失败')
-  }
-}
-
-const handleDelete = async (row: any) => {
-  try {
-    await ElMessageBox.confirm(`确定删除"${row.username}"？`, '确认', { type: 'warning' })
-    await deleteUser(row.id)
-    ElMessage.success('已删除')
-    loadUsers()
-  } catch {}
-}
-
-const handleRowClick = (row: any) => {
-  selectedUser.value = row
-}
-
+import { ref, computed, onMounted } from 'vue'
+import request from '@/utils/request'
+const keyword = ref(''); const roleFilter = ref(''); const statusFilter = ref('')
+const page = ref(1); const pageSize = ref(10); const total = ref(0); const loading = ref(false)
+const users = ref<any[]>([]); const dialogVisible = ref(false)
+const form = ref({ username:'', nickname:'', email:'', password:'', role:'student' })
+const maxPage = computed(()=>Math.max(1,Math.ceil(total.value/pageSize.value)))
+const pageNums = computed(()=>{ const p:number[]=[]; const s=Math.max(1,page.value-2); const e=Math.min(maxPage.value,page.value+2); for(let i=s;i<=e;i++) p.push(i); return p })
+const loadUsers = async()=>{ loading.value=true; try{ const r:any=await request.get('/admin/users',{params:{page:page.value,pageSize:pageSize.value,keyword:keyword.value||undefined}}); users.value=r?.records||[]; total.value=r?.total||0 }catch{}; loading.value=false }
+const showAddDialog=()=>{ form.value={username:'',nickname:'',email:'',password:'',role:'student'}; dialogVisible.value=true }
+const submitAdd=async()=>{ if(!form.value.username||!form.value.password) return alert('必填'); try{ await request.post('/auth/register',form.value); alert('创建成功'); dialogVisible.value=false; loadUsers() }catch(err:any){ alert(err?.response?.data?.message||'失败') } }
+const toggleStatus=async(u:any)=>{ const next=u.status==='active'?'inactive':'active'; if(!confirm(`确定${next==='active'?'启用':'停用'} ${u.username}？`)) return; try{ await request.put(`/admin/users/${u.id}/role`,{status:next}); u.status=next }catch{} }
+const delUser=async(u:any)=>{ if(!confirm(`确定删除 ${u.username}？不可恢复！`)) return; try{ await request.delete(`/admin/users/${u.id}`); loadUsers() }catch{} }
 onMounted(loadUsers)
 </script>
-
-
 <style scoped>
-.user-manage { padding: 20px; background-color: #f5f7fa; min-height: 100vh; }
-.user-detail .detail-header { display: flex; gap: 16px; align-items: center; }
-.header-info h3 { margin: 0 0 4px 0; }
-.header-info p { margin: 4px 0; color: #606266; }
-.info-item { display: flex; margin-bottom: 12px; }
-.info-item .label { width: 80px; color: #909399; }
-.log-title { font-weight: bold; margin-bottom: 12px; }
+.user-page { min-height: 100vh; padding: clamp(14px,2vw,28px); background: var(--surface); color: var(--charcoal); }
+.page-header { display:flex; justify-content:space-between; gap:20px; padding:28px; margin-bottom:20px; border-radius:var(--radius-xl); background:linear-gradient(135deg,var(--canvas) 0%,var(--tint-lavender) 100%); box-shadow:var(--shadow-subtle); }
+.eyebrow { margin:0 0 8px; color:var(--primary); font-weight:700; }
+.page-header h1 { margin:0; font-size:28px; color:var(--ink); }
+.page-header p { color:var(--steel); }
+.primary-btn { height:40px; padding:0 18px; border-radius:var(--radius-md); cursor:pointer; font:var(--text-button); border:none; color:var(--on-primary); background:var(--primary); }
+.outline-btn { height:40px; padding:0 18px; border-radius:var(--radius-md); cursor:pointer; font:var(--text-button); border:1px solid var(--hairline-strong); color:var(--primary); background:var(--canvas); }
+.table-wrap { background:var(--canvas); border:1px solid var(--hairline); border-radius:var(--radius-lg); overflow-x:auto; margin-bottom:var(--space-lg); }
+table { width:100%; border-collapse:collapse; min-width:700px; }
+th,td { padding:12px 14px; text-align:left; border-bottom:1px solid var(--hairline-soft); font:var(--text-sm); }
+th { color:var(--steel); background:var(--surface-soft); font:var(--text-sm-medium); }
+.state-cell { text-align:center; color:var(--muted); padding:40px; }
+.action-cell { white-space:nowrap; }
+.text-btn { border:none; background:transparent; cursor:pointer; font-size:13px; margin-right:10px; color:var(--link-blue); }
+.text-btn.danger { color:var(--error); }
+.pagination { display:flex; flex-wrap:wrap; justify-content:center; align-items:center; gap:4px; margin-top:20px; }
+.page-btn { border:1px solid var(--hairline); border-radius:var(--radius-sm); background:var(--canvas); cursor:pointer; font-size:14px; min-width:34px; height:34px; display:flex; align-items:center; justify-content:center; padding:0 8px; color:var(--charcoal); }
+.page-btn:disabled { opacity:0.35; cursor:not-allowed; }
+.page-btn.active { background:var(--primary); color:var(--on-primary); border-color:var(--primary); }
+.page-info { margin-left:8px; color:var(--stone); }
+.dialog-mask { position:fixed; inset:0; z-index:20; display:flex; align-items:center; justify-content:center; padding:16px; background:rgba(15,23,42,0.35); }
+.dialog { width:min(480px,100%); padding:24px; border-radius:var(--radius-xl); background:var(--canvas); }
+.dialog h3 { margin:0 0 16px; font:var(--text-h3); }
+.form-grid { display:grid; gap:14px; }
+.form-grid label { display:grid; gap:6px; color:var(--slate); font:var(--text-sm); }
+.form-grid input,.form-grid select { height:40px; padding:0 12px; border:1px solid var(--hairline-strong); border-radius:var(--radius-md); outline:none; background:var(--canvas); font:var(--text-sm); color:var(--charcoal); }
+.dialog-actions { display:flex; justify-content:flex-end; gap:10px; margin-top:18px; }
+@media(max-width:760px){ .page-header{flex-direction:column} }
 </style>

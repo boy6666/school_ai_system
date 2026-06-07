@@ -87,11 +87,18 @@ const handleCommand = (command: string) => {
 
 <style scoped>
 .layout-container { height: 100vh; }
-.aside { background-color: #304156; }
-.logo { height: 60px; line-height: 60px; text-align: center; color: white; font-size: 20px; font-weight: bold; }
-.header { background-color: #fff; border-bottom: 1px solid #e6e6e6; display: flex; justify-content: flex-end; align-items: center; padding: 0 20px; }
-.user-dropdown-trigger { display: flex; align-items: center; cursor: pointer; }
-.user-name { margin-right: 5px; }
+.aside { background-color: var(--brand-navy); }
+.logo { height: 60px; line-height: 60px; text-align: center; color: var(--on-dark); font-size: 18px; font-weight: 600; letter-spacing: -0.3px; }
+.header { background-color: var(--canvas); border-bottom: 1px solid var(--hairline); display: flex; justify-content: flex-end; align-items: center; padding: 0 var(--space-lg); }
+.user-dropdown-trigger { display: flex; align-items: center; cursor: pointer; gap: var(--space-xs); padding: var(--space-xs) 0; }
+.user-name { font: var(--text-sm-medium); color: var(--charcoal); }
 
-.el-main { background: #f5f6f8 !important; padding: 0 !important; }
+.el-main { background: var(--surface) !important; padding: 0 !important; }
+
+/* Element Plus menu overrides */
+.aside .el-menu { background: var(--brand-navy) !important; border-right: none !important; }
+.aside .el-menu-item { background: transparent !important; color: var(--on-dark-muted) !important; border-radius: var(--radius-sm) !important; margin: 2px var(--space-xs) !important; font: var(--text-sm-medium) !important; }
+.aside .el-menu-item:hover { background: rgba(255,255,255,0.06) !important; color: var(--on-dark) !important; }
+.aside .el-menu-item.is-active { background: var(--primary) !important; color: var(--on-dark) !important; }
+.aside .el-menu-item .el-icon { color: inherit !important; }
 </style>

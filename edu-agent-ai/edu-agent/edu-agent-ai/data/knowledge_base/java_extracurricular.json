@@ -1,0 +1,504 @@
+{
+  "chapters": [
+    {
+      "id": 1,
+      "name": "Java 简介",
+      "tag": "java-intro",
+      "levels": [
+        {
+          "level": "basic",
+          "name": "基础补齐",
+          "extracurricular": "Java 由 Sun Microsystems 于 1995 年推出，最初称为 Oak（橡树），后因商标冲突改为 Java。它的三个体系是 Java SE、Java EE、Java ME。",
+          "joke": "问：为什么 Java 程序员喜欢戴眼镜？答：因为他们不写 C（看不着）！"
+        },
+        {
+          "level": "intermediate",
+          "name": "稳步提升",
+          "extracurricular": "Java 字节码运行在 JVM 上，JIT 编译器可将热点字节码编译成本地代码，大幅提升执行效率。Java 是解释型与编译型结合的混合语言。",
+          "joke": "面试官：“你熟悉 Java 三大体系吗？”求职者：“当然，Java SE，Java EE，还有…Java 我全都要？”"
+        },
+        {
+          "level": "advanced",
+          "name": "拔尖拓展",
+          "extracurricular": "Java 的跨平台依赖于 JVM，不同平台的 JVM 实现不同，但都遵循 Java 虚拟机规范。Oracle 从 Java 9 开始引入了模块化系统（Project Jigsaw），将 JDK 拆分为多个模块。",
+          "joke": "问：Java 为什么叫 Java？答：因为 Oak 被注册了，团队去咖啡馆 brainstorming，决定用咖啡命名。后来有人问：“那为什么不叫 Cappuccino？”另一个人说：“因为那样太长了，写起来费劲。”"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Java 开发环境配置",
+      "tag": "java-setup",
+      "levels": [
+        {
+          "level": "basic",
+          "name": "基础补齐",
+          "extracurricular": "配置 Java 环境需要设置 JAVA_HOME 指向 JDK 安装目录，并在 PATH 中添加 %JAVA_HOME%\\bin。CLASSPATH 在 JDK 1.5 以上非必须。",
+          "joke": "程序员 A：“我昨天配置了 3 个小时的 Java 环境变量。” B：“然后呢？” A：“然后发现我忘了装 JDK。”"
+        },
+        {
+          "level": "intermediate",
+          "name": "稳步提升",
+          "extracurricular": "IntelliJ IDEA 是 JetBrains 开发的商业 IDE，社区版免费。Eclipse 由 Eclipse 基金会维护，完全开源。VS Code 通过插件支持 Java 开发。",
+          "joke": "问：为什么 Java 程序员总是带一把尺子？答：因为要量（凉）一下环境（Path）。"
+        },
+        {
+          "level": "advanced",
+          "name": "拔尖拓展",
+          "extracurricular": "JVM 参数 -Xms 和 -Xmx 分别设置堆内存初始值和最大值。GC 调优常用 -XX:+UseG1GC、-XX:+UseConcMarkSweepGC 等。从 Java 9 开始，默认垃圾回收器为 G1。",
+          "joke": "一个 JVM 参数对另一个说：“我是 -Xmx，控制最大内存。”另一个说：“我是 -Xms，控制初始内存。”又一个插嘴：“我是 -XX:+UseSerialGC，你们都得听我的！”第一个说：“你过时了，现在 G1 才是老大。”"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "Java 变量类型",
+      "tag": "java-variables",
+      "levels": [
+        {
+          "level": "basic",
+          "name": "基础补齐",
+          "extracurricular": "局部变量在方法、构造器或代码块中声明，必须初始化才能使用。成员变量有默认值（0、false、null）。",
+          "joke": "局部变量对全局变量说：“你每次都能被大家看到，真羡慕。”全局变量叹了口气：“可我一改就得背锅啊。”"
+        },
+        {
+          "level": "intermediate",
+          "name": "稳步提升",
+          "extracurricular": "静态变量（类变量）用 static 修饰，所有实例共享一份，在类加载时初始化。实例变量在创建对象时分配内存。",
+          "joke": "问：Java 变量中最神秘的是谁？答：局部变量，因为它只在代码块里出现一会儿就消失了，像极了魔术师。"
+        },
+        {
+          "level": "advanced",
+          "name": "拔尖拓展",
+          "extracurricular": "从 Java 10 开始，局部变量可以使用 var 进行类型推断，但必须在声明时初始化。var 不是关键字而是保留类型名，因此可以用于变量名（不推荐）。",
+          "joke": "var 说：“我不指定类型，但我什么都能装。”int 说：“你敢装 String 试试？”var 回答：“你管不着，编译器会帮我看。”"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "name": "Java 基本数据类型",
+      "tag": "java-primitives",
+      "levels": [
+        {
+          "level": "basic",
+          "name": "基础补齐",
+          "extracurricular": "Java 有 8 种基本数据类型：byte、short、int、long、float、double、char、boolean。char 是 16 位 Unicode 字符。",
+          "joke": "问：为什么 Java 的 float 和 double 总吵架？答：因为它们合（和）不精确。"
+        },
+        {
+          "level": "intermediate",
+          "name": "稳步提升",
+          "extracurricular": "浮点数 0.1 + 0.2 在 Java 中不等于 0.3，因为二进制无法精确表示某些十进制小数。货币计算应使用 BigDecimal。",
+          "joke": "程序员：“我老婆说我总是‘四舍五入’地敷衍她。”朋友：“那你怎么回答？”程序员：“算了，取个整吧。”"
+        },
+        {
+          "level": "advanced",
+          "name": "拔尖拓展",
+          "extracurricular": "boolean 类型在 JVM 中通常用 int 表示（0 为 false，非 0 为 true），大小依赖于 JVM 实现。double 的 MIN_VALUE 是最小的正数（4.9E-324），而不是负数。",
+          "joke": "double 对 float 说：“我比你精度高，范围大。”float 回答：“但我占内存小，嵌入式系统更喜欢我。”long 路过：“你们都不如我整数精确。”double 冷笑：“整数？你连 0.1 都存不了。”"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "name": "Java 修饰符",
+      "tag": "java-modifiers",
+      "levels": [
+        {
+          "level": "basic",
+          "name": "基础补齐",
+          "extracurricular": "访问修饰符有 private、default、protected、public。private 仅类内可见，public 对所有类可见。",
+          "joke": "问：Java 修饰符里谁最害羞？答：private，因为它只肯在自家（类）里露面。"
+        },
+        {
+          "level": "intermediate",
+          "name": "稳步提升",
+          "extracurricular": "static 修饰的成员属于类，可通过类名直接访问。final 修饰的变量只能赋值一次，方法不能重写，类不能被继承。",
+          "joke": "产品经理：“这个方法能不能改成 public？”程序员：“不行，它是 private 的，就像你的支付宝密码不能公开。”"
+        },
+        {
+          "level": "advanced",
+          "name": "拔尖拓展",
+          "extracurricular": "synchronized 在 Java 6 后引入偏向锁、轻量级锁优化。volatile 保证可见性并禁止指令重排序，但不保证原子性。transient 阻止字段被序列化。",
+          "joke": "volatile 对 synchronized 说：“我不用锁就能保证可见性。”synchronized 反问：“那你敢处理 i++ 吗？”volatile 沉默。synchronized 得意：“所以还是得我出马。”"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "name": "Java 运算符",
+      "tag": "java-operators",
+      "levels": [
+        {
+          "level": "basic",
+          "name": "基础补齐",
+          "extracurricular": "算术运算符：+ - * / %，关系运算符：== != > < >= <=，逻辑运算符：&& || !。",
+          "joke": "问：为什么 && 和 || 叫做“短路运算符”？答：因为只要一边决定了结果，另一边就断电（不执行）了。"
+        },
+        {
+          "level": "intermediate",
+          "name": "稳步提升",
+          "extracurricular": "三元运算符 ? : 是唯一的三目运算符。位运算符 & | ^ ~ << >> >>> 用于整型。instanceof 检查对象类型。",
+          "joke": "老婆：“如果你去洗碗，我就给你一个惊喜。”程序员（思考片刻）：“(去洗碗) ? 惊喜 : 挨骂;”然后默默走向厨房。"
+        },
+        {
+          "level": "advanced",
+          "name": "拔尖拓展",
+          "extracurricular": ">>> 是无符号右移，无论正负，高位补零。<< 左移相当于乘 2，>> 带符号右移相当于除 2。instanceof 在 Java 16 支持模式匹配，可直接声明变量。",
+          "joke": ">>> 对 >> 说：“我不管正负，一律补零。”>> 回答：“这样不精确，负数会被变成正数。”>>> 反驳：“那是你不懂无符号的世界。”"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "name": "Java 条件语句",
+      "tag": "java-if-else",
+      "levels": [
+        {
+          "level": "basic",
+          "name": "基础补齐",
+          "extracurricular": "if 语句根据布尔表达式决定执行哪个分支。else 与最近的 if 配对。switch 支持 int、char、byte、short、枚举和 String（Java 7+）。",
+          "joke": "程序员写了一个 if-else 嵌套了 20 层，后来找他帮忙的同事说：“这不是代码，这是俄罗斯套娃。”"
+        },
+        {
+          "level": "intermediate",
+          "name": "稳步提升",
+          "extracurricular": "switch 中 break 用于防止穿透（fall-through）。default 处理所有未匹配的情况。多个 case 可以合并。",
+          "joke": "问：为什么 switch 语句的 break 那么重要？答：因为如果没有 break，程序就会“落到”下一个 case 里，就像你滑滑梯停不下来一样。"
+        },
+        {
+          "level": "advanced",
+          "name": "拔尖拓展",
+          "extracurricular": "Java 12 开始，switch 可作为表达式，使用 -> 代替 :，不需要 break。Java 13 引入 yield 返回值。Java 17 正式稳定了 switch 表达式。",
+          "joke": "旧版 switch 对新版说：“你凭什么不用 break？”新版回答：“我用 -> 箭头，直接跳出，比你的冒号简洁多了。”旧版叹气：“时代变了。”"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "name": "Java 循环结构",
+      "tag": "java-loops",
+      "levels": [
+        {
+          "level": "basic",
+          "name": "基础补齐",
+          "extracurricular": "while 先判断后执行，可能 0 次；do-while 至少执行 1 次；for 用于固定次数循环；增强 for 用于遍历数组或集合。",
+          "joke": "一个 for 循环对 while 说：“我有三个兄弟。” while 不屑：“我一个条件就能搞定。” do-while 插嘴：“可我至少能保证执行一次。”"
+        },
+        {
+          "level": "intermediate",
+          "name": "稳步提升",
+          "extracurricular": "break 退出整个循环，continue 跳过本次迭代。带标签的 break/continue 可以跳出多层循环。",
+          "joke": "问：为什么 while(true) 是最恐怖的死循环？答：因为它从不 end（结束），比甲方改需求还可怕。"
+        },
+        {
+          "level": "advanced",
+          "name": "拔尖拓展",
+          "extracurricular": "增强 for 循环是语法糖，编译后对于数组变成普通 for，对于 Iterable 变成 while + 迭代器。遍历时不能直接修改集合结构，否则抛 ConcurrentModificationException。",
+          "joke": "迭代器对增强 for 说：“你背后其实是我在支撑。”增强 for 回答：“我知道，但你写法太啰嗦了，我简化了你们。”"
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "name": "Java 方法",
+      "tag": "java-methods",
+      "levels": [
+        {
+          "level": "basic",
+          "name": "基础补齐",
+          "extracurricular": "方法由修饰符、返回值类型、方法名、参数列表和方法体组成。void 表示无返回值。构造方法名称与类名相同，无返回值。",
+          "joke": "问：为什么构造方法没有返回类型？答：因为它从不“返回”，只是把对象“生”出来。"
+        },
+        {
+          "level": "intermediate",
+          "name": "稳步提升",
+          "extracurricular": "方法重载（Overload）要求方法名相同、参数列表不同，与返回值无关。可变参数（varargs）必须是最后一个参数。",
+          "joke": "老师：“什么是方法重写？”学生：“就是儿子把父亲的家规改掉了。”"
+        },
+        {
+          "level": "advanced",
+          "name": "拔尖拓展",
+          "extracurricular": "main 方法可以被重载，但 JVM 只调用 public static void main(String[])。finalize 方法在 GC 前调用，Java 9 已废弃，推荐 Cleaner 或 try-with-resources。",
+          "joke": "finalize 对 Cleaner 说：“我虽然被废弃了，但我有历史地位。”Cleaner 回答：“你不可预测，我基于 PhantomReference 更可靠。”finalize 叹气：“时代抛弃了我。”"
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "name": "Java 数组",
+      "tag": "java-arrays",
+      "levels": [
+        {
+          "level": "basic",
+          "name": "基础补齐",
+          "extracurricular": "数组是固定长度的同类型元素集合。索引从 0 开始。声明方式：int[] arr 或 int arr[]。",
+          "joke": "问：数组的索引为什么从 0 开始？答：因为如果从 1 开始，那么 arr[0] 就没有意义了，就像星期一是 0 号一样奇怪。"
+        },
+        {
+          "level": "intermediate",
+          "name": "稳步提升",
+          "extracurricular": "二维数组是数组的数组，可以是锯齿数组（每行长度不同）。Arrays 工具类提供排序、二分查找、填充等静态方法。",
+          "joke": "程序员：“我昨天写代码时数组越界了。”朋友：“然后呢？”程序员：“JVM 要抛异常，我说你抛吧我不接。”"
+        },
+        {
+          "level": "advanced",
+          "name": "拔尖拓展",
+          "extracurricular": "数组的 clone() 方法进行浅拷贝，基本类型数组没问题，引用类型数组克隆后元素指向相同对象。System.arraycopy() 是本地方法，效率高。",
+          "joke": "浅拷贝对深拷贝说：“我复制的是引用，不是对象。”深拷贝问：“那修改原对象的属性会影响我？”浅拷贝答：“会，但至少我快啊。”"
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "name": "Java String 类",
+      "tag": "java-string",
+      "levels": [
+        {
+          "level": "basic",
+          "name": "基础补齐",
+          "extracurricular": "String 是不可变类，任何修改都会产生新对象。字符串常量池存储字面量。常用方法：length()、charAt()、substring() 等。",
+          "joke": "问：String 为什么是不可变的？答：因为它怕变心（变型）。"
+        },
+        {
+          "level": "intermediate",
+          "name": "稳步提升",
+          "extracurricular": "equals() 比较内容，== 比较引用。intern() 方法可以将字符串放入常量池。String 的 + 操作编译后变成 StringBuilder。",
+          "joke": "String 对 StringBuilder 说：“我是老实人，从不改变；你是花心大萝卜，经常变来变去。”"
+        },
+        {
+          "level": "advanced",
+          "name": "拔尖拓展",
+          "extracurricular": "字符串常量池在 Java 7 后从永久代移到堆中，减少 OOM。Java 9 开始，String 内部使用 byte[] 代替 char[]，以节省内存。",
+          "joke": "Java 9 的 String 对 Java 8 的 String 说：“我把内部 char 数组换成了 byte，更省内存。”Java 8 回答：“你那是为了 Latin-1 优化，但是遇到中文还得用两个 byte。”"
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "name": "Java StringBuffer 和 StringBuilder",
+      "tag": "java-string-buffer-builder",
+      "levels": [
+        {
+          "level": "basic",
+          "name": "基础补齐",
+          "extracurricular": "StringBuffer 线程安全（方法同步），StringBuilder 非线程安全，性能更高。单线程推荐 StringBuilder。",
+          "joke": "问：为什么 StringBuffer 总是慢吞吞的？答：因为它太谨慎（同步）了，做每一步都要看看旁边有没有人。"
+        },
+        {
+          "level": "intermediate",
+          "name": "稳步提升",
+          "extracurricular": "常用方法：append()、insert()、delete()、reverse()。初始容量 16，自动扩容。toString() 转换为 String。",
+          "joke": "StringBuilder：“你为什么每次操作都带锁？”StringBuffer：“因为我是保安，要保证安全。”"
+        },
+        {
+          "level": "advanced",
+          "name": "拔尖拓展",
+          "extracurricular": "StringBuilder 和 StringBuffer 都继承自 AbstractStringBuilder。append 方法返回 this，支持链式调用。扩容策略是旧容量乘 2 加 2。",
+          "joke": "链式调用：“.append().append() 这种写法让我很舒服。”普通调用：“每次都要写 sb.xxx，累不累？”链式调用：“这叫流畅接口，你不懂美学。”"
+        }
+      ]
+    },
+    {
+      "id": 13,
+      "name": "Java 对象和类",
+      "tag": "java-object-class",
+      "levels": [
+        {
+          "level": "basic",
+          "name": "基础补齐",
+          "extracurricular": "面向对象三大特性：封装、继承、多态。类是对现实事物的抽象，对象是类的具体实例。使用 new 关键字创建对象。",
+          "joke": "学生：“我妈妈是面向对象的例子。她封装着我的零花钱，我只有通过她提供的 getter 才能拿到。”"
+        },
+        {
+          "level": "intermediate",
+          "name": "稳步提升",
+          "extracurricular": "this 引用当前对象，可用于调用其他构造方法。一个 .java 文件只能有一个 public 类，且类名与文件名相同。",
+          "joke": "问：为什么对象和类是一对冤家？答：因为类说“我定义了你的规则”，对象说“但我才是真实的你”。"
+        },
+        {
+          "level": "advanced",
+          "name": "拔尖拓展",
+          "extracurricular": "Class 对象是反射的核心，通过 .class 或 getClass() 获取。Java 9 模块系统限制反射访问非 public 成员，需 --add-opens 参数。",
+          "joke": "反射：“我能在运行时拿到类的所有信息。”封装：“你破坏了私有性！”反射：“但框架需要我，比如 Spring。”"
+        }
+      ]
+    },
+    {
+      "id": 14,
+      "name": "Java 继承",
+      "tag": "java-inheritance",
+      "levels": [
+        {
+          "level": "basic",
+          "name": "基础补齐",
+          "extracurricular": "Java 是单继承，一个子类只能有一个父类。extends 用于继承。子类继承父类非 private 成员。",
+          "joke": "问：为什么 Java 不支持类的多继承？答：因为怕出现“钻石问题”——一个类有两个爸爸，不知道该叫谁爸爸。"
+        },
+        {
+          "level": "intermediate",
+          "name": "稳步提升",
+          "extracurricular": "super 关键字访问父类成员、调用父类构造方法。方法重写要求方法签名相同，访问权限不能更低。final 类不能被继承。",
+          "joke": "儿子问父亲：“我为什么不能同时继承你和叔叔？”父亲：“因为你吃饭时会有两个声音叫你‘先来我这儿吃’。”"
+        },
+        {
+          "level": "advanced",
+          "name": "拔尖拓展",
+          "extracurricular": "Java 8 接口默认方法解决了菱形问题。若两个接口有相同默认方法，实现类必须重写并指定调用 InterfaceName.super.method()。",
+          "joke": "默认方法：“我可以让接口有具体实现。”抽象类：“我早就可以了。”默认方法反驳：“但我能多继承。”抽象类无话可说。"
+        }
+      ]
+    },
+    {
+      "id": 15,
+      "name": "Java 多态",
+      "tag": "java-polymorphism",
+      "levels": [
+        {
+          "level": "basic",
+          "name": "基础补齐",
+          "extracurricular": "多态的条件：继承、重写、父类引用指向子类对象。成员方法编译看左边、运行看右边。",
+          "joke": "面试官：“解释多态。”求职者：“我老婆让我‘拿那个’——同一个指令，可能拿水杯、遥控器、拖鞋，取决于她指的是哪个对象。”"
+        },
+        {
+          "level": "intermediate",
+          "name": "稳步提升",
+          "extracurricular": "成员变量没有多态，编译运行都看左边。静态方法属于类，也没有多态。向上转型自动，向下转型需强制并用 instanceof 检查。",
+          "joke": "问：多态在动物世界里怎么体现？答：你对着动物说“叫”，狗会“汪汪”，猫会“喵喵”。"
+        },
+        {
+          "level": "advanced",
+          "name": "拔尖拓展",
+          "extracurricular": "动态绑定是通过方法表（vtable）实现的。private、static、final 方法是静态绑定。Java 中虚函数（非 final、非 static）默认动态绑定。",
+          "joke": "动态绑定：“我运行时才决定调用哪个方法。”静态绑定：“我编译时就确定了。”动态绑定：“那你不够灵活。”静态绑定：“我比你快。”"
+        }
+      ]
+    },
+    {
+      "id": 16,
+      "name": "Java 接口",
+      "tag": "java-interface",
+      "levels": [
+        {
+          "level": "basic",
+          "name": "基础补齐",
+          "extracurricular": "接口使用 interface 定义，方法默认 public abstract，变量默认 public static final。类实现接口用 implements。",
+          "joke": "问：接口和抽象类有什么区别？答：接口是“我告诉你做什么”，抽象类是“我做了一部分，剩下的你做”。"
+        },
+        {
+          "level": "intermediate",
+          "name": "稳步提升",
+          "extracurricular": "Java 8 支持默认方法和静态方法。默认方法用于在不破坏现有实现的情况下扩展接口。接口可以多继承（extends 多个接口）。",
+          "joke": "接口对实现类：“你要是不实现我的所有方法，你就是抽象类！”实现类哭道：“我已经实现了 10 个，还有 1 个太难了……”"
+        },
+        {
+          "level": "advanced",
+          "name": "拔尖拓展",
+          "extracurricular": "Java 9 允许接口私有方法，用于在默认方法间共享代码。标记接口（如 Serializable）没有任何方法，仅作标记。函数式接口（只有一个抽象方法）可使用 Lambda 表达式。",
+          "joke": "函数式接口：“我只有一个抽象方法，可以用 Lambda 实现。”普通接口：“那你这接口也太简单了。”函数式接口：“简单就是美。”"
+        }
+      ]
+    },
+    {
+      "id": 17,
+      "name": "Java Swing 教程",
+      "tag": "java-swing",
+      "levels": [
+        {
+          "level": "basic",
+          "name": "基础补齐",
+          "extracurricular": "Swing 是 Java 的 GUI 工具包，纯 Java 实现，跨平台。JFrame 是顶级窗口，JPanel 是容器。",
+          "joke": "问：为什么 Swing 程序员不喜欢去派对？答：因为他们讨厌事件（Event）太多。"
+        },
+        {
+          "level": "intermediate",
+          "name": "稳步提升",
+          "extracurricular": "Swing 组件是轻量级的，不依赖本地操作系统。布局管理器有 BorderLayout、FlowLayout、GridLayout 等。事件处理需实现 ActionListener。",
+          "joke": "用户：“你的 Swing 界面为什么卡顿？”程序员：“因为我把所有逻辑都写在 EDT 里了。”用户：“怎么办？”程序员：“我开了新线程，界面不刷新了，至少不卡。”"
+        },
+        {
+          "level": "advanced",
+          "name": "拔尖拓展",
+          "extracurricular": "Swing 采用 MVC 模式，如 JTable 的 TableModel。SwingUtilities.invokeLater() 用于确保 UI 更新在 EDT 执行。Nimbus 和 Metal 是内置 LookAndFeel。",
+          "joke": "Swing 对 AWT 说：“你依赖本地系统，我纯 Java 跨平台。”AWT 回答：“但我更接近原生，速度快。”Swing 不屑：“现在谁还在意那点速度？”"
+        }
+      ]
+    },
+    {
+      "id": 18,
+      "name": "Java 多线程编程",
+      "tag": "java-multithreading",
+      "levels": [
+        {
+          "level": "basic",
+          "name": "基础补齐",
+          "extracurricular": "线程创建方式：继承 Thread、实现 Runnable。start() 启动线程，run() 是任务体。sleep() 使线程暂停。",
+          "joke": "问：线程和进程有什么区别？答：进程是房东，线程是房客。房东被干掉，所有房客都得搬走。"
+        },
+        {
+          "level": "intermediate",
+          "name": "稳步提升",
+          "extracurricular": "线程状态：NEW、RUNNABLE、BLOCKED、WAITING、TIMED_WAITING、TERMINATED。synchronized 用于同步。join() 等待线程结束。",
+          "joke": "两个线程争夺一个锁，锁说：“别打了，谁先拿到就跟谁。”线程 A：“我优先级高。”线程 B：“我 wait 了很久！”锁：“找 synchronized 评理吧。”"
+        },
+        {
+          "level": "advanced",
+          "name": "拔尖拓展",
+          "extracurricular": "Callable 有返回值，配合 FutureTask 使用。volatile 保证可见性，不保证原子性。线程池（ThreadPoolExecutor）避免频繁创建销毁线程。Java 并发包（JUC）提供高级工具。",
+          "joke": "volatile 对 synchronized 说：“我不用锁就能保证可见性。”synchronized 反问：“那你敢处理 i++ 吗？”volatile 沉默。synchronized 得意：“所以还是得我出马。”"
+        }
+      ]
+    },
+    {
+      "id": 19,
+      "name": "Java 异常处理",
+      "tag": "java-exception",
+      "levels": [
+        {
+          "level": "basic",
+          "name": "基础补齐",
+          "extracurricular": "异常层次：Throwable → Error / Exception。检查性异常（如 IOException）必须处理，运行时异常（如 NullPointerException）不强制。",
+          "joke": "问：为什么 finally 块总是执行？答：因为它很“靠谱”，即使 try 里 return 了，它也要最后说一句：“我办事，你放心。”"
+        },
+        {
+          "level": "intermediate",
+          "name": "稳步提升",
+          "extracurricular": "try-catch-finally，catch 可有多个，finally 总会执行。throw 手动抛出异常，throws 声明方法可能抛出的异常。",
+          "joke": "异常对程序员：“我不是 bug，我是 feature 的另一种形式。”程序员：“那你能消失吗？”异常：“试试 try-catch，但别 catch 了不处理。”"
+        },
+        {
+          "level": "advanced",
+          "name": "拔尖拓展",
+          "extracurricular": "try-with-resources（Java 7+）自动关闭实现 AutoCloseable 的资源。多异常捕获用 | 分隔（如 IOException | SQLException）。异常链通过 initCause() 传递原因。",
+          "joke": "try-with-resources 对 finally 说：“我不用写 finally 关闭资源。”finally 回答：“但你只能用于 AutoCloseable，我还是通用的。”try-with-resources 笑笑：“那我已经够用了。”"
+        }
+      ]
+    },
+    {
+      "id": 20,
+      "name": "Java 流(Stream)、文件(File)和IO",
+      "tag": "java-io",
+      "levels": [
+        {
+          "level": "basic",
+          "name": "基础补齐",
+          "extracurricular": "字节流：InputStream/OutputStream，字符流：Reader/Writer。File 类操作文件和目录。",
+          "joke": "问：为什么 FileInputStream 读文件很慢？答：因为它一个字节一个字节地读，就像你一个字一个字地看书。"
+        },
+        {
+          "level": "intermediate",
+          "name": "稳步提升",
+          "extracurricular": "BufferedInputStream 提供缓冲，提高效率。InputStreamReader 将字节流转换为字符流。FileWriter / FileReader 用于文本文件。",
+          "joke": "文件流对数据说：“你在我这里走一遭，就会变成 0 和 1。”数据：“那我还剩什么？”文件流：“剩个 EOF 和你的 hashCode。”"
+        },
+        {
+          "level": "advanced",
+          "name": "拔尖拓展",
+          "extracurricular": "RandomAccessFile 支持随机读写，通过 seek() 移动指针。NIO 中的 FileChannel 更高效，支持内存映射文件（MappedByteBuffer）。序列化需实现 Serializable 接口。",
+          "joke": "RandomAccessFile 对 FileInputStream 说：“我可以随意跳转。”FileInputStream 羡慕：“我只能从头读到尾。”RandomAccessFile 得意：“这就是我的优势。”"
+        }
+      ]
+    }
+  ]
+}

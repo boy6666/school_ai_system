@@ -1,0 +1,423 @@
+$ npm --prefix edu-agent-web run build 2>&1
+[exit 2]
+
+> edu-agent-web@0.0.0 build
+> vue-tsc -b && vite build
+
+src/views/admin/AdminLogin.vue(42,60): error TS1005: ',' expected.
+src/views/admin/AdminLogin.vue(42,64): error TS1005: ',' expected.
+src/views/admin/AdminLogin.vue(42,68): error TS1002: Unterminated string literal.
+src/views/admin/AdminLogin.vue(43,1): error TS1005: ':' expected.
+src/views/admin/AdminLogin.vue(45,1): error TS1005: ',' expected.
+src/views/admin/AdminLogin.vue(45,7): error TS1005: ':' expected.
+src/views/admin/AdminLogin.vue(56,33): error TS1002: Unterminated string literal.
+src/views/admin/AdminLogin.vue(57,5): error TS1005: ',' expected.
+src/views/admin/AdminLogin.vue(64,1): error TS1005: ',' expected.
+src/views/admin/Settings.vue(339,32): error TS1005: ',' expected.
+src/views/admin/Settings.vue(339,37): error TS1005: ',' expected.
+src/views/admin/Settings.vue(339,54): error TS1005: ':' expected.
+src/views/admin/Settings.vue(339,59): error TS1127: Invalid character.
+src/views/admin/Statistics.vue(110,76): error TS1005: ',' expected.
+src/views/admin/Statistics.vue(110,83): error TS1005: ':' expected.
+src/views/admin/Statistics.vue(110,89): error TS1002: Unterminated string literal.
+src/views/admin/Statistics.vue(111,11): error TS1005: ',' expected.
+src/views/admin/Statistics.vue(165,60): error TS1127: Invalid character.
+src/views/admin/Statistics.vue(165,61): error TS1005: ':' expected.
+src/views/admin/Statistics.vue(165,63): error TS1005: ',' expected.
+src/views/admin/Statistics.vue(165,63): error TS1351: An identifier or keyword cannot immediately follow a numeric literal.
+src/views/admin/Statistics.vue(165,67): error TS1005: ',' expected.
+src/views/admin/Statistics.vue(165,73): error TS1002: Unterminated string literal.
+src/views/admin/Statistics.vue(166,11): error TS1005: ':' expected.
+src/views/admin/Statistics.vue(166,63): error TS1005: ',' expected.
+src/views/admin/Statistics.vue(166,70): error TS1005: ':' expected.
+src/views/admin/Statistics.vue(166,75): error TS1002: Unterminated string literal.
+src/views/admin/Statistics.vue(167,9): error TS1005: ',' expected.
+src/views/admin/UserManage.vue(124,65): error TS1005: ',' expected.
+src/views/admin/UserManage.vue(124,67): error TS1005: ',' expected.
+src/views/admin/UserManage.vue(124,80): error TS1005: ':' expected.
+src/views/admin/UserManage.vue(124,82): error TS1005: ',' expected.
+src/views/admin/UserManage.vue(124,85): error TS1002: Unterminated string literal.
+src/views/admin/UserManage.vue(125,3): error TS1005: ':' expected.
+src/views/admin/UserManage.vue(125,10): error TS1005: ':' expected.
+src/views/RegisterForm.vue(72,35): error TS1002: Unterminated string literal.
+src/views/RegisterForm.vue(73,3): error TS1005: ',' expected.
+src/views/RegisterForm.vue(74,35): error TS1002: Unterminated string literal.
+src/views/RegisterForm.vue(75,3): error TS1005: ',' expected.
+src/views/RegisterForm.vue(83,61): error TS1005: ',' expected.
+src/views/RegisterForm.vue(83,65): error TS1005: ',' expected.
+src/views/RegisterForm.vue(83,69): error TS1002: Unterminated string literal.
+src/views/RegisterForm.vue(84,3): error TS1005: ':' expected.
+src/views/RegisterForm.vue(86,51): error TS1005: ',' expected.
+src/views/RegisterForm.vue(86,55): error TS1005: ',' expected.
+src/views/RegisterForm.vue(86,59): error TS1002: Unterminated string literal.
+src/views/RegisterForm.vue(87,3): error TS1005: ':' expected.
+src/views/RegisterForm.vue(89,51): error TS1005: ',' expected.
+src/views/RegisterForm.vue(89,55): error TS1005: ',' expected.
+src/views/RegisterForm.vue(89,59): error TS1002: Unterminated string literal.
+src/views/RegisterForm.vue(90,5): error TS1005: ':' expected.
+src/views/RegisterForm.vue(90,60): error TS1005: ',' expected.
+src/views/RegisterForm.vue(90,64): error TS1005: ',' expected.
+src/views/RegisterForm.vue(90,68): error TS1002: Unterminated string literal.
+src/views/RegisterForm.vue(91,3): error TS1005: ':' expected.
+src/views/RegisterForm.vue(111,39): error TS1002: Unterminated string literal.
+src/views/RegisterForm.vue(112,7): error TS1005: ',' expected.
+src/views/RegisterForm.vue(113,5): error TS1005: ',' expected.
+src/views/student/CourseCenter.vue(141,55): error TS1002: Unterminated string literal.
+src/views/student/CourseCenter.vue(142,5): error TS1005: ',' expected.
+src/views/student/CourseCenter.vue(156,60): error TS1002: Unterminated string literal.
+src/views/student/CourseCenter.vue(157,5): error TS1005: ',' expected.
+src/views/student/CourseCenter.vue(171,51): error TS1002: Unterminated string literal.
+src/views/student/CourseCenter.vue(172,5): error TS1005: ',' expected.
+src/views/student/CourseCenter.vue(186,53): error TS1002: Unterminated string literal.
+src/views/student/CourseCenter.vue(187,5): error TS1005: ',' expected.
+src/views/student/CourseCenter.vue(199,20): error TS1002: Unterminated string literal.
+src/views/student/CourseCenter.vue(200,5): error TS1005: ',' expected.
+src/views/student/CourseCenter.vue(201,55): error TS1002: Unterminated string literal.
+src/views/student/CourseCenter.vue(202,5): error TS1005: ',' expected.
+src/views/student/CourseCenter.vue(208,35): error TS1002: Unterminated string literal.
+src/views/student/CourseCenter.vue(209,5): error TS1005: ',' expected.
+src/views/student/CourseCenter.vue(210,22): error TS1005: ',' expected.
+src/views/student/CourseCenter.vue(210,28): error TS1005: ',' expected.
+src/views/student/CourseCenter.vue(210,32): error TS1005: ',' expected.
+src/views/student/CourseCenter.vue(210,36): error TS1005: ',' expected.
+src/views/student/CourseCenter.vue(210,38): error TS1002: Unterminated string literal.
+src/views/student/CourseCenter.vue(211,3): error TS1005: ',' expected.
+src/views/student/CourseCenter.vue(258,26): error TS1002: Unterminated string literal.
+src/views/student/CourseCenter.vue(259,5): error TS1005: ',' expected.
+src/views/student/CourseCenter.vue(259,21): error TS1002: Unterminated string literal.
+src/views/student/CourseCenter.vue(260,5): error TS1005: ',' expected.
+src/views/student/CourseCenter.vue(260,16): error TS1002: Unterminated string literal.
+src/views/student/CourseDetail.vue(274,44): error TS1002: Unterminated string literal.
+src/views/student/CourseDetail.vue(275,5): error TS1005: ',' expected.
+src/views/student/CourseDetail.vue(286,54): error TS1002: Unterminated string literal.
+src/views/student/CourseDetail.vue(287,9): error TS1005: ',' expected.
+src/views/student/CourseDetail.vue(312,55): error TS1002: Unterminated string literal.
+src/views/student/CourseDetail.vue(313,9): error TS1005: ',' expected.
+src/views/student/CourseDetail.vue(316,51): error TS1005: ',' expected.
+src/views/student/CourseDetail.vue(316,56): error TS1005: ',' expected.
+src/views/student/CourseDetail.vue(316,59): error TS1002: Unterminated string literal.
+src/views/student/CourseDetail.vue(317,9): error TS1005: ',' expected.
+src/views/student/CourseDetail.vue(317,18): error TS1005: ',' expected.
+src/views/student/CourseDetail.vue(320,32): error TS1002: Unterminated string literal.
+src/views/student/CourseDetail.vue(321,13): error TS1005: ',' expected.
+src/views/student/CourseDetail.vue(327,33): error TS1002: Unterminated string literal.
+src/views/student/CourseDetail.vue(328,13): error TS1005: ',' expected.
+src/views/student/CourseDetail.vue(334,30): error TS1002: Unterminated string literal.
+src/views/student/CourseDetail.vue(335,13): error TS1005: ',' expected.
+src/views/student/CourseDetail.vue(340,7): error TS1005: ',' expected.
+src/views/student/CourseDetail.vue(345,49): error TS1002: Unterminated string literal.
+src/views/student/CourseDetail.vue(346,9): error TS1005: ',' expected.
+src/views/student/CourseDetail.vue(349,45): error TS1005: ',' expected.
+src/views/student/CourseDetail.vue(349,49): error TS1005: ',' expected.
+src/views/student/CourseDetail.vue(349,53): error TS1005: ',' expected.
+src/views/student/Dashboard.vue(127,37): error TS1005: ':' expected.
+src/views/student/Dashboard.vue(127,37): error TS1434: Unexpected keyword or identifier.
+src/views/student/LearningPath.vue(201,23): error TS1002: Unterminated string literal.
+src/views/student/LearningPath.vue(232,73): error TS1002: Unterminated string literal.
+src/views/student/LearningPath.vue(233,72): error TS1002: Unterminated string literal.
+src/views/student/LearningPath.vue(234,3): error TS1005: ',' expected.
+src/views/student/LearningPath_backup_162222.vue(199,37): error TS1005: ',' expected.
+src/views/student/LearningPath_backup_162222.vue(199,39): error TS1005: ':' expected.
+src/views/student/LearningPath_backup_162222.vue(199,39): error TS1351: An identifier or keyword cannot immediately follow a numeric literal.
+src/views/student/LearningPath_backup_162222.vue(199,41): error TS1005: ',' expected.
+src/views/student/LearningPath_backup_162222.vue(199,53): error TS1005: ':' expected.
+src/views/student/LearningPath_backup_162222.vue(199,62): error TS1005: ',' expected.
+src/views/student/LearningPath_backup_162222.vue(199,96): error TS1002: Unterminated string literal.
+src/views/student/LearningPath_backup_162222.vue(200,5): error TS1005: ':' expected.
+src/views/student/LearningPath_backup_162222.vue(201,5): error TS1136: Property assignment expected.
+src/views/student/LearningPath_backup_162222.vue(201,38): error TS1005: ',' expected.
+src/views/student/LearningPath_backup_162222.vue(201,40): error TS1005: ':' expected.
+src/views/student/LearningPath_backup_162222.vue(201,40): error TS1351: An identifier or keyword cannot immediately follow a numeric literal.
+src/views/student/LearningPath_backup_162222.vue(201,42): error TS1005: ',' expected.
+src/views/student/LearningPath_backup_162222.vue(201,54): error TS1005: ':' expected.
+src/views/student/LearningPath_backup_162222.vue(201,61): error TS1005: ',' expected.
+src/views/student/LearningPath_backup_162222.vue(201,93): error TS1002: Unterminated string literal.
+src/views/student/LearningPath_backup_162222.vue(202,3): error TS1005: ':' expected.
+src/views/student/LearningPath_backup_162222.vue(205,39): error TS1005: ',' expected.
+src/views/student/LearningPath_backup_162222.vue(205,41): error TS1005: ':' expected.
+src/views/student/LearningPath_backup_162222.vue(205,41): error TS1351: An identifier or keyword cannot immediately follow a numeric literal.
+src/views/student/LearningPath_backup_162222.vue(205,43): error TS1005: ',' expected.
+src/views/student/LearningPath_backup_162222.vue(205,55): error TS1005: ':' expected.
+src/views/student/LearningPath_backup_162222.vue(205,66): error TS1005: ',' expected.
+src/views/student/LearningPath_backup_162222.vue(205,100): error TS1002: Unterminated string literal.
+src/views/student/LearningPath_backup_162222.vue(206,5): error TS1005: ':' expected.
+src/views/student/LearningPath_backup_162222.vue(207,5): error TS1136: Property assignment expected.
+src/views/student/LearningPath_backup_162222.vue(210,35): error TS1005: ',' expected.
+src/views/student/LearningPath_backup_162222.vue(210,37): error TS1005: ':' expected.
+src/views/student/LearningPath_backup_162222.vue(210,37): error TS1351: An identifier or keyword cannot immediately follow a numeric literal.
+src/views/student/LearningPath_backup_162222.vue(210,39): error TS1005: ',' expected.
+src/views/student/LearningPath_backup_162222.vue(210,51): error TS1005: ':' expected.
+src/views/student/LearningPath_backup_162222.vue(210,58): error TS1005: ',' expected.
+src/views/student/LearningPath_backup_162222.vue(210,91): error TS1002: Unterminated string literal.
+src/views/student/LearningPath_backup_162222.vue(211,5): error TS1005: ':' expected.
+src/views/student/LearningPath_backup_162222.vue(212,3): error TS1005: ',' expected.
+src/views/student/LearningTask.vue(201,26): error TS1002: Unterminated string literal.
+src/views/student/LearningTask.vue(202,5): error TS1005: ',' expected.
+src/views/student/LearningTask.vue(305,21): error TS1002: Unterminated string literal.
+src/views/student/LearningTask.vue(306,5): error TS1005: ',' expected.
+src/views/student/LearningTask.vue(313,26): error TS1002: Unterminated string literal.
+src/views/student/LearningTask.vue(314,5): error TS1005: ',' expected.
+src/views/student/LearningTask.vue(315,20): error TS1002: Unterminated string literal.
+src/views/student/LearningTask.vue(316,5): error TS1005: ',' expected.
+src/views/student/LearningTask.vue(327,17): error TS1002: Unterminated string literal.
+src/views/student/LearningTask.vue(328,5): error TS1005: ',' expected.
+src/views/student/LearningTask.vue(328,18): error TS1002: Unterminated string literal.
+src/views/student/LearningTask.vue(329,5): error TS1005: ',' expected.
+src/views/student/LearningTask.vue(329,16): error TS1002: Unterminated string literal.
+src/views/student/Messages.vue(338,57): error TS1002: Unterminated string literal.
+src/views/student/Messages.vue(339,5): error TS1005: ',' expected.
+src/views/student/Messages.vue(346,72): error TS1002: Unterminated string literal.
+src/views/student/Messages.vue(347,5): error TS1005: ',' expected.
+src/views/student/Messages.vue(354,59): error TS1002: Unterminated string literal.
+src/views/student/Messages.vue(355,5): error TS1005: ',' expected.
+src/views/student/Messages.vue(365,20): error TS1002: Unterminated string literal.
+src/views/student/Messages.vue(366,5): error TS1005: ',' expected.
+src/views/student/Messages.vue(374,54): error TS1002: Unterminated string literal.
+src/views/student/Messages.vue(375,5): error TS1005: ',' expected.
+src/views/student/Messages.vue(386,38): error TS1002: Unterminated string literal.
+src/views/student/Messages.vue(387,5): error TS1005: ',' expected.
+src/views/student/Messages.vue(390,47): error TS1005: ',' expected.
+src/views/student/Messages.vue(390,52): error TS1005: ',' expected.
+src/views/student/Messages.vue(390,71): error TS1002: Unterminated string literal.
+src/views/student/Messages.vue(391,7): error TS1005: ':' expected.
+src/views/student/Messages.vue(392,7): error TS1136: Property assignment expected.
+src/views/student/Messages.vue(392,56): error TS1005: ',' expected.
+src/views/student/Messages.vue(392,61): error TS1005: ',' expected.
+src/views/student/Messages.vue(392,80): error TS1002: Unterminated string literal.
+src/views/student/Messages.vue(393,7): error TS1005: ':' expected.
+src/views/student/Messages.vue(393,48): error TS1005: ',' expected.
+src/views/student/Messages.vue(393,53): error TS1005: ',' expected.
+src/views/student/Messages.vue(393,71): error TS1002: Unterminated string literal.
+src/views/student/Messages.vue(394,7): error TS1005: ':' expected.
+src/views/student/Messages.vue(394,46): error TS1005: ',' expected.
+src/views/student/Messages.vue(394,51): error TS1005: ',' expected.
+src/views/student/Messages.vue(394,69): error TS1002: Unterminated string literal.
+src/views/student/Messages.vue(395,5): error TS1005: ':' expected.
+src/views/student/Messages.vue(399,17): error TS1002: Unterminated string literal.
+src/views/student/Messages.vue(400,5): error TS1005: ',' expected.
+src/views/student/Messages.vue(401,36): error TS1002: Unterminated string literal.
+src/views/student/Messages.vue(402,5): error TS1005: ',' expected.
+src/views/student/Messages.vue(405,45): error TS1005: ',' expected.
+src/views/student/Messages.vue(405,48): error TS1005: ',' expected.
+src/views/student/Messages.vue(405,51): error TS1121: Octal literals are not allowed. Use the syntax '0o0'.
+src/views/student/Messages.vue(405,53): error TS1005: ',' expected.
+src/views/student/Messages.vue(405,72): error TS1002: Unterminated string literal.
+src/views/student/Messages.vue(406,7): error TS1005: ':' expected.
+src/views/student/Messages.vue(406,44): error TS1005: ',' expected.
+src/views/student/Messages.vue(406,47): error TS1005: ',' expected.
+src/views/student/Messages.vue(406,52): error TS1005: ',' expected.
+src/views/student/Messages.vue(406,70): error TS1002: Unterminated string literal.
+src/views/student/Messages.vue(407,7): error TS1005: ':' expected.
+src/views/student/Messages.vue(407,44): error TS1005: ',' expected.
+src/views/student/Messages.vue(407,47): error TS1005: ',' expected.
+src/views/student/Messages.vue(407,52): error TS1005: ',' expected.
+src/views/student/Messages.vue(407,70): error TS1002: Unterminated string literal.
+src/views/student/Messages.vue(408,5): error TS1005: ':' expected.
+src/views/student/Messages.vue(412,17): error TS1002: Unterminated string literal.
+src/views/student/Messages.vue(413,5): error TS1005: ',' expected.
+src/views/student/Messages.vue(414,35): error TS1002: Unterminated string literal.
+src/views/student/Messages.vue(415,5): error TS1005: ',' expected.
+src/views/student/Messages.vue(418,43): error TS1005: ',' expected.
+src/views/student/Messages.vue(418,44): error TS1005: ':' expected.
+src/views/student/Messages.vue(418,44): error TS1351: An identifier or keyword cannot immediately follow a numeric literal.
+src/views/student/Messages.vue(418,46): error TS1005: ',' expected.
+src/views/student/Messages.vue(418,64): error TS1002: Unterminated string literal.
+src/views/student/Messages.vue(419,5): error TS1005: ':' expected.
+src/views/student/Messages.vue(471,40): error TS1005: ',' expected.
+src/views/student/Messages.vue(471,42): error TS1005: ',' expected.
+src/views/student/Messages.vue(471,46): error TS1002: Unterminated string literal.
+src/views/student/Messages.vue(472,5): error TS1005: ',' expected.
+src/views/student/Messages.vue(472,22): error TS1005: ',' expected.
+src/views/student/Messages.vue(473,21): error TS1005: ',' expected.
+src/views/student/Messages.vue(474,9): error TS1005: ',' expected.
+src/views/student/Messages.vue(475,3): error TS1005: ',' expected.
+src/views/student/Messages.vue(475,4): error TS1005: ',' expected.
+src/views/student/Messages.vue(475,5): error TS1134: Variable declaration expected.
+src/views/student/Messages.vue(475,10): error TS1005: ',' expected.
+src/views/student/Messages.vue(482,1): error TS1128: Declaration or statement expected.
+src/views/student/Messages.vue(498,48): error TS1005: ',' expected.
+src/views/student/Messages.vue(498,50): error TS1005: ',' expected.
+src/views/student/Messages.vue(498,54): error TS1002: Unterminated string literal.
+src/views/student/Messages.vue(499,5): error TS1005: ',' expected.
+src/views/student/Messages.vue(499,22): error TS1005: ',' expected.
+src/views/student/Messages.vue(500,21): error TS1005: ',' expected.
+src/views/student/Messages.vue(501,9): error TS1005: ',' expected.
+src/views/student/Messages.vue(502,3): error TS1005: ',' expected.
+src/views/student/Messages.vue(502,4): error TS1005: ',' expected.
+src/views/student/Messages.vue(502,5): error TS1134: Variable declaration expected.
+src/views/student/Messages.vue(502,10): error TS1005: ',' expected.
+src/views/student/Messages.vue(504,31): error TS1002: Unterminated string literal.
+src/views/student/Messages.vue(505,3): error TS1005: ',' expected.
+src/views/student/Messages.vue(506,1): error TS1128: Declaration or statement expected.
+src/views/student/Messages.vue(537,29): error TS1002: Unterminated string literal.
+src/views/student/Messages.vue(538,1): error TS1005: ',' expected.
+src/views/student/OnboardOverlay.vue(97,56): error TS1005: ',' expected.
+src/views/student/OnboardOverlay.vue(97,62): error TS1005: ',' expected.
+src/views/student/OnboardOverlay.vue(97,85): error TS1005: ',' expected.
+src/views/student/OnboardOverlay.vue(97,91): error TS1005: ',' expected.
+src/views/student/OnboardOverlay.vue(97,96): error TS1002: Unterminated string literal.
+src/views/student/OnboardOverlay.vue(98,9): error TS1005: ',' expected.
+src/views/student/OnboardOverlay.vue(99,9): error TS1005: ',' expected.
+src/views/student/OnboardOverlay.vue(112,3): error TS1472: 'catch' or 'finally' expected.
+src/views/student/OnboardOverlay.vue(112,5): error TS1005: ',' expected.
+src/views/student/OnboardOverlay.vue(117,1): error TS1128: Declaration or statement expected.
+src/views/student/OnboardOverlay.vue(138,77): error TS1002: Unterminated string literal.
+src/views/student/OnboardOverlay.vue(139,5): error TS1005: ',' expected.
+src/views/student/Practice.vue(149,46): error TS1002: Unterminated string literal.
+src/views/student/Practice.vue(150,5): error TS1005: ',' expected.
+src/views/student/Practice.vue(154,19): error TS1002: Unterminated string literal.
+src/views/student/Practice.vue(155,7): error TS1005: ',' expected.
+src/views/student/Practice.vue(176,22): error TS1002: Unterminated string literal.
+src/views/student/Practice.vue(177,5): error TS1005: ',' expected.
+src/views/student/Practice.vue(190,23): error TS1002: Unterminated string literal.
+src/views/student/Practice.vue(191,5): error TS1005: ',' expected.
+src/views/student/Practice.vue(210,19): error TS1002: Unterminated string literal.
+src/views/student/Practice.vue(211,7): error TS1005: ',' expected.
+src/views/student/Practice.vue(229,16): error TS1002: Unterminated string literal.
+src/views/student/Practice.vue(230,5): error TS1005: ',' expected.
+src/views/student/Practice.vue(238,22): error TS1002: Unterminated string literal.
+src/views/student/Practice.vue(239,5): error TS1005: ',' expected.
+src/views/student/Practice.vue(239,21): error TS1002: Unterminated string literal.
+src/views/student/Practice.vue(240,5): error TS1005: ',' expected.
+src/views/student/Practice.vue(240,21): error TS1002: Unterminated string literal.
+src/views/student/Practice.vue(241,5): error TS1005: ',' expected.
+src/views/student/Practice.vue(272,48): error TS1005: ',' expected.
+src/views/student/Practice.vue(272,50): error TS1005: ',' expected.
+src/views/student/Practice.vue(272,54): error TS1002: Unterminated string literal.
+src/views/student/Practice.vue(273,5): error TS1005: ',' expected.
+src/views/student/Practice.vue(273,22): error TS1005: ',' expected.
+src/views/student/Practice.vue(274,21): error TS1005: ',' expected.
+src/views/student/Practice.vue(275,9): error TS1005: ',' expected.
+src/views/student/Practice.vue(276,3): error TS1005: ',' expected.
+src/views/student/Practice.vue(276,4): error TS1005: ',' expected.
+src/views/student/Practice.vue(276,5): error TS1134: Variable declaration expected.
+src/views/student/Practice.vue(276,10): error TS1005: ',' expected.
+src/views/student/Practice.vue(281,1): error TS1128: Declaration or statement expected.
+src/views/student/Practice.vue(285,33): error TS1002: Unterminated string literal.
+src/views/student/Practice.vue(286,5): error TS1005: ',' expected.
+src/views/student/Practice.vue(293,60): error TS1002: Unterminated string literal.
+src/views/student/Practice.vue(294,7): error TS1005: ',' expected.
+src/views/student/Practice.vue(313,33): error TS1002: Unterminated string literal.
+src/views/student/Profile.vue(440,43): error TS1002: Unterminated string literal.
+src/views/student/Profile.vue(441,7): error TS1005: ',' expected.
+src/views/student/Profile.vue(441,41): error TS1002: Unterminated string literal.
+src/views/student/Profile.vue(442,5): error TS1005: ',' expected.
+src/views/student/Profile.vue(449,41): error TS1002: Unterminated string literal.
+src/views/student/Profile.vue(450,5): error TS1005: ',' expected.
+src/views/student/Profile.vue(459,33): error TS1002: Unterminated string literal.
+src/views/student/Profile.vue(460,1): error TS1005: ',' expected.
+src/views/student/Profile.vue(490,36): error TS1002: Unterminated string literal.
+src/views/student/Profile.vue(491,5): error TS1005: ',' expected.
+src/views/student/Profile.vue(494,37): error TS1002: Unterminated string literal.
+src/views/student/Profile.vue(495,5): error TS1005: ',' expected.
+src/views/student/Profile.vue(498,31): error TS1002: Unterminated string literal.
+src/views/student/Profile.vue(499,3): error TS1005: ',' expected.
+src/views/student/Profile.vue(500,1): error TS1005: ',' expected.
+src/views/student/Profile.vue(511,42): error TS1005: ':' expected.
+src/views/student/ProfileChat.vue(129,88): error TS1005: ',' expected.
+src/views/student/ProfileChat.vue(129,92): error TS1005: ',' expected.
+src/views/student/ProfileChat.vue(129,96): error TS1002: Unterminated string literal.
+src/views/student/ProfileChat.vue(130,3): error TS1005: ':' expected.
+src/views/student/ProfileChat.vue(134,3): error TS1136: Property assignment expected.
+src/views/student/ProfileChat.vue(139,31): error TS1005: ',' expected.
+src/views/student/ProfileOverview.vue(83,28): error TS1005: ',' expected.
+src/views/student/Projects.vue(354,21): error TS1002: Unterminated string literal.
+src/views/student/Projects.vue(355,7): error TS1005: ',' expected.
+src/views/student/Projects.vue(363,24): error TS1002: Unterminated string literal.
+src/views/student/Projects.vue(364,9): error TS1005: ',' expected.
+src/views/student/Projects.vue(369,24): error TS1002: Unterminated string literal.
+src/views/student/Projects.vue(370,9): error TS1005: ',' expected.
+src/views/student/Projects.vue(370,36): error TS1002: Unterminated string literal.
+src/views/student/Projects.vue(371,9): error TS1005: ',' expected.
+src/views/student/Projects.vue(375,26): error TS1002: Unterminated string literal.
+src/views/student/Projects.vue(376,9): error TS1005: ',' expected.
+src/views/student/Projects.vue(381,25): error TS1002: Unterminated string literal.
+src/views/student/Projects.vue(382,9): error TS1005: ',' expected.
+src/views/student/Projects.vue(382,33): error TS1002: Unterminated string literal.
+src/views/student/Projects.vue(383,9): error TS1005: ',' expected.
+src/views/student/Projects.vue(394,33): error TS1005: ',' expected.
+src/views/student/Projects.vue(394,35): error TS1005: ',' expected.
+src/views/student/Projects.vue(394,49): error TS1005: ':' expected.
+src/views/student/Projects.vue(394,52): error TS1005: ',' expected.
+src/views/student/Projects.vue(394,56): error TS1002: Unterminated string literal.
+src/views/student/Projects.vue(395,7): error TS1005: ':' expected.
+src/views/student/Projects.vue(396,7): error TS1136: Property assignment expected.
+src/views/student/Projects.vue(397,33): error TS1005: ',' expected.
+src/views/student/Projects.vue(397,35): error TS1005: ',' expected.
+src/views/student/Projects.vue(397,49): error TS1005: ':' expected.
+src/views/student/Projects.vue(397,50): error TS1005: ',' expected.
+src/views/student/Projects.vue(397,50): error TS1351: An identifier or keyword cannot immediately follow a numeric literal.
+src/views/student/Projects.vue(397,52): error TS1005: ',' expected.
+src/views/student/Projects.vue(397,56): error TS1002: Unterminated string literal.
+src/views/student/Projects.vue(398,7): error TS1005: ':' expected.
+src/views/student/Projects.vue(398,33): error TS1005: ',' expected.
+src/views/student/Projects.vue(398,35): error TS1005: ',' expected.
+src/views/student/Projects.vue(398,49): error TS1005: ':' expected.
+src/views/student/Projects.vue(398,50): error TS1005: ',' expected.
+src/views/student/Projects.vue(398,50): error TS1351: An identifier or keyword cannot immediately follow a numeric literal.
+src/views/student/Projects.vue(398,52): error TS1005: ',' expected.
+src/views/student/Projects.vue(398,55): error TS1002: Unterminated string literal.
+src/views/student/Projects.vue(399,5): error TS1005: ':' expected.
+src/views/student/Projects.vue(415,19): error TS1002: Unterminated string literal.
+src/views/student/Projects.vue(416,7): error TS1005: ',' expected.
+src/views/student/Projects.vue(418,17): error TS1002: Unterminated string literal.
+src/views/student/Projects.vue(423,23): error TS1002: Unterminated string literal.
+src/views/student/Projects.vue(424,9): error TS1005: ',' expected.
+src/views/student/Projects.vue(435,23): error TS1002: Unterminated string literal.
+src/views/student/Projects.vue(436,9): error TS1005: ',' expected.
+src/views/student/Projects.vue(441,23): error TS1002: Unterminated string literal.
+src/views/student/Projects.vue(442,9): error TS1005: ',' expected.
+src/views/student/Projects.vue(442,31): error TS1002: Unterminated string literal.
+src/views/student/Projects.vue(443,9): error TS1005: ',' expected.
+src/views/student/Projects.vue(473,19): error TS1002: Unterminated string literal.
+src/views/student/Projects.vue(474,7): error TS1005: ',' expected.
+src/views/student/Projects.vue(492,23): error TS1002: Unterminated string literal.
+src/views/student/Projects.vue(493,9): error TS1005: ',' expected.
+src/views/student/Projects.vue(493,36): error TS1002: Unterminated string literal.
+src/views/student/Projects.vue(494,9): error TS1005: ',' expected.
+src/views/student/Projects.vue(498,23): error TS1002: Unterminated string literal.
+src/views/student/Projects.vue(499,9): error TS1005: ',' expected.
+src/views/student/Projects.vue(499,33): error TS1002: Unterminated string literal.
+src/views/student/Projects.vue(500,9): error TS1005: ',' expected.
+src/views/student/Projects.vue(596,38): error TS1005: ',' expected.
+src/views/student/Projects.vue(596,40): error TS1005: ',' expected.
+src/views/student/Projects.vue(596,44): error TS1002: Unterminated string literal.
+src/views/student/Projects.vue(597,5): error TS1005: ',' expected.
+src/views/student/Projects.vue(597,22): error TS1005: ',' expected.
+src/views/student/Projects.vue(598,21): error TS1005: ',' expected.
+src/views/student/Projects.vue(599,9): error TS1005: ',' expected.
+src/views/student/Projects.vue(600,3): error TS1005: ',' expected.
+src/views/student/Projects.vue(600,4): error TS1005: ',' expected.
+src/views/student/Projects.vue(600,5): error TS1134: Variable declaration expected.
+src/views/student/Projects.vue(600,10): error TS1005: ',' expected.
+src/views/student/Projects.vue(601,33): error TS1002: Unterminated string literal.
+src/views/student/Projects.vue(602,5): error TS1005: ',' expected.
+src/views/student/Projects.vue(603,3): error TS1005: ',' expected.
+src/views/student/Projects.vue(604,1): error TS1128: Declaration or statement expected.
+src/views/student/Report.vue(112,27): error TS1005: ',' expected.
+src/views/student/ResourceChapter.vue(96,34): error TS1005: ',' expected.
+src/views/student/ResourceChapter.vue(96,39): error TS1005: ',' expected.
+src/views/student/ResourceChapter.vue(96,43): error TS1005: ',' expected.
+src/views/student/ResourceChapter.vue(96,53): error TS1005: ':' expected.
+src/views/student/ResourceChapter.vue(96,55): error TS1127: Invalid character.
+src/views/student/ResourceChapter.vue(96,60): error TS1127: Invalid character.
+src/views/student/ResourceChapter.vue(96,64): error TS1127: Invalid character.
+src/views/student/ResourceDetail.vue(33,34): error TS1005: ',' expected.
+src/views/student/ResourceDetail.vue(33,39): error TS1005: ',' expected.
+src/views/student/ResourceDetail.vue(33,43): error TS1005: ',' expected.
+src/views/student/ResourceDetail.vue(33,53): error TS1005: ':' expected.
+src/views/student/ResourceDetail.vue(33,55): error TS1127: Invalid character.
+src/views/student/ResourceDetail.vue(33,60): error TS1127: Invalid character.
+src/views/student/ResourceDetail.vue(33,64): error TS1127: Invalid character.
+src/views/student/ResourceDetail.vue(33,69): error TS1127: Invalid character.
+src/views/student/ResourceDetail.vue(33,75): error TS1005: ',' expected.
+src/views/student/ResourceDetail.vue(33,79): error TS1002: Unterminated string literal.
+src/views/student/ResourceDetail.vue(34,3): error TS1005: ':' expected.
+src/views/student/ResourceDetail.vue(34,34): error TS1005: ',' expected.
+src/views/student/ResourceDetail.vue(34,38): error TS1005: ',' expected.
+src/views/student/ResourceDetail.vue(34,48): error TS1005: ':' expected.
+src/views/student/ResourceDetail.vue(34,52): error TS1127: Invalid character.
+src/views/student/ResourceDetail.vue(34,55): error TS1127: Invalid character.
+src
+
+[… truncated 307 chars …]

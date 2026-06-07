@@ -29,7 +29,7 @@ export function approveReview(id: number) { return request.put(`/admin/conversat
 export function rejectReview(id: number, reason?: string) { return request.put(`/admin/conversations/${id}/reject`, { reason }) }
 
 // ===== 资源管理 (ResourceManage) =====
-export type ManageStatus = 'published' | 'draft' | 'archived'
+export type ManageStatus = 'published' | 'draft' | 'archived' | 'offline' | 'reviewing'
 export interface AdminCourseItem { id: number; title: string; type: string; status: ManageStatus; createTime: string }
 export interface AdminResourceItem { id: number; title: string; type: string; status: ManageStatus; createTime: string }
 export function getAdminCourseList(params: { page: number; pageSize: number; keyword?: string }) { return request.get<unknown, PageResult<AdminCourseItem>>('/admin/resources', { params: { ...params, type: 'course' } }) }

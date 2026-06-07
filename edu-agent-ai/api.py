@@ -172,17 +172,39 @@ else:
 
     @app.post("/resource/generate")
     def resource_generate(req: ResourceGenRequest):
+        import time as _time
+        t0 = _time.time()
         _log(f"\n{'='*60}")
         _log(f"[资源生成AI] ===== 收到请求 =====")
         _log(f"[资源生成AI] chapter={req.chapter}, topic={req.topic}, resourceType={req.resourceType}, level={req.level}")
-        _log(f"[资源生成AI] prompt(前300字): {req.prompt[:300] if req.prompt else '空'}...")
+        _log(f"[资源生成AI] prompt(前200字): {req.prompt[:200] if req.prompt else '空'}...")
 
         from school_agent.services.llm_client import call_llm
+
+        # 根据资源类型设置角色 system prompt
+        role_prompts = {
+            "mindmap": "你是一位思维导图设计大师。你的任务是将知识点转化为 JSON 树形结构数据。每个节点包含 id（唯一字符串）、topic（显示文本），children（子节点数组，可选）。只输出纯 JSON，不要 Markdown 标记、代码块或任何额外文字。",
+            "quiz": "你是一位资深出题专家。你的任务是根据知识点设计高质量的练习题。必须返回 JSON 数组，每个元素包含 question（题目）、options（选项数组，选择题需要）、answer（正确答案）、explanation（解析）。",
+            "reading": "你是一位教育内容创作专家。你的任务是为知识点撰写深入浅出的拓展阅读材料。使用 Markdown 格式，包含概念解释、应用场景和延伸阅读方向。",
+            "code": "你是一位高级Java编程导师。你的任务是为知识点编写教学级代码案例。代码必须完整、可运行、包含详细中文注释。使用 Markdown 代码块标注。",
+            "review": "你是一位学习回顾分析师。根据学生的学习数据（画像、学习时长、完成任务数、资源使用情况），生成结构化的学习回顾报告。包含进度总结、薄弱点分析、改进建议。返回 JSON 格式。",
+            "summary": "你是一位学习总结专家。根据学生的学习画像、路径进度、学习时长和任务完成情况，生成全面的学习总结报告。包含综合评分、优点分析、不足分析、重点方向和学习建议。返回 JSON 格式。",
+            "evaluation": "你是一位学习评估专家。根据学生的学习数据生成客观的学习评价，包含各维度的知识掌握度评分和综合评估。返回 JSON 格式。",
+            "suggestion": "你是一位学习建议导师。根据学生画像和薄弱点，生成具体可执行的个性化学习建议。返回 JSON 数组格式。",
+        }
+        system_prompt = role_prompts.get(req.resourceType,
+            "你是一位教育内容生成专家。根据要求生成高质量的学习内容。")
+
+        _log(f"[资源生成AI] 角色={req.resourceType}, 耗时={_time.time()-t0:.2f}s")
+
+        # 传入 system_prompt + 用户 prompt
         _log(f"[资源生成AI] 🚀 正在调用 LLM...")
-        result = call_llm(req.prompt)
-        _log(f"[资源生成AI] 📥 LLM 返回长度: {len(result) if result else 0} 字")
+        t1 = _time.time()
+        result = call_llm(req.prompt, system_prompt=system_prompt)
+        t2 = _time.time()
+        _log(f"[资源生成AI] 📥 LLM 返回, 耗时={t2-t1:.2f}s, 长度={len(result) if result else 0} 字")
         _log(f"[资源生成AI] 📥 LLM 返回(前200字): {result[:200] if result else '空'}...")
-        _log(f"[资源生成AI] ===== 请求结束 =====\n{'='*60}")
+        _log(f"[资源生成AI] ===== 请求结束, 总耗时={t2-t0:.2f}s =====\n{'='*60}")
 
         return {
             "content": result,

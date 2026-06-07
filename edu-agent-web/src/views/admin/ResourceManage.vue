@@ -3,778 +3,88 @@
     <section class="page-header">
       <div>
         <p class="eyebrow">管理后台</p>
-        <h1>课程 / 资源管理</h1>
-        <p>统一维护课程、章节资源、学习材料、上下架状态与资源审核状态。</p>
-      </div>
-
-      <div class="header-actions">
-        <button class="primary-btn" @click="openCreate">新增</button>
-        <button class="outline-btn">批量导入</button>
+        <h1>资源管理</h1>
+        <p>管理 AI 生成的思维导图、练习题目、拓展阅读、代码案例等资源。</p>
       </div>
     </section>
-
-    <section class="stat-grid">
-      <div class="stat-card">
-        <span>课程总数</span>
-        <strong>{{ stats.courseTotal }}</strong>
-      </div>
-      <div class="stat-card">
-        <span>资源总数</span>
-        <strong>{{ stats.resourceTotal }}</strong>
-      </div>
-      <div class="stat-card">
-        <span>待审核</span>
-        <strong>{{ stats.reviewing }}</strong>
-      </div>
-      <div class="stat-card">
-        <span>已下架</span>
-        <strong>{{ stats.offline }}</strong>
-      </div>
+    <section class="stat-row" style="margin-bottom:20px">
+      <div class="stat-card"><span>资源总数</span><strong>{{ resourceList.length }}</strong></div>
+      <div class="stat-card"><span>待审核</span><strong>{{ pendingCount }}</strong></div>
+      <div class="stat-card"><span>已通过</span><strong>{{ approvedCount }}</strong></div>
     </section>
-
-    <section class="panel">
-      <div class="tabs">
-        <button
-          :class="{ active: activeTab === 'course' }"
-          @click="activeTab = 'course'"
-        >
-          课程管理
-        </button>
-        <button
-          :class="{ active: activeTab === 'resource' }"
-          @click="activeTab = 'resource'"
-        >
-          资源管理
-        </button>
-      </div>
-
-      <div class="toolbar">
-        <input
-          v-model="keyword"
-          type="text"
-          placeholder="搜索名称、编号、教师、上传人..."
-          @keyup.enter="fetchData"
-        />
-
-        <select v-model="status">
-          <option value="">全部状态</option>
-          <option value="published">已发布</option>
-          <option value="draft">草稿</option>
-          <option value="reviewing">审核中</option>
-          <option value="offline">已下架</option>
-        </select>
-
-        <select v-if="activeTab === 'resource'" v-model="resourceType">
-          <option value="">全部类型</option>
-          <option value="文档">文档</option>
-          <option value="PPT">PPT</option>
-          <option value="视频">视频</option>
-          <option value="题库">题库</option>
-          <option value="代码案例">代码案例</option>
-          <option value="实验项目">实验项目</option>
-        </select>
-
-        <button @click="fetchData">查询</button>
-      </div>
-
-      <div v-if="loading" class="state-card">数据加载中...</div>
-
-      <div v-else-if="activeTab === 'course'" class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>课程名称</th>
-              <th>课程编号</th>
-              <th>教师</th>
-              <th>院系</th>
-              <th>学期</th>
-              <th>学生数</th>
-              <th>资源数</th>
-              <th>状态</th>
-              <th>更新时间</th>
-              <th>操作</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            <tr v-for="course in filteredCourses" :key="course.id">
-              <td>{{ course.name }}</td>
-              <td>{{ course.code }}</td>
-              <td>{{ course.teacher }}</td>
-              <td>{{ course.department }}</td>
-              <td>{{ course.semester }}</td>
-              <td>{{ course.studentCount }}</td>
-              <td>{{ course.resourceCount }}</td>
-              <td>
-                <span :class="['status-tag', course.status]">
-                  {{ getStatusText(course.status) }}
-                </span>
-              </td>
-              <td>{{ course.updateTime }}</td>
-              <td>
-                <button class="text-btn" @click="editCourse(course)">编辑</button>
-                <button class="text-btn" @click="toggleCourseStatus(course)">
-                  {{ course.status === 'offline' ? '上架' : '下架' }}
-                </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-
-        <div v-if="filteredCourses.length === 0" class="state-card">
-          暂无课程数据
-        </div>
-      </div>
-
-      <div v-else class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>资源标题</th>
-              <th>类型</th>
-              <th>所属课程</th>
-              <th>难度</th>
-              <th>上传人</th>
-              <th>状态</th>
-              <th>更新时间</th>
-              <th>操作</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            <tr v-for="resource in filteredResources" :key="resource.id">
-              <td>{{ resource.title }}</td>
-              <td>{{ resource.type }}</td>
-              <td>{{ resource.courseName }}</td>
-              <td>{{ resource.difficulty }}</td>
-              <td>{{ resource.uploader }}</td>
-              <td>
-                <span :class="['status-tag', resource.status]">
-                  {{ getStatusText(resource.status) }}
-                </span>
-              </td>
-              <td>{{ resource.updateTime }}</td>
-              <td>
-                <button class="text-btn" @click="editResource(resource)">编辑</button>
-                <button class="text-btn" @click="toggleResourceStatus(resource)">
-                  {{ resource.status === 'offline' ? '上架' : '下架' }}
-                </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-
-        <div v-if="filteredResources.length === 0" class="state-card">
-          暂无资源数据
-        </div>
-      </div>
+    <section class="filter-bar">
+      <select v-model="typeFilter"><option value="">全部类型</option><option value="mindmap">思维导图</option><option value="quiz">练习题目</option><option value="reading">拓展阅读</option><option value="code">代码案例</option></select>
+      <select v-model="statusFilter"><option value="">全部状态</option><option value="published">已通过</option><option value="draft">待审核</option></select>
+      <button @click="search">查询</button>
     </section>
-
-    <div v-if="dialogVisible" class="dialog-mask">
-      <div class="dialog">
-        <h3>{{ dialogTitle }}</h3>
-
-        <div class="form-grid">
-          <label>
-            名称
-            <input v-model="form.name" type="text" placeholder="请输入名称" />
-          </label>
-
-          <label>
-            类型
-            <select v-model="form.type">
-              <option value="课程">课程</option>
-              <option value="文档">文档</option>
-              <option value="PPT">PPT</option>
-              <option value="视频">视频</option>
-              <option value="题库">题库</option>
-              <option value="实验项目">实验项目</option>
-            </select>
-          </label>
-
-          <label>
-            状态
-            <select v-model="form.status">
-              <option value="published">已发布</option>
-              <option value="draft">草稿</option>
-              <option value="reviewing">审核中</option>
-              <option value="offline">已下架</option>
-            </select>
-          </label>
-        </div>
-
-        <div class="dialog-actions">
-          <button class="outline-btn" @click="dialogVisible = false">取消</button>
-          <button class="primary-btn" @click="saveForm">保存</button>
-        </div>
-      </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>ID</th><th>标题</th><th>类型</th><th>章节</th><th>状态</th><th>创建时间</th><th>操作</th></tr>
+        </thead>
+        <tbody>
+          <tr v-if="loading"><td colspan="7" class="state-cell">加载中...</td></tr>
+          <tr v-else-if="!pagedList.length"><td colspan="7" class="state-cell">暂无数据</td></tr>
+          <tr v-for="r in pagedList" :key="r.id">
+            <td>{{ r.id }}</td>
+            <td><strong>{{ r.title }}</strong></td>
+            <td><span class="type-tag">{{ {mindmap:'思维导图',quiz:'练习题目',reading:'拓展阅读',code:'代码案例'}[r.type] || r.type }}</span></td>
+            <td>{{ r.chapterName || r.courseName || '-' }}</td>
+            <td><span :class="['status-badge', r.status==='published'?'active':'pending']">{{ r.status==='published'?'已通过':'待审核' }}</span></td>
+            <td>{{ r.createTime ? r.createTime.replace('T',' ').substring(0,16) : '-' }}</td>
+            <td class="action-cell">
+              <button class="text-btn" @click="preview(r)">预览</button>
+              <button class="text-btn" v-if="r.status!=='published'" @click="approve(r)">通过</button>
+              <button class="text-btn danger" @click="remove(r)">删除</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="pagination" v-if="resourceList.length>pageSize">
+      <button :disabled="page<=1" @click="page=1;fetchData()">«</button>
+      <button :disabled="page<=1" @click="page--;fetchData()">‹</button>
+      <button v-for="p in pageNums" :key="p" :class="['page-btn',{active:p===page}]" @click="page=p;fetchData()">{{ p }}</button>
+      <button :disabled="page>=maxPage" @click="page++;fetchData()">›</button>
+      <button :disabled="page>=maxPage" @click="page=maxPage;fetchData()">»</button>
+      <span class="page-info">{{ resourceList.length }} 条</span>
     </div>
   </div>
 </template>
-
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref, watch } from 'vue'
-import {
-  getAdminCourseList,
-  getAdminResourceList,
-  updateCourseStatus,
-  updateResourceStatus
-} from '@/api/admin'
-import type {
-  AdminCourseItem,
-  AdminResourceItem,
-  ManageStatus
-} from '@/api/admin'
-
-const activeTab = ref<'course' | 'resource'>('course')
-const keyword = ref('')
-const status = ref('')
-const resourceType = ref('')
-const loading = ref(false)
-const dialogVisible = ref(false)
-const dialogTitle = ref('新增')
-
-const form = reactive({
-  name: '',
-  type: '课程',
-  status: 'published' as ManageStatus
-})
-
-const fallbackCourses: AdminCourseItem[] = [
-  {
-    id: 1,
-    name: '人工智能导论',
-    code: 'AI101',
-    teacher: '王老师',
-    department: '计算机学院',
-    semester: '2025-2026-2',
-    studentCount: 128,
-    resourceCount: 36,
-    status: 'published',
-    updateTime: '2026-04-28'
-  },
-  {
-    id: 2,
-    name: 'Python 程序设计',
-    code: 'PY102',
-    teacher: '李老师',
-    department: '软件学院',
-    semester: '2025-2026-2',
-    studentCount: 206,
-    resourceCount: 42,
-    status: 'published',
-    updateTime: '2026-04-26'
-  },
-  {
-    id: 3,
-    name: '机器学习',
-    code: 'ML201',
-    teacher: '陈老师',
-    department: '人工智能学院',
-    semester: '2025-2026-2',
-    studentCount: 96,
-    resourceCount: 28,
-    status: 'draft',
-    updateTime: '2026-04-20'
-  }
-]
-
-const fallbackResources: AdminResourceItem[] = [
-  {
-    id: 101,
-    title: '搜索算法知识点讲解',
-    type: '文档',
-    courseName: '人工智能导论',
-    difficulty: '基础',
-    uploader: '王老师',
-    status: 'published',
-    updateTime: '2026-04-28'
-  },
-  {
-    id: 102,
-    title: 'A* 算法可视化动画',
-    type: '视频',
-    courseName: '人工智能导论',
-    difficulty: '进阶',
-    uploader: '王老师',
-    status: 'reviewing',
-    updateTime: '2026-04-27'
-  },
-  {
-    id: 103,
-    title: 'Python 爬虫实操案例',
-    type: '代码案例',
-    courseName: 'Python 程序设计',
-    difficulty: '进阶',
-    uploader: '李老师',
-    status: 'published',
-    updateTime: '2026-04-25'
-  },
-  {
-    id: 104,
-    title: '机器学习入门练习题',
-    type: '题库',
-    courseName: '机器学习',
-    difficulty: '基础',
-    uploader: '陈老师',
-    status: 'offline',
-    updateTime: '2026-04-18'
-  }
-]
-
-const courses = ref<AdminCourseItem[]>([])
-const resources = ref<AdminResourceItem[]>([])
-
-const stats = computed(() => {
-  return {
-    courseTotal: courses.value.length,
-    resourceTotal: resources.value.length,
-    reviewing: resources.value.filter(item => item.status === 'reviewing').length,
-    offline:
-      courses.value.filter(item => item.status === 'offline').length +
-      resources.value.filter(item => item.status === 'offline').length
-  }
-})
-
-const filteredCourses = computed(() => {
-  return courses.value.filter(item => {
-    const matchKeyword =
-      !keyword.value ||
-      item.name.includes(keyword.value) ||
-      item.code.includes(keyword.value) ||
-      item.teacher.includes(keyword.value)
-
-    const matchStatus = !status.value || item.status === status.value
-
-    return matchKeyword && matchStatus
-  })
-})
-
-const filteredResources = computed(() => {
-  return resources.value.filter(item => {
-    const matchKeyword =
-      !keyword.value ||
-      item.title.includes(keyword.value) ||
-      item.courseName.includes(keyword.value) ||
-      item.uploader.includes(keyword.value)
-
-    const matchStatus = !status.value || item.status === status.value
-    const matchType = !resourceType.value || item.type === resourceType.value
-
-    return matchKeyword && matchStatus && matchType
-  })
-})
-
-const fetchData = async () => {
-  loading.value = true
-
-  const query = {
-    keyword: keyword.value,
-    status: status.value,
-    type: resourceType.value,
-    page: 1,
-    pageSize: 20
-  }
-
-  try {
-    if (activeTab.value === 'course') {
-      const result = await getAdminCourseList(query)
-      courses.value = result.list
-    } else {
-      const result = await getAdminResourceList(query)
-      resources.value = result.list
-    }
-  } catch (error) {
-    console.warn('管理接口暂不可用，使用页面静态数据：', error)
-    courses.value = fallbackCourses
-    resources.value = fallbackResources
-  } finally {
-    loading.value = false
-  }
-}
-
-const openCreate = () => {
-  dialogTitle.value = activeTab.value === 'course' ? '新增课程' : '新增资源'
-  form.name = ''
-  form.type = activeTab.value === 'course' ? '课程' : '文档'
-  form.status = 'published'
-  dialogVisible.value = true
-}
-
-const editCourse = (course: AdminCourseItem) => {
-  dialogTitle.value = '编辑课程'
-  form.name = course.name
-  form.type = '课程'
-  form.status = course.status
-  dialogVisible.value = true
-}
-
-const editResource = (resource: AdminResourceItem) => {
-  dialogTitle.value = '编辑资源'
-  form.name = resource.title
-  form.type = resource.type
-  form.status = resource.status
-  dialogVisible.value = true
-}
-
-const toggleCourseStatus = async (course: AdminCourseItem) => {
-  const nextStatus: ManageStatus = course.status === 'offline' ? 'published' : 'offline'
-  course.status = nextStatus
-
-  try {
-    await updateCourseStatus(course.id, nextStatus)
-  } catch (error) {
-    console.warn('课程状态接口暂不可用，仅更新页面状态：', error)
-  }
-}
-
-const toggleResourceStatus = async (resource: AdminResourceItem) => {
-  const nextStatus: ManageStatus = resource.status === 'offline' ? 'published' : 'offline'
-  resource.status = nextStatus
-
-  try {
-    await updateResourceStatus(resource.id, nextStatus)
-  } catch (error) {
-    console.warn('资源状态接口暂不可用，仅更新页面状态：', error)
-  }
-}
-
-const saveForm = () => {
-  dialogVisible.value = false
-  alert('已保存')
-}
-
-const getStatusText = (value: ManageStatus) => {
-  const map: Record<ManageStatus, string> = {
-    published: '已发布',
-    draft: '草稿',
-    offline: '已下架',
-    reviewing: '审核中'
-  }
-
-  return map[value]
-}
-
-watch(activeTab, () => {
-  fetchData()
-})
-
-onMounted(() => {
-  courses.value = fallbackCourses
-  resources.value = fallbackResources
-})
+import { ref, computed, onMounted } from 'vue'
+import request from '@/utils/request'
+const typeFilter=ref(''); const statusFilter=ref(''); const page=ref(1); const pageSize=ref(10); const loading=ref(false)
+const resourceList=ref<any[]>([])
+const pageNums=computed(()=>{const p:number[]=[];const s=Math.max(1,page.value-2);const e=Math.min(maxPage.value,page.value+2);for(let i=s;i<=e;i++) p.push(i);return p})
+const maxPage=computed(()=>Math.max(1,Math.ceil(resourceList.value.length/pageSize.value)))
+const pagedList=computed(()=>{const start=(page.value-1)*pageSize.value;return resourceList.value.slice(start,start+pageSize.value)})
+const pendingCount=computed(()=>resourceList.value.filter((r:any)=>r.status!=='published').length)
+const approvedCount=computed(()=>resourceList.value.filter((r:any)=>r.status==='published').length)
+const fetchData=async()=>{loading.value=true;page.value=1;try{const res:any=await request.get('/admin/resources',{params:{page:1,pageSize:200,type:typeFilter.value||undefined}});const list=res?.records||[];resourceList.value=list.filter((r:any)=>{const t=!typeFilter.value||r.type===typeFilter.value;const s=!statusFilter.value||r.status===statusFilter.value;return t&&s})}catch{resourceList.value=[]};loading.value=false}
+const search=()=>{page.value=1;fetchData()}
+const preview=(r:any)=>{window.open(`/student/resources/generate/${r.type}`,'_blank')}
+const approve=async(r:any)=>{try{await request.put(`/admin/resources/${r.id}/status`,{status:'published'});r.status='published'}catch{}}
+const remove=async(r:any)=>{if(!confirm(`确定删除「${r.title}」？`))return;try{await request.delete(`/admin/resources/${r.id}`);resourceList.value=resourceList.value.filter((x:any)=>x.id!==r.id)}catch{}}
+onMounted(fetchData)
 </script>
-
 <style scoped>
-.manage-page {
-  min-height: 100vh;
-  padding: clamp(14px, 2vw, 28px);
-  background: #f5f8ff;
-  color: #1f2a44;
-  overflow-x: hidden;
-}
-
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  gap: 20px;
-  padding: 28px;
-  margin-bottom: 20px;
-  border-radius: 24px;
-  background: linear-gradient(135deg, #ffffff 0%, #eaf2ff 100%);
-  box-shadow: 0 12px 30px rgba(32, 88, 180, 0.08);
-}
-
-.eyebrow {
-  margin: 0 0 8px;
-  color: #1769ff;
-  font-weight: 700;
-}
-
-.page-header h1 {
-  margin: 0;
-  font-size: 30px;
-}
-
-.page-header p {
-  color: #667085;
-}
-
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.primary-btn,
-.outline-btn {
-  height: 40px;
-  padding: 0 18px;
-  border-radius: 12px;
-  cursor: pointer;
-}
-
-.primary-btn {
-  border: none;
-  color: #ffffff;
-  background: #1769ff;
-}
-
-.outline-btn {
-  border: 1px solid #dbe4f3;
-  color: #1769ff;
-  background: #ffffff;
-}
-
-.stat-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 16px;
-  margin-bottom: 20px;
-}
-
-.stat-card {
-  padding: 20px;
-  border-radius: 20px;
-  background: #ffffff;
-  box-shadow: 0 10px 26px rgba(32, 88, 180, 0.06);
-}
-
-.stat-card span {
-  color: #667085;
-}
-
-.stat-card strong {
-  display: block;
-  margin-top: 10px;
-  color: #1769ff;
-  font-size: 30px;
-}
-
-.panel {
-  padding: 20px;
-  border-radius: 22px;
-  background: #ffffff;
-  box-shadow: 0 10px 26px rgba(32, 88, 180, 0.06);
-}
-
-.tabs {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 18px;
-}
-
-.tabs button {
-  padding: 10px 18px;
-  border: none;
-  border-radius: 999px;
-  color: #52637a;
-  background: #f1f5fb;
-  cursor: pointer;
-}
-
-.tabs button.active {
-  color: #ffffff;
-  background: #1769ff;
-}
-
-.toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-bottom: 18px;
-}
-
-.toolbar input,
-.toolbar select {
-  height: 40px;
-  padding: 0 12px;
-  border: 1px solid #dbe4f3;
-  border-radius: 12px;
-  outline: none;
-}
-
-.toolbar input {
-  min-width: 280px;
-  flex: 1;
-}
-
-.toolbar button {
-  height: 40px;
-  padding: 0 18px;
-  border: none;
-  border-radius: 12px;
-  color: #ffffff;
-  background: #1769ff;
-  cursor: pointer;
-}
-
-.table-wrap {
-  width: 100%;
-  overflow-x: auto;
-}
-
-table {
-  width: 100%;
-  min-width: 920px;
-  border-collapse: collapse;
-}
-
-th,
-td {
-  padding: 14px 12px;
-  border-bottom: 1px solid #eef2f8;
-  text-align: left;
-  font-size: 14px;
-}
-
-th {
-  color: #667085;
-  background: #f7faff;
-}
-
-.status-tag {
-  padding: 5px 10px;
-  border-radius: 999px;
-  font-size: 12px;
-}
-
-.status-tag.published {
-  color: #15803d;
-  background: #ecfdf3;
-}
-
-.status-tag.draft {
-  color: #52637a;
-  background: #f1f5fb;
-}
-
-.status-tag.reviewing {
-  color: #b45309;
-  background: #fff7ed;
-}
-
-.status-tag.offline {
-  color: #b91c1c;
-  background: #fef2f2;
-}
-
-.text-btn {
-  margin-right: 8px;
-  border: none;
-  color: #1769ff;
-  background: transparent;
-  cursor: pointer;
-}
-
-.state-card {
-  padding: 40px;
-  text-align: center;
-  color: #75849a;
-}
-
-.dialog-mask {
-  position: fixed;
-  inset: 0;
-  z-index: 20;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-  background: rgba(15, 23, 42, 0.35);
-}
-
-.dialog {
-  width: min(520px, 100%);
-  padding: 24px;
-  border-radius: 22px;
-  background: #ffffff;
-}
-
-.dialog h3 {
-  margin: 0 0 18px;
-}
-
-.form-grid {
-  display: grid;
-  gap: 14px;
-}
-
-.form-grid label {
-  display: grid;
-  gap: 8px;
-  color: #52637a;
-  font-size: 14px;
-}
-
-.form-grid input,
-.form-grid select {
-  height: 40px;
-  padding: 0 12px;
-  border: 1px solid #dbe4f3;
-  border-radius: 12px;
-  outline: none;
-}
-
-.dialog-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  margin-top: 20px;
-}
-
-@media (max-width: 900px) {
-  .page-header {
-    flex-direction: column;
-  }
-
-  .header-actions {
-    justify-content: flex-start;
-  }
-
-  .stat-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .toolbar input {
-    min-width: 100%;
-  }
-}
-
-@media (max-width: 520px) {
-  .manage-page {
-    padding: 12px;
-  }
-
-  .page-header {
-    padding: 20px;
-    border-radius: 18px;
-  }
-
-  .page-header h1 {
-    font-size: 24px;
-  }
-
-  .stat-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .tabs {
-    overflow-x: auto;
-  }
-
-  .tabs button {
-    flex-shrink: 0;
-  }
-
-  .header-actions,
-  .dialog-actions {
-    flex-direction: column;
-  }
-
-  .primary-btn,
-  .outline-btn {
-    width: 100%;
-  }
-}
+.manage-page { min-height:100vh; padding:clamp(14px,2vw,28px); background:var(--surface); color:var(--charcoal); }
+.page-header { display:flex; justify-content:space-between; gap:20px; padding:28px; margin-bottom:20px; border-radius:var(--radius-xl); background:linear-gradient(135deg,var(--canvas) 0%,var(--tint-sky) 100%); box-shadow:var(--shadow-subtle); }
+.eyebrow { margin:0 0 8px; color:var(--primary); font-weight:700; }
+.page-header h1 { margin:0; font-size:28px; color:var(--ink); }
+.page-header p { color:var(--steel); }
+.type-tag { display:inline-block; padding:2px 8px; border-radius:var(--radius-full); font:var(--text-caption); background:var(--tint-lavender); color:var(--primary-deep); }
+.table-wrap { background:var(--canvas); border:1px solid var(--hairline); border-radius:var(--radius-lg); overflow-x:auto; margin-bottom:var(--space-lg); }
+table { width:100%; border-collapse:collapse; min-width:700px; }
+th,td { padding:12px 14px; text-align:left; border-bottom:1px solid var(--hairline-soft); font:var(--text-sm); }
+th { color:var(--steel); background:var(--surface-soft); font:var(--text-sm-medium); }
+.state-cell { text-align:center; color:var(--muted); padding:40px; }
+.action-cell { white-space:nowrap; }
+.text-btn { border:none; background:transparent; cursor:pointer; font-size:13px; margin-right:10px; color:var(--link-blue); }
+.text-btn.danger { color:var(--error); }
+.pagination { display:flex; flex-wrap:wrap; justify-content:center; align-items:center; gap:4px; margin-top:20px; }
+.page-btn { border:1px solid var(--hairline); border-radius:var(--radius-sm); background:var(--canvas); cursor:pointer; font-size:14px; min-width:34px; height:34px; display:flex; align-items:center; justify-content:center; padding:0 8px; color:var(--charcoal); }
+.page-btn.active { background:var(--primary); color:var(--on-primary); border-color:var(--primary); }
+.page-info { margin-left:8px; color:var(--stone); }
 </style>

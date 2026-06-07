@@ -48,7 +48,7 @@ const routes: RouteRecordRaw[] = [
       { path: 'dashboard', component: () => import('@/views/admin/Dashboard.vue') },
       { path: 'users', component: () => import('@/views/admin/UserManage.vue') },
       { path: 'resources', component: () => import('@/views/admin/ResourceManage.vue') },
-      { path: 'agents', component: () => import('@/views/admin/AgentManage.vue') },
+
       { path: 'reviews', component: () => import('@/views/admin/ContentReview.vue') },
       { path: 'statistics', component: () => import('@/views/admin/Statistics.vue') },
       { path: 'settings', component: () => import('@/views/admin/Settings.vue') }

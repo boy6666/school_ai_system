@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.eduagent.common.BusinessException;
 import com.eduagent.common.PageResult;
 import com.eduagent.entity.User;
+import com.eduagent.mapper.ConversationMapper;
 import com.eduagent.mapper.UserMapper;
 import com.eduagent.service.AdminService;
 import com.eduagent.vo.UserInfoVO;
@@ -21,6 +22,7 @@ import java.util.stream.Collectors;
 public class AdminServiceImpl implements AdminService {
 
     private final UserMapper userMapper;
+    private final ConversationMapper conversationMapper;
 
     @Override
     public PageResult<UserInfoVO> listUsers(int page, int pageSize, String keyword) {
@@ -57,11 +59,19 @@ public class AdminServiceImpl implements AdminService {
         Long totalUsers = userMapper.selectCount(null);
         Long studentCount = userMapper.selectCount(new LambdaQueryWrapper<User>().eq(User::getRole, "student"));
         Long adminCount = userMapper.selectCount(new LambdaQueryWrapper<User>().eq(User::getRole, "admin"));
+        Long totalConversations = conversationMapper.selectCount(null);
+        Long todayConversations = conversationMapper.selectCount(
+            new LambdaQueryWrapper<com.eduagent.entity.Conversation>()
+                .ge(com.eduagent.entity.Conversation::getCreateTime, java.time.LocalDate.now().atStartOfDay())
+        );
 
         Map<String, Object> stats = new HashMap<>();
         stats.put("totalUsers", totalUsers);
+        stats.put("activeUsers", totalUsers);
         stats.put("studentCount", studentCount);
         stats.put("adminCount", adminCount);
+        stats.put("totalConversations", totalConversations);
+        stats.put("todayConversations", todayConversations);
         return stats;
     }
 
@@ -69,7 +79,7 @@ public class AdminServiceImpl implements AdminService {
         return UserInfoVO.builder()
                 .id(user.getId()).username(user.getUsername()).nickname(user.getNickname())
                 .email(user.getEmail()).phone(user.getPhone()).avatar(user.getAvatar())
-                .role(user.getRole()).createTime(user.getCreateTime()).lastLoginTime(user.getLastLoginTime())
+                .role(user.getRole()).status(user.getStatus()).createTime(user.getCreateTime()).lastLoginTime(user.getLastLoginTime())
                 .build();
     }
 }

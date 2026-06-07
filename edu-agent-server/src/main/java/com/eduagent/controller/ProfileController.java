@@ -166,6 +166,7 @@ public class ProfileController {
         Map<String, Object> aiBody = new HashMap<>();
         aiBody.put("student_id", String.valueOf(userId));
         aiBody.put("prompt", prompt);
+        aiBody.put("resourceType", "suggestion");
         aiBody.put("mode", "generate_suggestions");
 
         log.info("🚀 调 AI 生成建议...");
