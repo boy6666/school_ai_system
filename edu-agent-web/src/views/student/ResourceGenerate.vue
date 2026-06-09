@@ -95,7 +95,11 @@
 
       <!-- 代码案例 -->
       <div v-else class="code-box">
-        <pre><code>{{ content }}</code></pre>
+        <div class="code-header">
+          <span class="code-lang">{{ detectedLang }}</span>
+          <el-button text size="small" class="code-copy-btn" @click="copyCode">📋 复制</el-button>
+        </div>
+        <pre><code class="hljs" v-html="highlightedCode"></code></pre>
       </div>
 
       <!-- ===== 反馈区：记录画像 + 换个方向重新生成 ===== -->
@@ -148,6 +152,21 @@ import { Loading } from '@element-plus/icons-vue'
 import 'mind-elixir/style'
 import MindElixir from 'mind-elixir'
 import { marked } from 'marked'
+import { markedHighlight } from 'marked-highlight'
+import hljs from 'highlight.js'
+import 'highlight.js/styles/atom-one-dark.css'
+
+// marked + highlight 插件
+marked.use(markedHighlight({
+  langPrefix: 'hljs language-',
+  highlight(code: string, lang: string) {
+    if (lang && hljs.getLanguage(lang)) {
+      return hljs.highlight(code, { language: lang }).value
+    }
+    return hljs.highlightAuto(code).value
+  }
+}))
+marked.setOptions({ breaks: true, gfm: true })
 import { generateResource, getChapterResource } from '@/api/resource'
 import { saveProfile } from '@/api/profile'
 import { useUserStore } from '@/stores/user'
@@ -181,6 +200,38 @@ const readingHtml = computed(() => {
   if (!content.value || resourceType.value !== 'reading') return ''
   return marked.parse(content.value, { breaks: true, gfm: true })
 })
+
+/** 代码案例：语法高亮 */
+const highlightedCode = computed(() => {
+  if (!content.value || resourceType.value !== 'code') return content.value
+  try {
+    return hljs.highlightAuto(content.value).value
+  } catch {
+    return content.value
+  }
+})
+
+/** 代码案例：检测语言 */
+const detectedLang = computed(() => {
+  if (!content.value || resourceType.value !== 'code') return ''
+  try {
+    const result = hljs.highlightAuto(content.value)
+    return result.language || 'code'
+  } catch {
+    return 'code'
+  }
+})
+
+/** 代码案例：复制 */
+const copyCode = async () => {
+  if (!content.value) return
+  try {
+    await navigator.clipboard.writeText(content.value)
+    ElMessage.success('代码已复制到剪贴板')
+  } catch {
+    ElMessage.warning('复制失败，请手动选择复制')
+  }
+}
 
 /** mind-elixir 实例引用 */
 let mindInstance: any = null
@@ -609,8 +660,27 @@ onMounted(() => {
 }
 .mm-toolbar .el-button { font-size: 15px; }
 
-/* 代码 */
-.code-box pre { background: #f5f7fa; padding: 16px; border-radius: 8px; overflow-x: auto; font-size: 13px; }
+/* 代码案例 — 语法高亮 + 复制按钮 */
+.code-box {
+  border-radius: 10px; overflow: hidden;
+  border: 1px solid #2d2d3d;
+}
+.code-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 16px; background: #1a1a2e;
+  border-bottom: 1px solid #2d2d3d;
+}
+.code-lang {
+  font-size: 12px; color: #6c7086; text-transform: uppercase;
+  letter-spacing: 0.5px; font-weight: 600;
+}
+.code-copy-btn { color: #6c7086 !important; font-size: 12px !important; }
+.code-copy-btn:hover { color: #cdd6f4 !important; }
+.code-box pre {
+  margin: 0; padding: 16px; overflow-x: auto;
+  background: #1e1e2e; font-size: 13px; line-height: 1.7;
+}
+.code-box pre code.hljs { background: none; padding: 0; }
 
 /* 拓展阅读 — Markdown 渲染优化 */
 .reading-box {
