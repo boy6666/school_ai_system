@@ -91,7 +91,7 @@
       </div>
 
       <!-- 拓展阅读 -->
-      <div v-else-if="resourceType === 'reading'" class="reading-box" v-html="content"></div>
+      <div v-else-if="resourceType === 'reading'" class="reading-box" v-html="readingHtml"></div>
 
       <!-- 代码案例 -->
       <div v-else class="code-box">
@@ -147,6 +147,7 @@ import { ElMessage } from 'element-plus'
 import { Loading } from '@element-plus/icons-vue'
 import 'mind-elixir/style'
 import MindElixir from 'mind-elixir'
+import { marked } from 'marked'
 import { generateResource, getChapterResource } from '@/api/resource'
 import { saveProfile } from '@/api/profile'
 import { useUserStore } from '@/stores/user'
@@ -174,6 +175,12 @@ const typeMap: Record<string, string> = {
   reading: '拓展阅读', code: '代码案例',
 }
 const typeLabel = computed(() => typeMap[resourceType.value] || resourceType.value)
+
+/** 拓展阅读：Markdown → HTML */
+const readingHtml = computed(() => {
+  if (!content.value || resourceType.value !== 'reading') return ''
+  return marked.parse(content.value, { breaks: true, gfm: true })
+})
 
 /** mind-elixir 实例引用 */
 let mindInstance: any = null
@@ -605,10 +612,48 @@ onMounted(() => {
 /* 代码 */
 .code-box pre { background: #f5f7fa; padding: 16px; border-radius: 8px; overflow-x: auto; font-size: 13px; }
 
-/* 拓展阅读 */
-.reading-box { line-height: 1.8; color: #333; }
-.reading-box :deep(h4) { margin: 16px 0 6px; }
-.reading-box :deep(p) { margin: 0 0 10px; }
+/* 拓展阅读 — Markdown 渲染优化 */
+.reading-box {
+  line-height: 1.9; color: #333; font-size: 15px;
+  padding: 8px 4px;
+}
+.reading-box :deep(h1) { font-size: 24px; margin: 28px 0 14px; font-weight: 700; color: #1a1a1a; padding-bottom: 8px; border-bottom: 2px solid #409eff; }
+.reading-box :deep(h2) { font-size: 20px; margin: 24px 0 12px; font-weight: 600; color: #1a1a1a; }
+.reading-box :deep(h3) { font-size: 17px; margin: 20px 0 10px; font-weight: 600; color: #2c3e50; }
+.reading-box :deep(h4) { font-size: 15px; margin: 16px 0 8px; font-weight: 600; color: #2c3e50; }
+.reading-box :deep(p) { margin: 0 0 12px; }
+.reading-box :deep(ul), .reading-box :deep(ol) { margin: 8px 0 12px; padding-left: 24px; }
+.reading-box :deep(li) { margin: 4px 0; }
+.reading-box :deep(blockquote) {
+  margin: 12px 0; padding: 10px 16px; border-left: 4px solid #409eff;
+  background: #f8faff; color: #555; border-radius: 0 6px 6px 0;
+}
+.reading-box :deep(code) {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  background: #f0f2f5; padding: 2px 6px; border-radius: 4px;
+  font-size: 13px; color: #d63384;
+}
+.reading-box :deep(pre) {
+  background: #1e1e2e; color: #cdd6f4; padding: 16px;
+  border-radius: 10px; overflow-x: auto; margin: 14px 0;
+  font-size: 13px; line-height: 1.6;
+}
+.reading-box :deep(pre code) {
+  background: none; padding: 0; color: inherit; font-size: inherit;
+}
+.reading-box :deep(a) { color: #409eff; text-decoration: none; }
+.reading-box :deep(a:hover) { text-decoration: underline; }
+.reading-box :deep(img) { max-width: 100%; border-radius: 8px; margin: 12px 0; }
+.reading-box :deep(hr) { border: none; border-top: 1px solid #e4e7ed; margin: 24px 0; }
+.reading-box :deep(strong) { color: #1a1a1a; }
+.reading-box :deep(table) {
+  width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 14px;
+}
+.reading-box :deep(th), .reading-box :deep(td) {
+  border: 1px solid #e4e7ed; padding: 8px 12px; text-align: left;
+}
+.reading-box :deep(th) { background: #f5f7fa; font-weight: 600; }
+.reading-box :deep(tr:nth-child(even)) { background: #fafafa; }
 
 /* 练习题目 */
 .quiz-item { background: #f8f9fb; padding: 16px; border-radius: 8px; margin-bottom: 10px; }
