@@ -180,7 +180,26 @@ const formatTime = (t: string) => {
 
 onMounted(() => {
   loadSessions()
-  loadMessages()
+
+  // 先检测是否有从题目页传来的预置消息（优先级高于 history）
+  const presetRaw = localStorage.getItem('tutor_current_messages')
+  localStorage.removeItem('tutor_current_messages')
+
+  if (presetRaw) {
+    try {
+      const preset = JSON.parse(presetRaw)
+      const firstUser = Array.isArray(preset) && preset.find((m: any) => m.role === 'user')
+      if (firstUser?.content) {
+        // 直接设 input 并发送，让 send() 创建 session + 存后端
+        currentSessionId.value = ''
+        input.value = firstUser.content
+        nextTick().then(() => send())
+      }
+    } catch { /* ignore */ }
+  } else {
+    loadMessages()
+  }
+
   if (messages.value.length > 0) {
     currentSessionId.value = localStorage.getItem('tutor_current_session') || ''
   }

@@ -27,21 +27,65 @@
 
       <!-- 练习题目 -->
       <div v-else-if="resourceType === 'quiz'" class="quiz-box">
-        <div v-for="(q, i) in questions" :key="i" class="quiz-item">
+        <div v-for="(q, i) in questions" :key="i" class="quiz-item" :class="{ answered: q._submitted }">
           <div class="q-header">
             <span class="q-num">{{ i + 1 }}</span>
             <span>{{ q.question || q.title || '题目' }}</span>
+            <span v-if="q._submitted" :class="['q-badge', q._isCorrect ? 'correct' : 'wrong']">
+              {{ q._isCorrect ? '✓ 正确' : '✗ 错误' }}
+            </span>
           </div>
+
+          <!-- 选择题选项 -->
           <div v-if="q.options?.length" class="q-options">
-            <div v-for="(opt, j) in q.options" :key="j" :class="['opt', { correct: q.showAnswer && j === q.answer }]">
+            <div
+              v-for="(opt, j) in q.options"
+              :key="j"
+              :class="[
+                'opt-btn',
+                { selected: q._selected === opt },
+                { 'is-correct': q._submitted && getOptLabel(opt) === q.answer },
+                { 'is-wrong': q._submitted && q._selected === opt && getOptLabel(opt) !== q.answer },
+              ]"
+              @click="submitChoice(q, opt, i)"
+            >
               {{ opt }}
             </div>
           </div>
-          <el-button v-if="!q.showAnswer" text type="primary" size="small" @click="q.showAnswer = true">
-            显示答案
-          </el-button>
-          <div v-if="q.showAnswer" class="q-answer">
-            答案：{{ q.options ? q.options[q.answer] : q.answer || q.explanation }}
+
+          <!-- 简答题输入 -->
+          <div v-else class="q-short">
+            <el-input
+              v-model="q._inputVal"
+              type="textarea"
+              :rows="3"
+              :disabled="q._submitted"
+              placeholder="输入你的答案..."
+            />
+            <el-button
+              v-if="!q._submitted"
+              type="primary"
+              size="small"
+              class="q-submit-btn"
+              :loading="q._loading"
+              @click="submitShort(q, i)"
+            >提交答案</el-button>
+          </div>
+
+          <!-- AI 讲解 -->
+          <div v-if="q._submitted && q._explanation" class="q-explain">
+            <div class="q-explain-header">📖 AI 个性化讲解</div>
+            <div class="q-explain-body" v-html="q._explanation"></div>
+          </div>
+          <div v-if="q._submitted && !q._explanation && q._loading" class="q-explain">
+            <div class="q-explain-header">⏳ AI 正在生成讲解...</div>
+          </div>
+
+          <!-- 继续提问 -->
+          <div v-if="q._submitted && q._explanation" class="q-continue">
+            <el-button type="primary" size="small" @click="continueToTutor(q, i)">
+              继续提问 →
+            </el-button>
           </div>
         </div>
       </div>
@@ -106,6 +150,7 @@ import MindElixir from 'mind-elixir'
 import { generateResource, getChapterResource } from '@/api/resource'
 import { saveProfile } from '@/api/profile'
 import { useUserStore } from '@/stores/user'
+import { getExplain, getAnsweredQuestions } from '@/api/tutor'
 
 const route = useRoute()
 const userStore = useUserStore()
@@ -118,6 +163,7 @@ const chapterId = computed(() => {
 const loading = ref(false)
 const content = ref('')
 const questions = ref<any[]>([])
+const currentResourceId = ref<number>(0)
 const liked = ref(false)
 const disliked = ref(false)
 const difficulty = ref('ok')
@@ -251,7 +297,20 @@ function applyContent(res: any) {
     try {
       const parsed = JSON.parse(raw)
       questions.value = Array.isArray(parsed) ? parsed : [parsed]
-      questions.value = questions.value.map((q: any) => ({ ...q, showAnswer: false }))
+      // 保存 resourceId 用于查已答题
+      if (res?.id) currentResourceId.value = res.id
+      // 初始化每题交互状态
+      questions.value = questions.value.map((q: any) => ({
+        ...q,
+        _selected: '',
+        _inputVal: '',
+        _submitted: false,
+        _isCorrect: false,
+        _explanation: '',
+        _loading: false,
+      }))
+      // 查已答题并填补空缺
+      checkAndFillAnswered()
     } catch {
       content.value = res.content
     }
@@ -347,6 +406,165 @@ const onDiffClick = async (val: string) => {
   ElMessage.success('已换个方向重新生成')
 }
 
+/** 提取选项的字母标签（"A. xxx" → "A"） */
+function getOptLabel(opt: string): string {
+  const m = opt.match(/^([A-Za-z])/)
+  return m ? m[1].toUpperCase() : opt
+}
+
+/** 提取选项文本（"A. xxx" → "xxx"） */
+
+
+/** 提交选择题答案 */
+async function submitChoice(q: any, opt: string, _idx?: number) {
+  if (q._submitted) return
+  q._selected = opt
+  q._submitted = true
+  const userLabel = getOptLabel(opt)
+  const correctLabel = typeof q.answer === 'string' ? q.answer.toUpperCase() : String(q.answer)
+  q._isCorrect = userLabel === correctLabel
+  q._loading = true
+
+  try {
+    const res = await getExplain({
+      resourceId: currentResourceId.value || undefined,
+      question: q.question,
+      questionType: 'choice',
+      userAnswer: userLabel,
+      correctAnswer: correctLabel,
+      isCorrect: q._isCorrect,
+    })
+    q._explanation = res.explanation
+  } catch {
+    q._explanation = q._isCorrect
+      ? '✅ 回答正确！' + (q.explanation ? '\n\n' + q.explanation : '')
+      : '❌ 正确答案是 ' + correctLabel + '。' + (q.explanation ? '\n\n' + q.explanation : '')
+  }
+  q._loading = false
+}
+
+/** 提交简答题答案 */
+async function submitShort(q: any, _idx: number) {
+  if (q._submitted || !q._inputVal?.trim()) return
+  q._submitted = true
+  q._loading = true
+
+  try {
+    const res = await getExplain({
+      resourceId: currentResourceId.value || undefined,
+      question: q.question,
+      questionType: 'short_answer',
+      userAnswer: q._inputVal.trim(),
+      correctAnswer: q.answer || q.explanation || '',
+      isCorrect: false,
+    })
+    q._isCorrect = res.correct
+    q._explanation = res.explanation
+  } catch {
+    q._explanation = 'AI 评判失败，请重试。'
+  }
+  q._loading = false
+}
+
+/** 继续提问 → 跳转智能辅导 */
+function continueToTutor(q: any, _idx: number) {
+  const question = q.question || ''
+  const userAns = q._selected || q._inputVal || ''
+  const correctAns = q.answer || ''
+  const explainText = q._explanation || ''
+
+  // 写入 localStorage
+  const messages = [
+    {
+      role: 'user',
+      content: `我遇到一道题：${question}\n我的答案：${userAns}\n正确答案：${correctAns}\n请帮我深入讲解一下。`,
+      time: Date.now(),
+    },
+    {
+      role: 'assistant',
+      content: explainText,
+      time: Date.now(),
+    },
+  ]
+  localStorage.setItem('tutor_current_messages', JSON.stringify(messages))
+  localStorage.removeItem('tutor_current_session')
+  // 跳转
+  window.open('/student/tutor', '_self')
+}
+
+/** 检查已答题并生成新题填补空缺 */
+async function checkAndFillAnswered() {
+  if (resourceType.value !== 'quiz' || !currentResourceId.value) return
+  try {
+    const answered = await getAnsweredQuestions(currentResourceId.value)
+    if (!answered || answered.length === 0) return
+
+    // 按题目文本匹配已答题
+    const answeredTexts = new Set(answered.map((a: any) => a.question))
+    const answeredIndices: number[] = []
+    questions.value.forEach((q: any, i: number) => {
+      if (answeredTexts.has(q.question)) {
+        answeredIndices.push(i)
+        // 标记为已做（展示历史答案）
+        q._submitted = true
+        const matched = answered.find((a: any) => a.question === q.question)
+        if (matched) {
+          q._isCorrect = matched.isCorrect === 1
+          q._explanation = matched.explanation || ''
+          q._selected = matched.correctAnswer // 高亮正确答案
+        }
+      }
+    })
+
+    if (answeredIndices.length === 0) return
+
+    // 收集已有的题目文本，避免重复
+    const existingTexts = questions.value.map((q: any) => q.question)
+
+    // 调 AI 生成新题填补
+    const newRes = await generateResource({
+      chapterId: chapterId.value > 0 ? chapterId.value : 0,
+      chapterName: 'Java 程序设计',
+      topic: 'Java',
+      type: 'quiz',
+      difficulty: 'medium',
+      force: true,
+    })
+
+    if (newRes?.content) {
+      const clean = cleanJson(newRes.content)
+      const newParsed = JSON.parse(clean)
+      const newQuestions = Array.isArray(newParsed) ? newParsed : [newParsed]
+
+      // 过滤掉与已有题目重复的新题
+      const uniqueNew = newQuestions.filter(
+        (nq: any) => !existingTexts.includes(nq.question)
+      )
+
+      // 替换已答题位置
+      let newIdx = 0
+      const updated = [...questions.value]
+      for (const idx of answeredIndices) {
+        if (newIdx < uniqueNew.length) {
+          updated[idx] = {
+            ...uniqueNew[newIdx],
+            _selected: '',
+            _inputVal: '',
+            _submitted: false,
+            _isCorrect: false,
+            _explanation: '',
+            _loading: false,
+          }
+          newIdx++
+        }
+      }
+      questions.value = updated
+    }
+  } catch {
+    // 填空失败不影响已有题目展示
+  }
+}
+
 const like = () => {
   liked.value = !liked.value
   if (liked.value) disliked.value = false
@@ -394,12 +612,35 @@ onMounted(() => {
 
 /* 练习题目 */
 .quiz-item { background: #f8f9fb; padding: 16px; border-radius: 8px; margin-bottom: 10px; }
-.q-header { display: flex; align-items: center; gap: 8px; font-weight: 500; }
+.quiz-item.answered { border-left: 3px solid #4f8cff; }
+.q-header { display: flex; align-items: center; gap: 8px; font-weight: 500; flex-wrap: wrap; }
+.q-badge { font-size: 12px; padding: 2px 8px; border-radius: 10px; font-weight: 600; }
+.q-badge.correct { background: #e6f7e6; color: #52c41a; }
+.q-badge.wrong { background: #fde8e8; color: #e64553; }
 .q-num { display: inline-flex; width: 24px; height: 24px; border-radius: 50%; background: #4f8cff; color: #fff; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0; }
 .q-options { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 0 32px; }
-.opt { padding: 6px 14px; background: #f0f2f5; border-radius: 6px; font-size: 13px; }
-.opt.correct { background: #e6f7e6; color: #52c41a; font-weight: 600; }
-.q-answer { margin: 8px 0 0 32px; color: #52c41a; font-weight: 500; }
+.opt-btn {
+  padding: 8px 16px; background: #fff; border: 1px solid #d9d9d9;
+  border-radius: 8px; font-size: 13px; cursor: pointer;
+  transition: all .2s; user-select: none;
+}
+.opt-btn:hover { border-color: #4f8cff; color: #4f8cff; }
+.opt-btn.selected { border-color: #4f8cff; background: #eef4ff; color: #4f8cff; font-weight: 600; }
+.opt-btn.is-correct { border-color: #52c41a; background: #e6f7e6; color: #52c41a; font-weight: 600; cursor: default; }
+.opt-btn.is-wrong { border-color: #e64553; background: #fde8e8; color: #e64553; font-weight: 600; cursor: default; }
+.opt-btn.is-correct:hover, .opt-btn.is-wrong:hover { transform: none; }
+
+/* 简答 */
+.q-short { margin: 10px 0 0 32px; }
+.q-submit-btn { margin-top: 8px; }
+
+/* AI 讲解 */
+.q-explain { margin: 12px 0 0 32px; background: #fff; border-radius: 8px; border: 1px solid #e8e8e8; overflow: hidden; }
+.q-explain-header { font-size: 13px; font-weight: 600; color: #4f8cff; padding: 10px 14px; background: #f8faff; border-bottom: 1px solid #e8e8e8; }
+.q-explain-body { padding: 12px 14px; font-size: 14px; line-height: 1.8; color: #333; white-space: pre-wrap; }
+
+/* 继续提问 */
+.q-continue { margin: 10px 0 0 32px; }
 
 /* 反馈栏 */
 .feedback-bar {

@@ -193,6 +193,8 @@ else:
             "evaluation": "你是一位学习评估专家。根据学生的学习数据生成客观的学习评价，包含各维度的知识掌握度评分和综合评估。返回 JSON 格式。",
             "learning_path": "你是一位学习路径规划专家。根据学生画像生成个性化的学习路径规划。必须返回严格的 JSON 对象，包含 goal（学习目标）、stages（阶段数组），每个 stage 包含 name（阶段名）和 tasks（任务数组），每个 task 包含 title、duration（分钟）、status=0、progress=0。直接返回纯 JSON，不要 Markdown 标记或额外说明。",
             "suggestion": "你是一位学习建议导师。根据学生画像和薄弱点，生成具体可执行的个性化学习建议。返回 JSON 数组格式。",
+            "explain": "你是一位个性化讲解导师。根据学生的做题情况（题目、用户答案、正确答案、对错）和学生画像（薄弱点、基础），生成针对性的纠错或拓展讲解。回答要结构清晰、有针对性。",
+            "judge": "你是一位答题评判专家。根据题目、标准答案和用户答案，判断用户答案是否正确，并给出评分和简短的评判意见。返回 JSON 格式，包含 score（0或1）、correct（boolean）、comment（评判意见）。",
         }
         system_prompt = role_prompts.get(req.resourceType,
             "你是一位教育内容生成专家。根据要求生成高质量的学习内容。")
