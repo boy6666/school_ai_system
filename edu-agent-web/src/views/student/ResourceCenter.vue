@@ -59,11 +59,21 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { marked } from 'marked'
+import { markedHighlight } from 'marked-highlight'
 import hljs from 'highlight.js'
-import 'highlight.js/styles/github.css'
+import 'highlight.js/styles/atom-one-dark.css'
 import { getCategories, getNotes, getNoteDetail } from '@/api/notes'
 
-marked.setOptions({ breaks: true, gfm: true, highlight: (c: string, l: string) => l && hljs.getLanguage(l) ? hljs.highlight(c, { language: l }).value : hljs.highlightAuto(c).value })
+marked.use(markedHighlight({
+  langPrefix: 'hljs language-',
+  highlight(code: string, lang: string) {
+    if (lang && hljs.getLanguage(lang)) {
+      return hljs.highlight(code, { language: lang }).value
+    }
+    return hljs.highlightAuto(code).value
+  }
+}))
+marked.setOptions({ breaks: true, gfm: true })
 
 const router = useRouter()
 
@@ -145,11 +155,46 @@ onMounted(async () => {
 .ch-arrow { font-size: 18px; color: #ccc; }
 .back { padding: 8px 0; cursor: pointer; color: #4f8cff; font-size: 14px; margin-bottom: 8px; }
 .back:hover { text-decoration: underline; }
-.content-area h2 { font-size: 22px; margin: 12px 0; }
-.md { line-height: 1.9; font-size: 15px; color: #333; }
-.md :deep(p) { margin: 10px 0; }
-.md :deep(pre) { background: #f6f8fa; padding: 18px; border-radius: 10px; overflow-x: auto; border: 1px solid #eee; }
-.md :deep(code) { font-size: 14px; }
+.content-area { background: #fff; border-radius: 12px; padding: 32px 40px; border: 1px solid #ebeef5; margin-top: 12px; }
+.content-area h2 { font-size: 26px; margin: 0 0 8px; color: #1a1a1a; font-weight: 700; }
+
+/* Markdown 渲染优化 */
+.md { line-height: 1.9; font-size: 15px; color: #333; padding: 4px 0; }
+.md :deep(h1) { font-size: 24px; margin: 28px 0 14px; font-weight: 700; color: #1a1a1a; padding-bottom: 8px; border-bottom: 2px solid #409eff; }
+.md :deep(h2) { font-size: 20px; margin: 24px 0 12px; font-weight: 600; color: #1a1a1a; }
+.md :deep(h3) { font-size: 17px; margin: 20px 0 10px; font-weight: 600; color: #2c3e50; }
+.md :deep(h4) { font-size: 15px; margin: 16px 0 8px; font-weight: 600; color: #2c3e50; }
+.md :deep(p) { margin: 0 0 14px; }
+.md :deep(ul), .md :deep(ol) { margin: 8px 0 14px; padding-left: 24px; }
+.md :deep(li) { margin: 4px 0; }
+.md :deep(blockquote) {
+  margin: 14px 0; padding: 12px 18px; border-left: 4px solid #409eff;
+  background: #f8faff; color: #555; border-radius: 0 8px 8px 0;
+}
+.md :deep(code) {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  background: #f0f2f5; padding: 2px 7px; border-radius: 4px;
+  font-size: 13px; color: #d63384;
+}
+.md :deep(pre) {
+  background: #1e1e2e; color: #cdd6f4; padding: 18px;
+  border-radius: 10px; overflow-x: auto; margin: 16px 0;
+  font-size: 13px; line-height: 1.7; border: 1px solid #2d2d3d;
+}
+.md :deep(pre code) { background: none; padding: 0; color: inherit; font-size: inherit; }
+.md :deep(a) { color: #409eff; text-decoration: none; }
+.md :deep(a:hover) { text-decoration: underline; }
+.md :deep(img) { max-width: 100%; border-radius: 8px; margin: 14px 0; box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+.md :deep(hr) { border: none; border-top: 1px solid #e4e7ed; margin: 28px 0; }
+.md :deep(strong) { color: #1a1a1a; }
+.md :deep(table) {
+  width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 14px;
+}
+.md :deep(th), .md :deep(td) {
+  border: 1px solid #e4e7ed; padding: 10px 14px; text-align: left;
+}
+.md :deep(th) { background: #f5f7fa; font-weight: 600; color: #1a1a1a; }
+.md :deep(tr:nth-child(even)) { background: #fafafa; }
 .side-cards { width: 150px; flex-shrink: 0; position: sticky; top: 32px; align-self: flex-start; }
 .side-title { font-size: 14px; font-weight: 600; color: #1a1a1a; margin-bottom: 14px; }
 .mini-card {
