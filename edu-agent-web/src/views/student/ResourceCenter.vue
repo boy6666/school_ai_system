@@ -57,12 +57,15 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { marked } from 'marked'
 import hljs from 'highlight.js'
 import 'highlight.js/styles/github.css'
 import { getCategories, getNotes, getNoteDetail } from '@/api/notes'
 
 marked.setOptions({ breaks: true, gfm: true, highlight: (c: string, l: string) => l && hljs.getLanguage(l) ? hljs.highlight(c, { language: l }).value : hljs.highlightAuto(c).value })
+
+const router = useRouter()
 
 const cats = ref<any[]>([])
 const curCat = ref<any>(null)
@@ -97,7 +100,10 @@ const enterNote = async (item: any) => {
 }
 
 const goResource = (key: string) => {
-  window.open(`/student/resources/generate/${key}`, '_self')
+  // 如果已选中章节，把 category 作为 chapterId 传过去，让生成页优先查DB缓存
+  const chapterId = curCat.value?.category
+  const query = chapterId ? `?chapterId=${chapterId}` : ''
+  router.push(`/student/resources/generate/${key}${query}`)
 }
 
 onMounted(async () => {

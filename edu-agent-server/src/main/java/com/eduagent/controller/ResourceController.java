@@ -83,8 +83,9 @@ public class ResourceController {
         String topic = (String) body.getOrDefault("topic", chapterName);
         String type = (String) body.getOrDefault("type", "mindmap");
         String difficulty = (String) body.getOrDefault("difficulty", "medium");
+        boolean force = body.get("force") != null && Boolean.parseBoolean(body.get("force").toString());
 
-        Resource resource = resourceService.generateResource(chapterId, chapterName, topic, type, difficulty, userId);
+        Resource resource = resourceService.generateResource(chapterId, chapterName, topic, type, difficulty, userId, force);
         return Result.success(resource);
     }
 

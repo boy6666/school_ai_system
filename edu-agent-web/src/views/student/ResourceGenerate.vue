@@ -13,9 +13,16 @@
 
     <!-- 内容区 -->
     <div v-else-if="content || questions.length" class="content-area">
-      <!-- 思维导图 -->
-      <div v-if="resourceType === 'mindmap'" class="mindmap-box">
-        <pre><code>{{ content }}</code></pre>
+      <!-- 思维导图：mind-elixir 渲染（直接接受 JSON） -->
+      <div v-if="resourceType === 'mindmap'" class="mm-wrapper">
+        <div ref="mmEl" class="mindmap-box map-container"></div>
+        <div class="mm-toolbar">
+          <el-button size="small" circle @click="mmZoomOut" title="缩小">−</el-button>
+          <el-button size="small" @click="mmZoomReset" title="适应屏幕">⊡</el-button>
+          <el-button size="small" circle @click="mmZoomIn" title="放大">+</el-button>
+          <el-divider direction="vertical" />
+          <el-button size="small" @click="mmDownload" title="下载图片">⬇ 下载</el-button>
+        </div>
       </div>
 
       <!-- 练习题目 -->
@@ -53,12 +60,28 @@
         <el-button :type="liked ? 'primary' : 'default'" size="small" circle @click="like">👍</el-button>
         <el-button :type="disliked ? 'danger' : 'default'" size="small" circle @click="dislike">👎</el-button>
         <el-divider direction="vertical" />
-        <span>难度：</span>
-        <el-radio-group v-model="difficulty" size="small" @change="onDifficultyChange">
-          <el-radio-button value="easy">太简单</el-radio-button>
-          <el-radio-button value="ok">刚好</el-radio-button>
-          <el-radio-button value="hard">太难</el-radio-button>
-        </el-radio-group>
+        <span>评价：</span>
+        <!-- 用按钮代替 radio，确保重复点击同一选项也能触发 -->
+        <div class="diff-btns">
+          <el-button
+            :type="difficulty === 'easy' ? 'warning' : 'default'"
+            size="small"
+            plain
+            @click="onDiffClick('easy')"
+          >太简单</el-button>
+          <el-button
+            :type="difficulty === 'ok' ? 'success' : 'default'"
+            size="small"
+            plain
+            @click="onDiffClick('ok')"
+          >刚好</el-button>
+          <el-button
+            :type="difficulty === 'hard' ? 'danger' : 'default'"
+            size="small"
+            plain
+            @click="onDiffClick('hard')"
+          >太难</el-button>
+        </div>
       </div>
     </div>
 
@@ -74,11 +97,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Loading } from '@element-plus/icons-vue'
-import { generateResource } from '@/api/resource'
+import 'mind-elixir/style'
+import MindElixir from 'mind-elixir'
+import { generateResource, getChapterResource } from '@/api/resource'
 import { saveProfile } from '@/api/profile'
 import { useUserStore } from '@/stores/user'
 
@@ -86,12 +111,17 @@ const route = useRoute()
 const userStore = useUserStore()
 
 const resourceType = computed(() => (route.params.type as string) || 'mindmap')
+const chapterId = computed(() => {
+  const raw = route.query.chapterId
+  return raw ? Number(raw) : 0
+})
 const loading = ref(false)
 const content = ref('')
 const questions = ref<any[]>([])
 const liked = ref(false)
 const disliked = ref(false)
 const difficulty = ref('ok')
+const mmEl = ref<HTMLElement>()
 
 const typeMap: Record<string, string> = {
   mindmap: '思维导图', quiz: '练习题目',
@@ -99,44 +129,181 @@ const typeMap: Record<string, string> = {
 }
 const typeLabel = computed(() => typeMap[resourceType.value] || resourceType.value)
 
-/** 调用 AI 生成资源 */
-const doGenerate = async (typeOverride?: string) => {
+/** mind-elixir 实例引用 */
+let mindInstance: any = null
+
+/** 组件卸载时清理 mind-elixir 实例 */
+onUnmounted(() => {
+  if (mindInstance) {
+    mindInstance.destroy()
+    mindInstance = null
+  }
+})
+
+/** 用 mind-elixir 渲染思维导图（直接接受 AI 返回的 JSON 树） */
+async function renderMindmap(raw: string) {
+  if (!mmEl.value) return
+
+  if (mindInstance) {
+    mindInstance.destroy()
+    mindInstance = null
+  }
+  mmEl.value.innerHTML = ''
+
+  let nodeData: any
+  try {
+    nodeData = JSON.parse(raw)
+    if (!nodeData.topic) throw new Error('不是有效的思维导图 JSON')
+  } catch {
+    mmEl.value.textContent = raw
+    return
+  }
+
+  await nextTick()
+
+  try {
+    mindInstance = new MindElixir({
+      el: mmEl.value,
+      direction: MindElixir.RIGHT,
+      editable: false,
+      contextMenu: false,
+      toolBar: false,
+      keypress: false,
+      theme: MindElixir.THEME,
+    })
+    const err = mindInstance.init({ nodeData })
+    if (err) throw err
+    mindInstance.scaleFit()
+  } catch {
+    mmEl.value.textContent = raw
+  }
+}
+
+/** 放大 */
+function mmZoomIn() {
+  if (!mindInstance) return
+  const cur = mindInstance.scaleVal
+  mindInstance.scale(Math.min(cur * 1.3, 3))
+}
+
+/** 缩小 */
+function mmZoomOut() {
+  if (!mindInstance) return
+  const cur = mindInstance.scaleVal
+  mindInstance.scale(Math.max(cur / 1.3, 0.15))
+}
+
+/** 适应屏幕 */
+function mmZoomReset() {
+  if (!mindInstance) return
+  mindInstance.scaleFit()
+}
+
+/** 下载 PNG 图片 */
+async function mmDownload() {
+  if (!mindInstance) return
+  try {
+    const blob = await mindInstance.exportPng()
+    if (!blob) {
+      ElMessage.warning('导出失败')
+      return
+    }
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `思维导图_${Date.now()}.png`
+    a.click()
+    URL.revokeObjectURL(url)
+    ElMessage.success('图片已下载')
+  } catch {
+    ElMessage.error('下载失败')
+  }
+}
+
+/** 统一处理 AI 返回的内容展示 */
+function applyContent(res: any) {
+  if (!res?.content) return
+
+  if (resourceType.value === 'quiz') {
+    try {
+      const parsed = JSON.parse(res.content)
+      questions.value = Array.isArray(parsed) ? parsed : [parsed]
+      questions.value = questions.value.map((q: any) => ({ ...q, showAnswer: false }))
+    } catch {
+      content.value = res.content
+    }
+  } else if (resourceType.value === 'mindmap') {
+    content.value = res.content
+    nextTick().then(() => renderMindmap(res.content))
+  } else {
+    content.value = res.content
+  }
+}
+
+/** 首次加载：有 chapterId 则查DB缓存，没有则直接 AI 生成 */
+const initialLoad = async () => {
   loading.value = true
   content.value = ''
   questions.value = []
 
-  const params = {
-    chapterId: 0,
-    chapterName: 'Java 程序设计',
-    topic: 'Java',
-    type: typeOverride || resourceType.value,
-    difficulty: 'medium',
-  }
-
   try {
-    const res = await generateResource(params)
-
-    if (resourceType.value === 'quiz') {
-      // quiz 尝试解析 JSON 题目列表
-      try {
-        const parsed = JSON.parse(res.content)
-        questions.value = Array.isArray(parsed) ? parsed : [parsed]
-        // 给每题加上 showAnswer 控制
-        questions.value = questions.value.map((q: any) => ({ ...q, showAnswer: false }))
-      } catch {
-        content.value = res.content
-      }
+    if (chapterId.value > 0) {
+      const res = await getChapterResource(
+        chapterId.value,
+        resourceType.value,
+        'medium',
+        'Java 程序设计',
+        'Java'
+      )
+      // 先关 loading 再设内容，确保 nextTick 触发时 content-area 已在 DOM 中
+      loading.value = false
+      applyContent(res)
     } else {
-      content.value = res.content
+      const res = await generateResource({
+        chapterId: 0,
+        chapterName: 'Java 程序设计',
+        topic: 'Java',
+        type: resourceType.value,
+        difficulty: 'medium',
+      })
+      loading.value = false
+      applyContent(res)
     }
   } catch {
+    loading.value = false
     ElMessage.error('AI 生成失败，请重试')
   }
-  loading.value = false
 }
 
-/** 难度反馈：记录画像 + 换个方向重新生成 */
-const onDifficultyChange = async (val: string) => {
+/** 反馈触发生成：强制调 AI，跳过缓存，存 DB */
+const doGenerate = async () => {
+  loading.value = true
+  content.value = ''
+  questions.value = []
+
+  try {
+    const res = await generateResource({
+      chapterId: chapterId.value > 0 ? chapterId.value : 0,
+      chapterName: 'Java 程序设计',
+      topic: 'Java',
+      type: resourceType.value,
+      difficulty: 'medium',
+      force: true,
+    })
+    // 先关 loading 再设内容，确保 nextTick 时 content-area 已在 DOM
+    loading.value = false
+    applyContent(res)
+  } catch {
+    loading.value = false
+    ElMessage.error('AI 生成失败，请重试')
+  }
+}
+
+/** 评价当前内容：记录画像 + AI 换个方向重新生成 */
+const onDiffClick = async (val: string) => {
+  // 更新高亮状态
+  difficulty.value = val
+
   // 1. 记录画像
   const userId = userStore.userInfo?.id
   if (userId) {
@@ -151,7 +318,7 @@ const onDifficultyChange = async (val: string) => {
     }
   }
 
-  // 2. AI 换个方向重新生成（不增不减难度，只是换讲解角度）
+  // 2. AI 换个方向重新生成（不改变难度，只换讲解角度）
   ElMessage.info('正在根据你的反馈调整内容方向...')
   await doGenerate()
   ElMessage.success('已换个方向重新生成')
@@ -170,7 +337,7 @@ const dislike = () => {
 }
 
 onMounted(() => {
-  doGenerate()
+  initialLoad()
 })
 </script>
 
@@ -184,8 +351,17 @@ onMounted(() => {
 
 .content-area { background: #fff; border-radius: 10px; padding: 24px; border: 1px solid #ebeef5; }
 
-/* 思维导图 & 代码 */
-.mindmap-box pre,
+/* 思维导图 — 外层只给尺寸，内部由 mind-elixir 全权控制 */
+.mm-wrapper { position: relative; }
+.mindmap-box { width: 100%; height: 520px; }
+.mm-toolbar {
+  display: flex; align-items: center; gap: 4px;
+  padding: 8px 0 0; justify-content: center;
+  color: #909399; font-size: 13px;
+}
+.mm-toolbar .el-button { font-size: 15px; }
+
+/* 代码 */
 .code-box pre { background: #f5f7fa; padding: 16px; border-radius: 8px; overflow-x: auto; font-size: 13px; }
 
 /* 拓展阅读 */
@@ -208,6 +384,7 @@ onMounted(() => {
   display: flex; align-items: center; gap: 8px; font-size: 13px; color: #606266;
   flex-wrap: wrap;
 }
+.diff-btns { display: flex; gap: 4px; }
 
 .empty-area { padding: 80px 0; }
 </style>

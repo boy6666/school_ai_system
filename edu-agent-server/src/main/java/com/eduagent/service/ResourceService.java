@@ -11,6 +11,8 @@ public interface ResourceService extends IService<Resource> {
     Resource getByChapterId(Long chapterId, String type);
     List<Resource> listByChapterId(Long chapterId);
     Resource generateResource(Long chapterId, String chapterName, String topic, String type, String difficulty, Long studentId);
+
+    Resource generateResource(Long chapterId, String chapterName, String topic, String type, String difficulty, Long studentId, boolean force);
     Resource regenerateResource(Long resourceId, String difficulty, Long studentId);
     void saveFeedback(Long resourceId, Boolean liked, String difficultyFeedback);
     Resource findByChapterAndType(Long chapterId, String type);

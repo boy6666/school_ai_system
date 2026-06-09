@@ -19,6 +19,7 @@
     "marked-highlight": "^2.2.4",
     "markmap-lib": "^0.18.12",
     "markmap-view": "^0.18.12",
+    "mind-elixir": "^5.12.2",
     "pinia": "^3.0.4",
     "vue": "^3.5.32",
     "vue-router": "^4.6.4"

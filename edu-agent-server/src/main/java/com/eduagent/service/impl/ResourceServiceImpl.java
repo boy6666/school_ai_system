@@ -60,11 +60,19 @@ public class ResourceServiceImpl extends ServiceImpl<ResourceMapper, Resource> i
     @Override
     @Transactional
     public Resource generateResource(Long chapterId, String chapterName, String topic, String type, String difficulty, Long studentId) {
-        // 1. 先查DB是否已有同章节同类型同难度的资源
-        Resource existing = findByChapterAndTypeAndDifficulty(chapterId, type, difficulty);
-        if (existing != null && existing.getContent() != null && !existing.getContent().isEmpty()) {
-            log.info("命中缓存: chapterId={}, type={}, difficulty={}", chapterId, type, difficulty);
-            return existing;
+        return generateResource(chapterId, chapterName, topic, type, difficulty, studentId, false);
+    }
+
+    @Override
+    @Transactional
+    public Resource generateResource(Long chapterId, String chapterName, String topic, String type, String difficulty, Long studentId, boolean force) {
+        // 1. 先查DB是否已有同章节同类型同难度的资源（force=true 时跳过缓存）
+        if (!force) {
+            Resource existing = findByChapterAndTypeAndDifficulty(chapterId, type, difficulty);
+            if (existing != null && existing.getContent() != null && !existing.getContent().isEmpty()) {
+                log.info("命中缓存: chapterId={}, type={}, difficulty={}", chapterId, type, difficulty);
+                return existing;
+            }
         }
 
         // 2. 读取学生画像

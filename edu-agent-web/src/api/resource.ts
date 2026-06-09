@@ -63,6 +63,7 @@ export function generateResource(params: {
   topic: string
   type: string
   difficulty: string
+  force?: boolean
 }): Promise<ChapterResource> {
   return request.post('/resources/generate', params)
 }
