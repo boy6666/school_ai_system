@@ -140,6 +140,28 @@ onUnmounted(() => {
   }
 })
 
+/** 清理 AI 返回内容中的 Markdown 代码块标记，提取纯净 JSON */
+function cleanJson(raw: string): string {
+  let s = raw.trim()
+  // 去掉开头的 ```json 或 ```
+  s = s.replace(/^```(?:json)?\s*/i, '')
+  // 去掉结尾的 ```
+  s = s.replace(/```\s*$/i, '')
+  // 去掉首尾空白后，如果整体被花括号/方括号包裹，尝试提取 JSON
+  s = s.trim()
+  // 查找第一个 { 或 [ 到最后一个 } 或 ]
+  const firstBrace = s.indexOf('{')
+  const firstBracket = s.indexOf('[')
+  const first = firstBrace === -1 ? firstBracket : firstBracket === -1 ? firstBrace : Math.min(firstBrace, firstBracket)
+  const lastBrace = s.lastIndexOf('}')
+  const lastBracket = s.lastIndexOf(']')
+  const last = lastBrace === -1 ? lastBracket : lastBracket === -1 ? lastBrace : Math.max(lastBrace, lastBracket)
+  if (first !== -1 && last !== -1 && last > first) {
+    s = s.slice(first, last + 1)
+  }
+  return s
+}
+
 /** 用 mind-elixir 渲染思维导图（直接接受 AI 返回的 JSON 树） */
 async function renderMindmap(raw: string) {
   if (!mmEl.value) return
@@ -152,7 +174,7 @@ async function renderMindmap(raw: string) {
 
   let nodeData: any
   try {
-    nodeData = JSON.parse(raw)
+    nodeData = JSON.parse(cleanJson(raw))
     if (!nodeData.topic) throw new Error('不是有效的思维导图 JSON')
   } catch {
     mmEl.value.textContent = raw
@@ -223,10 +245,11 @@ async function mmDownload() {
 /** 统一处理 AI 返回的内容展示 */
 function applyContent(res: any) {
   if (!res?.content) return
+  const raw = cleanJson(res.content)
 
   if (resourceType.value === 'quiz') {
     try {
-      const parsed = JSON.parse(res.content)
+      const parsed = JSON.parse(raw)
       questions.value = Array.isArray(parsed) ? parsed : [parsed]
       questions.value = questions.value.map((q: any) => ({ ...q, showAnswer: false }))
     } catch {
