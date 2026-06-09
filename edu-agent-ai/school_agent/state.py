@@ -18,3 +18,4 @@ class StudentState(TypedDict, total=False):
     safety_report: Dict[str, Any]
     final_answer: str
     resource_dir: str
+    profile_complete: bool

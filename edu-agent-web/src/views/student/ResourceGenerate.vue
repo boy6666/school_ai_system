@@ -1,127 +1,213 @@
 <template>
-  <div class="gp">
-    <div class="top">
+  <div class="generate-page">
+    <div class="top-bar">
       <el-button text @click="$router.back()">← 返回</el-button>
-      <h2>{{ typeLabel }}</h2>
-      <div class="diff">
-        <span v-for="d in ['简单','适合','困难']" :key="d" :class="['dt',{on:curDiff===d}]" @click="switchDiff(d)">{{ d }}</span>
+      <h2>{{ typeLabel }} · AI 生成</h2>
+    </div>
+
+    <!-- 加载中 -->
+    <div v-if="loading" class="loading-area">
+      <el-icon class="is-loading" :size="32"><Loading /></el-icon>
+      <p>AI 正在为你生成 {{ typeLabel }}...</p>
+    </div>
+
+    <!-- 内容区 -->
+    <div v-else-if="content || questions.length" class="content-area">
+      <!-- 思维导图 -->
+      <div v-if="resourceType === 'mindmap'" class="mindmap-box">
+        <pre><code>{{ content }}</code></pre>
+      </div>
+
+      <!-- 练习题目 -->
+      <div v-else-if="resourceType === 'quiz'" class="quiz-box">
+        <div v-for="(q, i) in questions" :key="i" class="quiz-item">
+          <div class="q-header">
+            <span class="q-num">{{ i + 1 }}</span>
+            <span>{{ q.question || q.title || '题目' }}</span>
+          </div>
+          <div v-if="q.options?.length" class="q-options">
+            <div v-for="(opt, j) in q.options" :key="j" :class="['opt', { correct: q.showAnswer && j === q.answer }]">
+              {{ opt }}
+            </div>
+          </div>
+          <el-button v-if="!q.showAnswer" text type="primary" size="small" @click="q.showAnswer = true">
+            显示答案
+          </el-button>
+          <div v-if="q.showAnswer" class="q-answer">
+            答案：{{ q.options ? q.options[q.answer] : q.answer || q.explanation }}
+          </div>
+        </div>
+      </div>
+
+      <!-- 拓展阅读 -->
+      <div v-else-if="resourceType === 'reading'" class="reading-box" v-html="content"></div>
+
+      <!-- 代码案例 -->
+      <div v-else class="code-box">
+        <pre><code>{{ content }}</code></pre>
+      </div>
+
+      <!-- ===== 反馈区：记录画像 + 换个方向重新生成 ===== -->
+      <div class="feedback-bar">
+        <span>这个内容对你有帮助吗？</span>
+        <el-button :type="liked ? 'primary' : 'default'" size="small" circle @click="like">👍</el-button>
+        <el-button :type="disliked ? 'danger' : 'default'" size="small" circle @click="dislike">👎</el-button>
+        <el-divider direction="vertical" />
+        <span>难度：</span>
+        <el-radio-group v-model="difficulty" size="small" @change="onDifficultyChange">
+          <el-radio-button value="easy">太简单</el-radio-button>
+          <el-radio-button value="ok">刚好</el-radio-button>
+          <el-radio-button value="hard">太难</el-radio-button>
+        </el-radio-group>
       </div>
     </div>
 
-    <div v-if="loading" class="ld">加载中...</div>
-
-    <div v-else class="body">
-      <!-- 思维导图：用 markmap 渲染 -->
-      <div v-if="typeKey === 'mindmap'" ref="mmEl" class="mm-box"></div>
-
-      <!-- 其他：Markdown 渲染 -->
-      <div v-else class="md" v-html="html"></div>
+    <!-- 空状态 -->
+    <div v-else class="empty-area">
+      <el-empty description="点击按钮开始生成">
+        <el-button type="primary" @click="doGenerate" :loading="loading">
+          生成 {{ typeLabel }}
+        </el-button>
+      </el-empty>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, nextTick } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { marked } from 'marked'
-import hljs from 'highlight.js'
-import 'highlight.js/styles/github.css'
+import { ElMessage } from 'element-plus'
+import { Loading } from '@element-plus/icons-vue'
+import { generateResource } from '@/api/resource'
+import { saveProfile } from '@/api/profile'
 import { useUserStore } from '@/stores/user'
-import request from '@/utils/request'
-
-marked.setOptions({ breaks: true, gfm: true, highlight: (c: string, l: string) => l && hljs.getLanguage(l) ? hljs.highlight(c, { language: l }).value : hljs.highlightAuto(c).value })
 
 const route = useRoute()
-const typeKey = computed(() => (route.params.type as string) || 'mindmap')
-const curDiff = ref('适合')
-const loading = ref(true)
-const content = ref('')
-const mmEl = ref<HTMLElement>()
-
 const userStore = useUserStore()
-const typeLabel = computed(() => ({ mindmap: '思维导图', quiz: '练习题目', reading: '拓展阅读', code: '代码案例' }[typeKey.value] || typeKey.value))
-const html = computed(() => content.value ? marked.parse(content.value) : '')
 
-const renderMindmap = async () => {
-  if (typeKey.value !== 'mindmap' || !content.value || !mmEl.value) return
-  await nextTick()
-  try {
-    const { Transformer } = await import('markmap-lib')
-    const { Markmap } = await import('markmap-view')
-    const { root } = new Transformer().transform(content.value)
-    Markmap.create(mmEl.value, {}, root)
-  } catch {}
+const resourceType = computed(() => (route.params.type as string) || 'mindmap')
+const loading = ref(false)
+const content = ref('')
+const questions = ref<any[]>([])
+const liked = ref(false)
+const disliked = ref(false)
+const difficulty = ref('ok')
+
+const typeMap: Record<string, string> = {
+  mindmap: '思维导图', quiz: '练习题目',
+  reading: '拓展阅读', code: '代码案例',
 }
+const typeLabel = computed(() => typeMap[resourceType.value] || resourceType.value)
 
-const diffMap: Record<string, string> = { '简单': '入门', '适合': '基础', '困难': '进阶' }
-const typeMap: Record<string, string> = { mindmap: '思维导图', quiz: '题库', reading: '拓展阅读', code: '代码案例' }
-
-const doGenerate = async () => {
-  const sid = userStore.userInfo?.id || '9'
+/** 调用 AI 生成资源 */
+const doGenerate = async (typeOverride?: string) => {
   loading.value = true
   content.value = ''
+  questions.value = []
 
-  // 1. 查 DB（按学生+类型+难度精确匹配）
-  try {
-    const list: any = await request.get('/resources', {
-      params: { type: typeMap[typeKey.value], difficulty: diffMap[curDiff.value], chapterName: 'Java' }
-    })
-    if (Array.isArray(list) && list.length && list[0]?.content) {
-      content.value = list[0].content
-      loading.value = false
-      await nextTick()
-      renderMindmap()
-      return
-    }
-  } catch {}
-
-  // 2. 调 AI 生成
-  try {
-    const res: any = await request.post('/resources/generate', {
-      studentId: sid,
-      type: typeKey.value,
-      title: '通用',
-      chapterName: 'Java',
-      difficulty: curDiff.value
-    })
-    if (res?.content) content.value = res.content
-  } catch {}
-
-  loading.value = false
-  await nextTick()
-  renderMindmap()
-}
-
-const switchDiff = (d: string) => {
-  curDiff.value = d
-  // 难度变化 → 通知画像更新
-  const level = d === '简单' ? -1 : d === '困难' ? 1 : 0
-  if (level !== 0) {
-    try {
-      request.post('/profile/save', {
-        userId: userStore.userInfo?.id,
-        pace: level > 0 ? '快速' : '慢速'
-      })
-    } catch {}
+  const params = {
+    chapterId: 0,
+    chapterName: 'Java 程序设计',
+    topic: 'Java',
+    type: typeOverride || resourceType.value,
+    difficulty: 'medium',
   }
-  doGenerate()
+
+  try {
+    const res = await generateResource(params)
+
+    if (resourceType.value === 'quiz') {
+      // quiz 尝试解析 JSON 题目列表
+      try {
+        const parsed = JSON.parse(res.content)
+        questions.value = Array.isArray(parsed) ? parsed : [parsed]
+        // 给每题加上 showAnswer 控制
+        questions.value = questions.value.map((q: any) => ({ ...q, showAnswer: false }))
+      } catch {
+        content.value = res.content
+      }
+    } else {
+      content.value = res.content
+    }
+  } catch {
+    ElMessage.error('AI 生成失败，请重试')
+  }
+  loading.value = false
 }
 
-onMounted(() => { doGenerate() })
+/** 难度反馈：记录画像 + 换个方向重新生成 */
+const onDifficultyChange = async (val: string) => {
+  // 1. 记录画像
+  const userId = userStore.userInfo?.id
+  if (userId) {
+    try {
+      await saveProfile({
+        userId,
+        difficulty_preference: val,
+        resource_type: resourceType.value,
+      })
+    } catch {
+      // 画像保存失败不影响核心流程
+    }
+  }
+
+  // 2. AI 换个方向重新生成（不增不减难度，只是换讲解角度）
+  ElMessage.info('正在根据你的反馈调整内容方向...')
+  await doGenerate()
+  ElMessage.success('已换个方向重新生成')
+}
+
+const like = () => {
+  liked.value = !liked.value
+  if (liked.value) disliked.value = false
+  ElMessage.success('感谢反馈！')
+}
+
+const dislike = () => {
+  disliked.value = !disliked.value
+  if (disliked.value) liked.value = false
+  ElMessage.info('我们会优化内容')
+}
+
+onMounted(() => {
+  doGenerate()
+})
 </script>
 
 <style scoped>
-.gp { padding: 24px; max-width: 900px; margin: 0 auto; }
-.top { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
-.top h2 { margin: 0; font-size: 18px; flex: 1; }
-.diff { display: flex; gap: 4px; }
-.dt { padding: 4px 12px; border-radius: 12px; border: 1px solid #ddd; cursor: pointer; font-size: 12px; background: #fff; }
-.dt.on { background: #1479ff; color: #fff; border-color: #1479ff; }
-.ld { text-align: center; padding: 80px; color: #909399; }
-.body { background: #fff; border-radius: 10px; padding: 24px; border: 1px solid #eee; min-height: 300px; }
-.md { line-height: 1.9; font-size: 15px; color: #333; }
-.md :deep(p) { margin: 8px 0; }
-.md :deep(pre) { background: #f6f8fa; padding: 16px; border-radius: 8px; overflow-x: auto; }
-.md :deep(code) { font-size: 14px; }
-.mm-box { width: 100%; height: 520px; }
+.generate-page { padding: 24px; max-width: 900px; margin: 0 auto; }
+.top-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+.top-bar h2 { margin: 0; font-size: 18px; }
+
+.loading-area { text-align: center; padding: 80px 0; color: #909399; }
+.loading-area p { margin-top: 16px; font-size: 15px; }
+
+.content-area { background: #fff; border-radius: 10px; padding: 24px; border: 1px solid #ebeef5; }
+
+/* 思维导图 & 代码 */
+.mindmap-box pre,
+.code-box pre { background: #f5f7fa; padding: 16px; border-radius: 8px; overflow-x: auto; font-size: 13px; }
+
+/* 拓展阅读 */
+.reading-box { line-height: 1.8; color: #333; }
+.reading-box :deep(h4) { margin: 16px 0 6px; }
+.reading-box :deep(p) { margin: 0 0 10px; }
+
+/* 练习题目 */
+.quiz-item { background: #f8f9fb; padding: 16px; border-radius: 8px; margin-bottom: 10px; }
+.q-header { display: flex; align-items: center; gap: 8px; font-weight: 500; }
+.q-num { display: inline-flex; width: 24px; height: 24px; border-radius: 50%; background: #4f8cff; color: #fff; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0; }
+.q-options { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 0 32px; }
+.opt { padding: 6px 14px; background: #f0f2f5; border-radius: 6px; font-size: 13px; }
+.opt.correct { background: #e6f7e6; color: #52c41a; font-weight: 600; }
+.q-answer { margin: 8px 0 0 32px; color: #52c41a; font-weight: 500; }
+
+/* 反馈栏 */
+.feedback-bar {
+  margin-top: 20px; padding: 16px; border-top: 1px solid #ebeef5;
+  display: flex; align-items: center; gap: 8px; font-size: 13px; color: #606266;
+  flex-wrap: wrap;
+}
+
+.empty-area { padding: 80px 0; }
 </style>

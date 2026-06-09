@@ -141,6 +141,9 @@ public class AiClient {
             case "code":
                 sb.append("生成一个可运行的 Java 代码案例，包含详细注释。使用 Markdown 代码块标注。");
                 break;
+            case "learning_path":
+                sb.append("生成个性化的学习路径规划。必须返回 JSON 格式，包含 goal（学习目标）、stages（阶段数组），每个 stage 包含 name（阶段名）和 tasks（任务数组），每个 task 包含 title、duration（分钟）、status=0、progress=0。直接返回纯 JSON，不要 Markdown 标记。");
+                break;
         }
 
         sb.append("难度：").append(difficulty).append("。");

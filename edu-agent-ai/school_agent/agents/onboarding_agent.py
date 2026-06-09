@@ -19,9 +19,6 @@ from school_agent.services.llm_client import call_llm
 from school_agent.services.profile_store import load_student_profile, save_student_profile
 from school_agent.utils.json_utils import merge_agent_output
 from school_agent.utils.time_utils import now_iso
-from school_agent.agents.path_agent import path_agent
-from school_agent.agents.resource_agent import resource_agent
-from school_agent.services.resource_store import save_resources
 
 ONBOARDING_SYSTEM = """你是"小航"，一个友好、耐心的学习伙伴。你的任务是通过自然聊天大致了解学生。
 
@@ -132,15 +129,18 @@ def _merge_dimensions(profile: dict, dimension_changes: dict) -> dict:
 
 
 def _check_complete(dimension_changes: dict, profile: dict) -> bool:
-    """判断是否有足够维度有了大致判断（不需全部精确）"""
+    """判断画像是否完整。只有 LLM 明确标记 complete 时才通过，
+    此函数作为兜底——只有当大部分维度达到中高置信度时才返回 True。
+    """
     filled = 0
     for dim_key in DIMENSION_KEYS:
         dim = profile.get(dim_key, {}) if isinstance(profile.get(dim_key), dict) else {}
         score = dim.get("score", 30)
-        if score >= 35:
+        # 需要 ≥55 分才算有效判断（避免初始 35 分就提前结束）
+        if score >= 55:
             filled += 1
-    # 6 个维度中 4 个以上有大致的分数即可
-    return filled >= 4
+    # 6 个维度中至少 5 个达到中高置信度
+    return filled >= 5
 
 
 def onboarding_agent(state: dict) -> dict:
@@ -253,81 +253,23 @@ def onboarding_agent(state: dict) -> dict:
             d = profile.get(dim_key, {})
             if isinstance(d, dict):
                 print(f"  [ONBOARD]   {dim_key}: level={d.get('level')}, score={d.get('score')}")
-        print(f"  [ONBOARD] 开始生成学习路径 + 资源...")
-        log("ONBOARD", "Phase 3: complete")
+        print(f"  [ONBOARD] 画像已保存，生成逻辑交给前端逐步调 API")
+        log("ONBOARD", "Phase 3: profile complete")
         profile["_onboarding_phase"] = "complete"
         profile["_onboarding_complete"] = True
         # 清理临时字段
         profile.pop("_onboarding_log", None)
         save_student_profile(student_id, profile)
 
-        # 自动生成学习路径（含应用建议）
-        path_result = path_agent({"profile": profile})
-        learning_path = path_result.get("learning_path", [])
-        suggestions = path_result.get("suggestions", [])
-
-        # 确保 topic 有值，否则从对话历史推断
+        # 确保 topic 有值
         if not profile.get("topic"):
-            history = profile.get("_onboarding_log", [])
-            for turn in (history or []):
-                if turn.get("user"):
-                    profile["topic"] = turn["user"][:50]
-                    break
-            if not profile.get("topic"):
-                profile["topic"] = "编程学习"
-
-        # 自动生成资源
-        res_result = resource_agent({"profile": profile, "retrieved_context": ""})
-        resources = res_result.get("resources", {})
-        resource_dir = save_resources(
-            student_id=student_id,
-            session_id=state.get("session_id", "default"),
-            profile=profile,
-            resources=resources,
-            learning_path=learning_path,
-        )
-
-        # 写入 Java 数据库（用内置 urllib，避免依赖外部 requests 库）
-        import json as _json, urllib.request as _urllib
-        db_type_map = {
-            "course_doc": "文档", "mindmap": "思维导图",
-            "quiz": "题库", "extended_reading": "拓展阅读",
-            "code_practice": "代码案例",
-        }
-        for res_key, db_type in db_type_map.items():
-            content = resources.get(res_key) or res_result.get(res_key)
-            if content:
-                payload = {
-                    "title": f"{db_type} - {profile.get('topic', '') or '通用'}",
-                    "type": db_type,
-                    "description": db_type,
-                    "content": str(content)[:5000],
-                    "studentId": int(student_id) if student_id.isdigit() else None,
-                    "fileUrl": resource_dir or "",
-                    "courseName": profile.get("course", ""),
-                }
-                try:
-                    data = _json.dumps(payload).encode("utf-8")
-                    req = _urllib.Request(
-                        "http://localhost:8080/resources",
-                        data=data,
-                        headers={"Content-Type": "application/json"},
-                    )
-                    _urllib.urlopen(req, timeout=5)
-                    log("ONBOARD", f"DB save success: {res_key}")
-                except Exception as e:
-                    log("ONBOARD", f"DB save failed: {res_key} - {e}")
+            profile["topic"] = "编程学习"
 
         return {
-            "final_answer": reply + "\n\n画像采集完成，正在为你生成学习路径和学习资源...",
+            "final_answer": reply + "\n\n画像采集完成！正在为你生成学习方案...",
             "profile": profile,
-            "learning_path": learning_path,
-            "suggestions": suggestions,
-            "resources": resources,
-            "resource_dir": resource_dir,
-            "is_onboarding": False,
             "profile_complete": True,
-            "silent_tasks": ["update_profile", "init_path"],
+            "is_onboarding": False,
             "agent_outputs": merge_agent_output(state, "onboarding_agent", {"phase": "complete"}),
         }
 

@@ -6,6 +6,7 @@ import com.eduagent.entity.StudentProfile;
 import com.eduagent.mapper.StudentProfileMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -76,32 +77,58 @@ public class ProfileController {
     }
 
     /**
-     * 保存/更新画像 — 由前端难度切换时调用
+     * 保存/更新画像 — 由引导流程/日常对话调用，支持全量画像字段
      * POST /profile/save
      */
     @PostMapping("/save")
     public Result<Map<String, Object>> save(@RequestBody Map<String, Object> body) {
-        log.info("===== [画像保存] 请求 body: {}", body);
-        Object userIdObj = body.get("userId");
-        if (userIdObj == null) {
-            return Result.error("userId 不能为空");
+        Long userId;
+        try {
+            userId = (Long) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        } catch (Exception e) {
+            return Result.error("未登录");
         }
-        Long userId = userIdObj instanceof Number
-            ? ((Number) userIdObj).longValue()
-            : Long.parseLong(userIdObj.toString());
+        log.info("===== [画像保存] userId={}, body={}", userId, body);
 
         try {
+            com.fasterxml.jackson.databind.ObjectMapper om = new com.fasterxml.jackson.databind.ObjectMapper();
             StudentProfile sp = studentProfileMapper.findByStudentId(userId);
             if (sp == null) {
                 sp = new StudentProfile();
                 sp.setStudentId(userId);
                 sp.setCreateTime(LocalDateTime.now());
             }
-            // 更新画像字段
+            // 更新画像字段（基础字段）
             if (body.containsKey("pace")) sp.setPace((String) body.get("pace"));
             if (body.containsKey("learning_goal")) sp.setLearningGoal((String) body.get("learning_goal"));
             if (body.containsKey("topic")) sp.setTopic((String) body.get("topic"));
             if (body.containsKey("course")) sp.setCourse((String) body.get("course"));
+            if (body.containsKey("knowledge_base")) sp.setKnowledgeBase((String) body.get("knowledge_base"));
+            if (body.containsKey("cognitive_style")) sp.setCognitiveStyle((String) body.get("cognitive_style"));
+            if (body.containsKey("overall_type")) sp.setOverallType((String) body.get("overall_type"));
+
+            // 数组/对象字段 — 转为 JSON 字符串存储
+            Object weaknesses = body.get("weaknesses");
+            if (weaknesses != null) sp.setWeaknesses(om.writeValueAsString(weaknesses));
+            Object resourcePref = body.get("resource_preference");
+            if (resourcePref != null) sp.setResourcePreference(om.writeValueAsString(resourcePref));
+            Object mistakePatterns = body.get("mistake_patterns");
+            if (mistakePatterns != null) sp.setMistakePatterns(om.writeValueAsString(mistakePatterns));
+
+            // 六维画像数据
+            Object dimensions = body.get("dimensions");
+            if (dimensions != null) {
+                sp.setProfileData(om.writeValueAsString(dimensions));
+                // 从六维中提取 last_score
+                if (dimensions instanceof Map) {
+                    Map<?, ?> dimMap = (Map<?, ?>) dimensions;
+                    Object overall = dimMap.get("overall_level");
+                    if (overall instanceof Map) {
+                        Object score = ((Map<?, ?>) overall).get("score");
+                        if (score instanceof Number) sp.setLastScore(((Number) score).intValue());
+                    }
+                }
+            }
 
             sp.setUpdateTime(LocalDateTime.now());
 

@@ -33,4 +33,7 @@ public class AiChatResponse {
 
     @JsonProperty("resource_dir")
     private String resourceDir;
+
+    @JsonProperty("profile_complete")
+    private Boolean profileComplete;
 }

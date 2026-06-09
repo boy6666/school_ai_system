@@ -81,6 +81,7 @@ else:
             "safety_report": result.get("safety_report"),
             "evaluation_report": result.get("evaluation_report"),
             "resource_dir": result.get("resource_dir"),
+            "profile_complete": result.get("profile_complete"),
         }
 
     class ResourceGenRequest(BaseModel):
@@ -190,6 +191,7 @@ else:
             "review": "你是一位学习回顾分析师。根据学生的学习数据（画像、学习时长、完成任务数、资源使用情况），生成结构化的学习回顾报告。包含进度总结、薄弱点分析、改进建议。返回 JSON 格式。",
             "summary": "你是一位学习总结专家。根据学生的学习画像、路径进度、学习时长和任务完成情况，生成全面的学习总结报告。包含综合评分、优点分析、不足分析、重点方向和学习建议。返回 JSON 格式。",
             "evaluation": "你是一位学习评估专家。根据学生的学习数据生成客观的学习评价，包含各维度的知识掌握度评分和综合评估。返回 JSON 格式。",
+            "learning_path": "你是一位学习路径规划专家。根据学生画像生成个性化的学习路径规划。必须返回严格的 JSON 对象，包含 goal（学习目标）、stages（阶段数组），每个 stage 包含 name（阶段名）和 tasks（任务数组），每个 task 包含 title、duration（分钟）、status=0、progress=0。直接返回纯 JSON，不要 Markdown 标记或额外说明。",
             "suggestion": "你是一位学习建议导师。根据学生画像和薄弱点，生成具体可执行的个性化学习建议。返回 JSON 数组格式。",
         }
         system_prompt = role_prompts.get(req.resourceType,

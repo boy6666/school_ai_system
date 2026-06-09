@@ -199,6 +199,7 @@ public class ResourceServiceImpl extends ServiceImpl<ResourceMapper, Resource> i
         labels.put("quiz", "练习题目");
         labels.put("reading", "拓展阅读");
         labels.put("code", "代码案例");
+        labels.put("learning_path", "学习路径");
         return labels.getOrDefault(type, type);
     }
 }

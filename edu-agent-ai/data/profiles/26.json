@@ -6,40 +6,40 @@
     "level": "level_1",
     "score": 40,
     "evidence": [],
-    "last_updated": "2026-06-06T14:41:14.666859"
+    "last_updated": "2026-06-08T15:07:55.362001"
   },
   "learning_goal_clarity": {
     "level": "level_1",
     "score": 30,
     "evidence": [],
-    "last_updated": "2026-06-06T14:41:14.666871"
+    "last_updated": "2026-06-08T15:07:55.362030"
   },
   "cognitive_adaptation": {
     "level": "level_1",
     "score": 35,
     "evidence": [],
-    "last_updated": "2026-06-06T14:41:14.666875"
+    "last_updated": "2026-06-08T15:07:55.362034"
   },
   "mistake_avoidance": {
     "level": "level_1",
     "score": 35,
     "evidence": [],
-    "last_updated": "2026-06-06T14:41:14.666881"
+    "last_updated": "2026-06-08T15:07:55.362036"
   },
   "learning_autonomy": {
     "level": "level_1",
     "score": 35,
     "evidence": [],
-    "last_updated": "2026-06-06T14:41:14.666885"
+    "last_updated": "2026-06-08T15:07:55.362038"
   },
   "overall_level": {
     "level": "level_1",
     "score": 35,
     "evidence": [],
-    "last_updated": "2026-06-06T14:41:14.666887"
+    "last_updated": "2026-06-08T15:07:55.362039"
   },
-  "topic": "继承与接口",
-  "course": "编程基础或Java",
-  "knowledge_base": "了解基本概念但应用不熟练",
-  "pace": "中速"
+  "topic": "未知",
+  "course": "未知",
+  "knowledge_base": "未知",
+  "pace": "未知"
 }
