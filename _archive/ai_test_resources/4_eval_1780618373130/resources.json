@@ -1,0 +1,49 @@
+{
+  "course_doc": "你好，我是你的课程讲解专家。今天我们要一起来解决一个让你反复卡住、迟迟无法动手的核心问题：如何正确安装JDK并配置环境变量，然后真正运行起你的第一个Java程序。很多同学和你的情况很像，总是想先拿到完美的学习规划，却忘记了编程最关键的步骤是“把代码敲出来并看到结果”。下面我会用最直白的话解释概念，带你亲手写出两个可以运行的代码示例，并指出你最容易踩坑的几个地方。\n\n首先，我们需要搞清楚几个核心概念。\n\nJDK的全称是Java Development Kit，也就是Java开发工具包。它包含了三个重要的东西：编译器（javac）、解释器（java）和JRE（Java运行时环境）。你安装JDK后，会在某个文件夹里看到bin目录，这个bin目录里放着javac.exe和java.exe等可执行文件。在命令行里输入javac，就是调用这个编译器把你写的.java文件编译成.class字节码文件；然后输入java，就是调用解释器去运行这个.class文件。PATH环境变量就像是操作系统的“通讯录”，你告诉系统说：当我在命令行里输入javac或java时，你要去哪些文件夹里找这些程序。如果你没有把JDK的bin目录加到PATH里，系统就会提示“javac不是内部或外部命令”。所以配置环境变量就是让系统知道你的Java工具放在哪里。\n\n现在我们来动手。我假设你已经从Oracle官网下载了JDK（比如JDK 17），并安装到了C:\\Program Files\\Java\\jdk-17（注意，路径里不要有中文和空格，如果安装时有自定义选项，建议改成一个简单路径比如C:\\Java\\jdk-17）。安装完成后，你需要做两件事：一是设置JAVA_HOME环境变量，指向你的JDK安装目录；二是把%JAVA_HOME%\\bin加到PATH里。具体操作：在Windows搜索“环境变量”，点击“环境变量”，在系统变量里新建一个JAVA_HOME，值填C:\\Java\\jdk-17；然后找到PATH变量，编辑，在末尾添加一行%JAVA_HOME%\\bin（注意前面如果有分号则无需再加分号，Win10/11可以一行一行添加）。之后打开新的命令提示符窗口，输入java -version，如果显示版本信息，就说明配置成功。\n\n下面给你两个可以运行的代码示例，请你一定亲自在记事本或VS Code里写一遍，用命令行编译运行。\n\n第一个示例：HelloWorld（基础中的基础）。新建一个文本文档，改名为HelloWorld.java（注意大小写）。内容如下：\n\npublic class HelloWorld {\n    public static void main(String[] args) {\n        System.out.println(\"Hello, 这是我的第一个Java程序！\");\n    }\n}\n\n然后在命令提示符中，cd到该文件所在的文件夹，依次输入：\njavac HelloWorld.java\njava HelloWorld\n如果屏幕上打印出了那句话，你就成功了。注意：javac命令后要跟文件名（带.java），java命令后要跟类名（不带.class，也不带后缀）。\n\n第二个示例：做一个简单的加法计算器，练习基本的输入输出和变量使用。新建一个Calculator.java文件，内容如下：\n\nimport java.util.Scanner;\n\npublic class Calculator {\n    public static void main(String[] args) {\n        Scanner scanner = new Scanner(System.in);\n        System.out.print(\"请输入第一个数字: \");\n        int a = scanner.nextInt();\n        System.out.print(\"请输入第二个数字: \");\n        int b = scanner.nextInt();\n        int sum = a + b;\n        System.out.println(\"两数之和是: \" + sum);\n        scanner.close();\n    }\n}\n\n同样用javac编译，用java运行，然后根据提示输入两个整数，就能看到结果。\n\n现在列出你在配置和运行中常犯的五个易错点，请你对照检查：\n\n第一，配置PATH时，很多同学会漏掉bin目录，或者把路径写成了JDK安装目录本身。正确的写法是C:\\Java\\jdk-17\\bin，而不是C:\\Java\\jdk-17。\n\n第二，类名必须和文件名完全一致。如果你写的类是public class HelloWorld，那么文件名必须是HelloWorld.java，大小写也不能错。\n\n第三，main方法的签名必须一字不差：public static void main(String[] args)。如果你写成public static void main(String args[]) 也是可以的，但初学者经常漏掉static或者把单词拼错。\n\n第四，编译时遇到“javac不是内部命令”，90%的情况是PATH没配好。请确认你打开的是新命令提示符窗口（旧窗口不会刷新环境变量），并且输入echo %JAVA_HOME%和echo %PATH%来检查变量是否正确。\n\n第五，运行java时，不要在类名后加.class或.java。比如java HelloWorld是正确的，java HelloWorld.class是错的。\n\n最后给你几条学习建议，请你认真执行，不要再停留在“请求规划”阶段。\n\n第一，立刻停止向AI索要新的学习路线图。你在过去已经收到了足够多的指导，现在你需要的是在电脑前坐下来，输入上面两个代码，亲眼看到输出结果。十五分钟之内就能完成。\n\n第二，建立一个习惯：每天至少写一个简单的小程序，哪怕只是打印一句“今天天气不错”。动手之后你会发现自己真正的问题在哪里，而不是空想。\n\n第三，遇到报错不要直接问AI“为什么”，而是先自己读一下错误信息。比如“找不到符号”说明变量名写错了，“非法字符”说明可能用了中文标点。试着解读，然后再去搜索或用AI确认。\n\n第四，环境变量配好之后，不要再反复重装JDK或改动配置。你已经成功了，把时间用在写代码上。\n\n记住，编程不是靠看规划学会的，是靠敲击键盘学会的。现在就去打开编辑器，写下你的HelloWorld，然后让它跑起来。",
+  "mindmap": "graph TD\n    A[目标设定] --> A1[短期目标]\n    A --> A2[长期目标]\n    A --> A3[具体可量化]\n    B[知识获取] --> B1[阅读书籍]\n    B --> B2[观看视频]\n    B --> B3[听课笔记]\n    C[技能训练] --> C1[项目实战]\n    C --> C2[模拟练习]\n    D[反馈评估] --> D1[自我测试]\n    D --> D2[他人评价]\n    E[时间规划] --> E1[制定日程]\n    E --> E2[优先级排序]\n    E --> E3[避免拖延]\n    F[资源整合] --> F1[工具利用]\n    F --> F2[人脉网络]\n    G[心态调整] --> G1[积极心态]\n    G --> G2[克服焦虑]\n    H[持续改进] --> H1[定期复盘]\n    H --> H2[调整策略]",
+  "quiz": [
+    {
+      "type": "choice",
+      "difficulty": "基础",
+      "question": "学习 未提供 时，最应该先掌握哪一项？",
+      "options": [
+        "基本定义、使用场景和常见错误",
+        "直接背诵全部代码",
+        "跳过概念直接做难题",
+        "只看答案不练习"
+      ],
+      "answer": "基本定义、使用场景和常见错误",
+      "analysis": "当前薄弱点包括：JDK 安装目录与 PATH 环境变量的正确配置方法、理解 java 命令与 bin 目录的关系、学生多次请求相同的Java学习路径，可能未能充分消化此前AI提供的规划，对结构化指导的跟进与执行力有待加强、JDK安装与环境变量配置仍有困难，多次依赖AI指导验证、学生反复请求规划但未实际动手实践，可能陷入'计划依赖'，需要尽快进入编码执行阶段、缺乏动手实践：学生反复请求规划但从未实际执行任何任务、依赖外部框架：过度依赖AI给出的结构化路径，无自主探索行为、缺乏动手实践习惯，仅停留在索取规划层面、无法将明确的学习目标转化为具体执行动作、对AI引导的实操任务存在明显回避行为，应先建立概念框架。"
+    },
+    {
+      "type": "judge",
+      "difficulty": "基础",
+      "question": "判断：只要能背出 未提供 的定义，就一定能解决相关编程题。",
+      "answer": "错误",
+      "analysis": "编程题还需要理解边界条件、输入输出和具体实现过程。"
+    },
+    {
+      "type": "short_answer",
+      "difficulty": "中等",
+      "question": "请用自己的话解释 未提供 解决了什么问题。",
+      "answer": "未提供 的价值在于帮助我们组织或处理特定类型的数据与过程。",
+      "analysis": "这道题检查是否真正理解概念，而不是机械背诵。"
+    },
+    {
+      "type": "code_reading",
+      "difficulty": "中等",
+      "question": "阅读一段与 未提供 相关的代码，指出可能遗漏的边界条件。",
+      "answer": "需要检查空输入、极端规模、递归终止条件或索引越界等情况。",
+      "analysis": "代码阅读题用于暴露常见错误模式。"
+    },
+    {
+      "type": "practice",
+      "difficulty": "提高",
+      "question": "请写一个 Java 小例子，演示 未提供 的核心思想。",
+      "answer": "答案应包含核心逻辑、注释说明和一个简单测试用例。",
+      "analysis": "实践题用于把概念迁移到代码实现中。"
+    }
+  ],
+  "extended_reading": "关于“未提供”这一主题，在数据分析、数据库管理和编程实践中通常指向缺失值（Missing Values）、空值（Null）或未定义状态。以下是为您准备的拓展阅读材料。\n\n推荐2-3个进阶概念：\n1. 缺失数据机制（Missing Data Mechanisms）：包括完全随机缺失（MCAR）、随机缺失（MAR）和非随机缺失（MNAR）。理解这些机制有助于选择合适的插补方法或建模策略，避免引入偏差。\n2. 多重插补（Multiple Imputation）：一种处理缺失值的先进统计方法，通过生成多个完整数据集并合并结果来反映不确定性，优于简单的均值填充或删除。\n3. 潜在变量模型与缺失数据：在结构方程模型或贝叶斯框架中，缺失值可被视为潜在变量，利用EM算法或MCMC进行估计，适用于复杂因果关系分析。\n\n实际项目应用场景：\n- 医疗健康分析：电子病历中大量检测结果未记录（如患者未提供既往病史），需采用多重插补或基于随机森林的缺失值预测来保证临床模型准确性。\n- 金融风控：客户申请贷款时部分收入或资产信息未提供，银行需利用生成模型（如VAE）或规则引擎处理稀疏输入，避免拒绝合格申请人。\n- 推荐系统：用户行为数据稀疏（如电影评分矩阵大量未评分项），使用矩阵分解或神经协同过滤隐含假设缺失值为未观测而非零，直接建模偏好。\n- 物联网传感器：设备故障或传输丢失导致时间序列数据出现缺口，需使用卡尔曼滤波或样条插值恢复连续信号，用于异常检测。\n\n进一步学习资源方向：\n- 书籍：《Statistical Analysis with Missing Data》 by Little & Rubin（经典教材），《Missing Data Analysis in Practice》 by Trinh（实用指南）。\n- 在线课程：Coursera上的“Data Wrangling and Missing Data”由Johns Hopkins提供；Kaggle的“Handling Missing Values”实战模块。\n- 开源工具：Python中scikit-learn的SimpleImputer和IterativeImputer，R语言中mice包可进行多重插补，以及TensorFlow Probability中的缺失值处理层。\n- 论文：参考Journal of Statistical Software中关于mice的文章，以及NeurIPS上关于缺失值深度生成模型的论文（如GAIN）。",
+  "code_practice": "public class 未提供Practice {\n    public static void main(String[] args) {\n        System.out.println(\"学习主题：未提供\");\n        System.out.println(\"请你根据下方注释补充代码逻辑：\");\n        // TODO: 实现 未提供 的核心操作\n        // TODO: 添加边界条件检查\n        // TODO: 测试并输出结果\n    }\n}\n"
+}

@@ -1,0 +1,49 @@
+{
+  "course_doc": "JDK安装与环境变量配置是Java学习的第一个门槛，很多初学者在这里卡住，导致后续无法运行任何Java程序。本文用最直白的方式解释核心概念，并给出两个可以直接动手运行的示例，同时列出常见错误和解决建议。\n\n首先，理解三个关键概念：JDK、bin目录、PATH环境变量。JDK是Java Development Kit的缩写，它是开发Java程序所需的工具集合，包含编译器javac、运行器java、打包工具jar等。当你从Oracle或OpenJDK官网下载并安装JDK后，这些工具存放在一个名为bin的子文件夹里。例如Windows上默认路径为C:\\Program Files\\Java\\jdk-17\\bin，里面有很多.exe文件，其中javac.exe用于编译.java源代码文件，java.exe用于运行编译后的.class字节码文件。\n\n但操作系统并不知道这个bin文件夹在哪里。当你在命令提示符下输入javac或java时，系统会去一个叫PATH的环境变量里查找。PATH变量记录了一组文件夹路径，系统会依次在这些路径下寻找你输入的命令。如果JDK的bin路径没有加入PATH，输入javac就会报“不是内部或外部命令”。因此，配置环境变量的本质就是告诉系统：“请记住这个bin文件夹，以后我输入java或javac时，你去那里找。”\n\n现在来看两个可运行的代码示例。它们都要求你首先正确安装了JDK并配置了PATH。第一个示例是验证环境是否配置成功。打开命令提示符（Windows下按Win+R输入cmd回车），输入java -version，如果显示java版本信息（如openjdk version \"17\"），说明java命令可用。再输入javac -version，同样应该有版本信息。如果报错，请检查PATH配置。第二个示例是编写并运行一段Java程序。\n\n创建一个文本文件，命名为Hello.java，内容如下：\n\npublic class Hello {\n    public static void main(String[] args) {\n        System.out.println(\"我的第一个Java程序运行成功！\");\n    }\n}\n\n注意文件名必须与类名一致，即Hello.java。打开命令提示符，切换到该文件所在的目录（例如cd C:\\MyJava）。先执行javac Hello.java，编译后会在同目录生成Hello.class文件。再执行java Hello，注意不要加.class后缀，屏幕上会输出“我的第一个Java程序运行成功！”。如果出现“找不到或无法加载主类”，通常是因为当前目录没有加入classpath或文件名拼写错误。这个最简单的示例能让你立即确认JDK和PATH配置完全正确。\n\n接下来列出三个最常见易错点：\n\n第一，安装JDK时选择了错误的架构或版本。比如在64位系统上安装了32位JDK，或者下载了JDK而不是JRE（Java Runtime Environment）。JRE不包含javac编译器，无法编译代码。务必下载与操作系统匹配的JDK版本，例如Windows x64 Installer。\n\n第二，配置PATH时写错了bin目录的完整路径。常见错误包括：路径末尾多了一个反斜杠，或者用了中文引号，或者把路径写成了JDK的根目录（例如直接写C:\\Program Files\\Java\\jdk-17）而不是bin子目录。应该写C:\\Program Files\\Java\\jdk-17\\bin。另外，多个路径之间用分号分隔，不要留多余空格。\n\n第三，配置完PATH后没有重新打开命令提示符。环境变量修改后，已经打开的窗口仍然使用旧的PATH值，必须关闭所有命令提示符再重新打开。同时注意，如果在系统变量和用户变量中都配置了Path，系统会合并两者，但优先级可能不同，建议集中在系统变量中配置。\n\n最后给出学习建议。你目前反复索取规划但从未动手实践，这是最大的障碍。请立刻执行以下三步：第一步，卸载所有已安装的JDK，重新下载最新长期支持版（如JDK 17或21），并手动安装，记住安装路径。第二步，打开系统环境变量设置，在Path中添加JDK的bin路径。第三步，打开新命令提示符，输入java -version验证，然后创建Hello.java文件并编译运行。整个流程不要超过30分钟。一旦成功运行，你对Java的恐惧就会消失一半。\n\n后续学习不要依赖AI给你完整规划。每学一个新概念，比如变量、循环、对象，立即写一个对应的代码片段并运行，哪怕只有5行。把“请求规划”的习惯改成“先跑通一个例子”。记住：编程不是看会的，是敲会的。从今天起，每天至少写一个可运行的Java程序，哪怕只是打印一句话。",
+  "mindmap": "graph TD\nA[未明确] --> B[核心概念]\nA --> C[应用场景]\nA --> D[易错点]\nA --> E[进阶延伸]\nB --> B1[定义]\nB --> B2[关键特性]\nC --> C1[代码示例]\nC --> C2[实际项目]\nD --> D1[常见误区]\nD --> D2[边界问题]\nE --> E1[相关知识点]\nE --> E2[推荐阅读]\n",
+  "quiz": [
+    {
+      "type": "choice",
+      "difficulty": "基础",
+      "question": "学习 未明确 时，最应该先掌握哪一项？",
+      "options": [
+        "基本定义、使用场景和常见错误",
+        "直接背诵全部代码",
+        "跳过概念直接做难题",
+        "只看答案不练习"
+      ],
+      "answer": "基本定义、使用场景和常见错误",
+      "analysis": "当前薄弱点包括：JDK 安装目录与 PATH 环境变量的正确配置方法、理解 java 命令与 bin 目录的关系、学生多次请求相同的Java学习路径，可能未能充分消化此前AI提供的规划，对结构化指导的跟进与执行力有待加强、JDK安装与环境变量配置仍有困难，多次依赖AI指导验证、学生反复请求规划但未实际动手实践，可能陷入'计划依赖'，需要尽快进入编码执行阶段、缺乏动手实践：学生反复请求规划但从未实际执行任何任务、依赖外部框架：过度依赖AI给出的结构化路径，无自主探索行为、缺乏动手实践习惯，仅停留在索取规划层面、无法将明确的学习目标转化为具体执行动作、对AI引导的实操任务存在明显回避行为，应先建立概念框架。"
+    },
+    {
+      "type": "judge",
+      "difficulty": "基础",
+      "question": "判断：只要能背出 未明确 的定义，就一定能解决相关编程题。",
+      "answer": "错误",
+      "analysis": "编程题还需要理解边界条件、输入输出和具体实现过程。"
+    },
+    {
+      "type": "short_answer",
+      "difficulty": "中等",
+      "question": "请用自己的话解释 未明确 解决了什么问题。",
+      "answer": "未明确 的价值在于帮助我们组织或处理特定类型的数据与过程。",
+      "analysis": "这道题检查是否真正理解概念，而不是机械背诵。"
+    },
+    {
+      "type": "code_reading",
+      "difficulty": "中等",
+      "question": "阅读一段与 未明确 相关的代码，指出可能遗漏的边界条件。",
+      "answer": "需要检查空输入、极端规模、递归终止条件或索引越界等情况。",
+      "analysis": "代码阅读题用于暴露常见错误模式。"
+    },
+    {
+      "type": "practice",
+      "difficulty": "提高",
+      "question": "请写一个 Java 小例子，演示 未明确 的核心思想。",
+      "answer": "答案应包含核心逻辑、注释说明和一个简单测试用例。",
+      "analysis": "实践题用于把概念迁移到代码实现中。"
+    }
+  ],
+  "extended_reading": "对于学习“未明确”这一主题的学生，即处理定义模糊、边界不清或信息不完备的问题，推荐三个进阶概念。第一是模糊逻辑（Fuzzy Logic），它允许用连续的真值（0到1之间）替代传统二值逻辑，适用于描述模糊概念如“高温”或“很快”。第二是粗糙集（Rough Set），通过上下近似来近似不确定集合，用于数据挖掘中的不确定性分析。第三是贝叶斯推断（Bayesian Inference），利用先验知识和观测数据更新概率，量化不确定性，是处理未明确信息的重要工具。\n\n实际项目应用场景包括：智能家居中的温度控制，采用模糊逻辑自动调节空调强度，无需精确数学模型；自动驾驶中的环境感知，利用贝叶斯滤波融合雷达和摄像头数据，处理障碍物的不确定位置；医疗诊断系统中，通过粗糙集从症状数据集提取决策规则，应对症状与疾病间未明确定义的关联；自然语言处理中的歧义消解，如语音助手使用模糊逻辑判断用户意图。\n\n进一步学习资源方向：推荐阅读《模糊集与模糊逻辑：理论及应用》（Klir & Yuan）、《粗糙集：理论与应用》（Pawlak）和《贝叶斯数据分析》作为教材。在线课程可关注Coursera上的“Bayesian Methods for Machine Learning”和edX的“Fuzzy Logic and Applications”。实践资源包括Scikit-fuzzy库在Python中的模糊系统实现，以及PyMC库进行贝叶斯建模。同时，多关注IEEE Transactions on Fuzzy Systems和International Journal of Approximate Reasoning等期刊的前沿论文。",
+  "code_practice": "public class 未明确Practice {\n    public static void main(String[] args) {\n        System.out.println(\"学习主题：未明确\");\n        System.out.println(\"请你根据下方注释补充代码逻辑：\");\n        // TODO: 实现 未明确 的核心操作\n        // TODO: 添加边界条件检查\n        // TODO: 测试并输出结果\n    }\n}\n"
+}

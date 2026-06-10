@@ -1,0 +1,49 @@
+{
+  "course_doc": "# Java 基础巩固：从面向对象到网络编程实践\n\n## 一、核心概念通俗解读\n\n**Java 基础** 不仅是语法规则的罗列，更是构建一切 Java 程序的骨架。这里我们聚焦几个最核心的模块：\n\n- **类与对象**：Java 用类（`class`）定义事物的模板，对象（`new` 出来的实例）是真正干活的主体。所有代码都必须放在类内部。\n- **异常处理**：程序运行时可能出现的“意外情况”，用 `try-catch` 捕获并处理，避免程序崩溃。`IOException` 是输入输出异常家族的总称。\n- **I/O 流**：数据像水流一样在程序与外部（文件、网络）之间传输。`InputStream`/`OutputStream` 处理字节，`Reader`/`Writer` 处理字符，`BufferedReader` 可以一次读一行，方便高效。\n- **多线程**：让程序“同时”做多件事。通过继承 `Thread` 或实现 `Runnable` 接口实现，网络服务器常用多线程，为每个客户端分配一个独立线程提供服务。\n- **网络编程基础**：`Socket` 代表两台机器之间的“电话线”，`ServerSocket` 在服务器端“接听”并创建 `Socket`。数据通过流在这条线上双向传递。\n\n下面通过两个可运行的网络通信示例，把上述概念串联起来，真正理解 Java 基础在实际项目中的运用。\n\n## 二、可运行代码示例\n\n### 示例1：单线程回显服务器与客户端（演示异常、IO流、Socket基础）\n\n**服务器端** 创建 `ServerSocket` 监听端口，接收一个客户端连接，读取一行消息并回送响应。\n\n```java\nimport java.io.*;\nimport java.net.*;\n\npublic class EchoServer {\n    public static void main(String[] args) {\n        try (ServerSocket serverSocket = new ServerSocket(8888)) {\n            System.out.println(\"服务器启动，等待连接...\");\n            Socket clientSocket = serverSocket.accept();           // 阻塞，直到有客户端连接\n            System.out.println(\"客户端已连接：\" + clientSocket.getInetAddress());\n\n            // 字符流包装字节流，方便读写字符串\n            BufferedReader in = new BufferedReader(\n                    new InputStreamReader(clientSocket.getInputStream()));\n            BufferedWriter out = new BufferedWriter(\n                    new OutputStreamWriter(clientSocket.getOutputStream()));\n\n            String message = in.readLine();                       // 读取一行\n            System.out.println(\"客户端说：\" + message);\n            out.write(\"服务器回复: \" + message + \"\\n\");\n            out.flush();                                          // 强制写出\n\n            // 关闭资源\n            in.close();\n            out.close();\n            clientSocket.close();\n        } catch (IOException e) {\n            e.printStackTrace();\n        }\n    }\n}\n```\n\n**客户端** 连接到服务器，发送一句话，并设置读取超时，防止无限等待。\n\n```java\nimport java.io.*;\nimport java.net.*;\n\npublic class EchoClient {\n    public static void main(String[] args) {\n        try (Socket socket = new Socket(\"localhost\", 8888)) {\n            socket.setSoTimeout(3000);                // 读取超时 3 秒（重要！）\n            BufferedWriter out = new BufferedWriter(\n                    new OutputStreamWriter(socket.getOutputStream()));\n            BufferedReader in = new BufferedReader(\n                    new InputStreamReader(socket.getInputStream()));\n\n            out.write(\"你好，服务器！\\n\");\n            out.flush();\n            String response = in.readLine();          // 可能超时\n            System.out.println(\"服务器回应：\" + response);\n\n            out.close();\n            in.close();\n        } catch (SocketTimeoutException e) {\n            System.out.println(\"读取超时，服务器无响应\");\n        } catch (IOException e) {\n            e.printStackTrace();\n        }\n    }\n}\n```\n\n### 示例2：多线程服务器（巩固多线程与Socket超时）\n\n为每个客户端启动一个新线程，使服务器可以同时处理多个连接，并在线程内部设置读取超时。\n\n```java\nimport java.io.*;\nimport java.net.*;\n\npublic class MultiThreadServer {\n    public static void main(String[] args) throws IOException {\n        ServerSocket serverSocket = new ServerSocket(8888);\n        System.out.println(\"多线程服务器已启动...\");\n        while (true) {\n            Socket clientSocket = serverSocket.accept();\n            new ClientHandler(clientSocket).start();     // 启动线程处理连接\n        }\n    }\n}\n\nclass ClientHandler extends Thread {\n    private Socket socket;\n\n    public ClientHandler(Socket socket) {\n        this.socket = socket;\n    }\n\n    @Override\n    public void run() {\n        try (\n            BufferedReader in = new BufferedReader(\n                    new InputStreamReader(socket.getInputStream()));\n            BufferedWriter out = new BufferedWriter(\n                    new OutputStreamWriter(socket.getOutputStream()))\n        ) {\n            socket.setSoTimeout(5000);               // 线程内设置读超时 5 秒\n            String message;\n            while ((message = in.readLine()) != null) {\n                System.out.println(Thread.currentThread().getName() + \" 收到: \" + message);\n                out.write(\"回显: \" + message + \"\\n\");\n                out.flush();\n            }\n        } catch (SocketTimeoutException e) {\n            System.out.println(\"客户端超时，线程结束\");\n        } catch (IOException e) {\n            e.printStackTrace();\n        } finally {\n            try {\n                socket.close();\n            } catch (IOException e) {\n                e.printStackTrace();\n            }\n        }\n    }\n}\n```\n\n客户端可直接复用示例1的客户端，打开多个终端运行，即可测试多线程服务器的并发能力。\n\n## 三、易错点警示（3～5个）\n\n1. **资源泄漏**：`Socket`、各类流对象使用后必须关闭，否则会导致端口占用和内存泄漏。推荐使用 `try-with-resources`（示例2）或在 `finally` 块中逐一关闭。\n2. **死等阻塞**：`readLine()` 在没有数据时会一直阻塞。如果网络异常，客户端可能永远卡死。务必调用 `setSoTimeout()` 设置超时，并捕获 `SocketTimeoutException`。\n3. **多线程同步缺失**：如果多个线程修改同一共享资源（如统计在线人数），必须使用 `synchronized` 或 `Lock`，否则会造成数据错乱。\n4. **流乱码问题**：网络传输默认使用字节流，包装为字符流时必须指定一致编码（如 `UTF-8`）。示例中未指定，会使用平台默认编码，不同平台可能导致乱码，建议显式使用 `InputStreamReader(stream, StandardCharsets.UTF_8)`。\n5. **异常吞噬**：`catch (Exception e)` 过于宽泛，可能掩盖具体错误，不利于调试。应精确捕获 `IOException`、`SocketTimeoutException` 等。\n\n## 四、学习建议\n\n1. **动手编码**：将上述两个示例完整敲入IDE，修改端口、消息、超时时间，观察现象，在出错中加深理解。\n2. **画图梳理流程**：画出客户端–服务器的交互时序图，标出 `accept()`、`readLine()`、`write()` 的调用顺序和阻塞点。\n3. **阅读JDK源码**：查看 `Socket`、`ServerSocket` 的文档，理解每个方法的含义和超时设置。\n4. **系统学习基础**：先扎实掌握异常体系、IO流类层次、多线程的两种实现方式，网络编程是这些基础的“联合作战”。\n5. **写日志代替 `printStackTrace`**：养成用日志框架记录异常的习惯，为日后项目铺路。\n\nJava 基础是内功，网络编程是极佳的试炼场。把基础打牢，后续学习 TCP 握手细节、高并发框架才能游刃有余。",
+  "mindmap": "graph TD\nA[Java 基础] --> B[核心概念]\nA --> C[应用场景]\nA --> D[易错点]\nA --> E[进阶延伸]\nB --> B1[定义]\nB --> B2[关键特性]\nC --> C1[代码示例]\nC --> C2[实际项目]\nD --> D1[常见误区]\nD --> D2[边界问题]\nE --> E1[相关知识点]\nE --> E2[推荐阅读]\n",
+  "quiz": [
+    {
+      "type": "choice",
+      "difficulty": "基础",
+      "question": "学习 Java 基础 时，最应该先掌握哪一项？",
+      "options": [
+        "基本定义、使用场景和常见错误",
+        "直接背诵全部代码",
+        "跳过概念直接做难题",
+        "只看答案不练习"
+      ],
+      "answer": "基本定义、使用场景和常见错误",
+      "analysis": "当前薄弱点包括：TCP 三次握手、Socket 超时处理、多线程服务器、Java 基础，应先建立概念框架。"
+    },
+    {
+      "type": "judge",
+      "difficulty": "基础",
+      "question": "判断：只要能背出 Java 基础 的定义，就一定能解决相关编程题。",
+      "answer": "错误",
+      "analysis": "编程题还需要理解边界条件、输入输出和具体实现过程。"
+    },
+    {
+      "type": "short_answer",
+      "difficulty": "中等",
+      "question": "请用自己的话解释 Java 基础 解决了什么问题。",
+      "answer": "Java 基础 的价值在于帮助我们组织或处理特定类型的数据与过程。",
+      "analysis": "这道题检查是否真正理解概念，而不是机械背诵。"
+    },
+    {
+      "type": "code_reading",
+      "difficulty": "中等",
+      "question": "阅读一段与 Java 基础 相关的代码，指出可能遗漏的边界条件。",
+      "answer": "需要检查空输入、极端规模、递归终止条件或索引越界等情况。",
+      "analysis": "代码阅读题用于暴露常见错误模式。"
+    },
+    {
+      "type": "practice",
+      "difficulty": "提高",
+      "question": "请写一个 Java 小例子，演示 Java 基础 的核心思想。",
+      "answer": "答案应包含核心逻辑、注释说明和一个简单测试用例。",
+      "analysis": "实践题用于把概念迁移到代码实现中。"
+    }
+  ],
+  "extended_reading": "### 泛型与类型擦除\n泛型是 Java 基础中常被低估的进阶概念。它允许在编译期进行类型检查，避免强制转换，从而提升代码安全性与可读性。深入理解类型擦除机制至关重要——编译器在生成字节码时会移除泛型信息，并用边界类型或 `Object` 替代。这一设计带来了向后兼容性，也引出了通配符（`? extends`、`? super`）与 PECS 原则等关键知识。\n\n### 并发编程与内存模型\n多线程远不止 `synchronized` 与 `Thread` 类那么简单。进阶学习需要掌握 `java.util.concurrent` 包中的工具，如 `ConcurrentHashMap`、`CountDownLatch` 和线程池（`Executors`）。理解 Java 内存模型（JMM）中的可见性、有序性与 happens-before 规则，是写出正确并发代码的基石，同样需要关注 `volatile` 变量的底层语义。\n\n### 注解与元编程\n从 `@Override` 起步的注解，进阶后会成为框架的核心。学习自定义注解和反射（`java.lang.reflect`）处理，能理解 Spring、JUnit 等框架如何通过元数据驱动逻辑。掌握编译期注解处理器（如 Lombok 的原理）将进一步打开代码生成的大门。\n\n**实际项目应用场景**\n- **泛型**：构建通用数据存取层（DAO），编写可复用的集合工具类，或在 JSON 解析中安全转换复杂嵌套数据结构。\n- **并发**：电商秒杀库存扣减、异步日志处理、实时数据聚合接口、高并发缓存设计。\n- **注解**：自动生成 REST API 文档、实现接口权限校验、减少样板式代码（getter/setter）、标记事务边界。\n\n**进一步学习资源方向**\n- **书籍**：阅读《Effective Java》（注重最佳实践）、《Java 并发编程实战》（深入并发基石）。\n- **源码分析**：研究 JDK 中 `ArrayList`、`HashMap` 的实现，过渡到阅读 Spring 或 Netty 的核心模块源码。\n- **规范理解**：掌握 Java 语言规范（JLS）中有关泛型、内存模型的章节，并跟随 OpenJDK 邮件列表了解演进。",
+  "code_practice": "public class Java基础Practice {\n    public static void main(String[] args) {\n        System.out.println(\"学习主题：Java 基础\");\n        System.out.println(\"请你根据下方注释补充代码逻辑：\");\n        // TODO: 实现 Java 基础 的核心操作\n        // TODO: 添加边界条件检查\n        // TODO: 测试并输出结果\n    }\n}\n"
+}

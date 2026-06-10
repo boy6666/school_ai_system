@@ -1,0 +1,31 @@
+{
+  "major": "信息类相关专业",
+  "grade": "未知年级",
+  "course": "Java 程序设计",
+  "topic": "Java 基础",
+  "learning_goal": "掌握 TCP/UDP 通信和简易服务器开发",
+  "knowledge_base": "有一定编程基础",
+  "cognitive_style": "偏好项目实战驱动",
+  "weaknesses": [
+    "TCP 三次握手",
+    "Socket 超时处理",
+    "多线程服务器",
+    "Java 基础"
+  ],
+  "mistake_patterns": [
+    "端口未释放",
+    "连接未关闭"
+  ],
+  "resource_preference": [
+    "代码案例",
+    "讲解文档",
+    "拓展阅读",
+    "思维导图",
+    "练习题"
+  ],
+  "pace": "中速",
+  "last_updated": "2026-05-26T20:46:38",
+  "username": "test",
+  "last_score": 78,
+  "last_suggestion": "建议继续完成 Java 基础 的练习题和代码实操。"
+}

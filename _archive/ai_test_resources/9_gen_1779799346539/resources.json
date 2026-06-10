@@ -1,0 +1,49 @@
+{
+  "course_doc": "# Java 基础核心概念与实战\n\n## 一、通俗解释核心概念\n\nJava 基础就像建造高楼的地基，所有复杂应用都构建于这些基本元素之上。可以把 Java 程序想象成一个用乐高积木搭建的世界——每一块积木就是一个“对象”，而把积木拼起来的规则就是“语法”。\n\n**1. 类与对象**  \n类是你画的设计图纸，对象是根据图纸造出来的实体。比如“手机”是一个类，你手中的 iPhone 和华为 Mate 就是两个不同的对象。每个对象有自己的属性（屏幕尺寸、颜色）和行为（打电话、拍照）。\n\n**2. 数据类型**  \nJava 把数据分成两类：基本类型（`int`, `double`, `boolean` 等）和引用类型（`String`, 数组, 自定义类）。基本类型像一个个简单的工具盒，直接装数值；引用类型则像一把钥匙，指向内存中实际存放数据的位置。\n\n**3. 控制流程**  \n顺序、选择（`if-else`, `switch`）、循环（`for`, `while`）这三种结构就像道路上的交通指挥，决定了代码执行的路线。没有它们，程序只能一条道走到黑。\n\n**4. 异常处理**  \n程序运行时的意外就是“异常”，比如文件找不到、网络中断。`try-catch-finally` 就像一个安全气囊，确保出问题时程序能够优雅处理，而不是直接崩溃。\n\n**5. 输入输出（IO）**  \nJava 通过“流”来读写数据，就像水管输送水一样。`InputStream`/`OutputStream` 处理字节，`Reader`/`Writer` 处理字符。后面要学的 Socket 通信就是网络 IO 的典型应用，本质上也是在这些流上操作。\n\n掌握了这些基础，再去看 TCP 三次握手、多线程服务器就不会觉得飘在空中了——它们不过是把 Java 基本的类、异常、IO 组合起来，再加上了网络协议和多线程的知识而已。\n\n---\n\n## 二、两个可运行的 Java 代码示例\n\n### 示例1：面向对象基础——学生成绩管理\n\n```java\n// 定义一个学生类\nclass Student {\n    // 私有属性（封装）\n    private String name;\n    private double score;\n\n    // 构造方法\n    public Student(String name, double score) {\n        this.name = name;\n        this.score = score;\n    }\n\n    // 获取等级的方法\n    public String getGrade() {\n        if (score >= 90) return \"优秀\";\n        else if (score >= 70) return \"良好\";\n        else if (score >= 60) return \"及格\";\n        else return \"不及格\";\n    }\n\n    // 展示信息\n    public void display() {\n        System.out.println(name + \" 的成绩：\" + score + \" 等级：\" + getGrade());\n    }\n}\n\npublic class BasicDemo {\n    public static void main(String[] args) {\n        // 创建对象并调用方法\n        Student stu1 = new Student(\"小明\", 85);\n        Student stu2 = new Student(\"小红\", 58);\n        stu1.display();\n        stu2.display();\n    }\n}\n```\n\n**运行结果：**\n```\n小明 的成绩：85.0 等级：良好\n小红 的成绩：58.0 等级：不及格\n```\n\n**知识点覆盖：** 类与对象、封装、构造方法、`this` 关键字、条件判断、字符串输出。这些正是 Java 基础的核心。\n\n### 示例2：基础 I/O 与异常处理——模拟简单聊天记录保存\n\n```java\nimport java.io.*;\nimport java.util.Scanner;\n\npublic class ChatLogger {\n    public static void main(String[] args) {\n        Scanner scanner = new Scanner(System.in);\n        System.out.print(\"请输入本次聊天记录文件名：\");\n        String filename = scanner.nextLine();\n        // 使用 try-with-resources 自动关闭流\n        try (BufferedWriter writer = new BufferedWriter(new FileWriter(filename))) {\n            System.out.println(\"开始记录聊天（输入 exit 结束）：\");\n            while (true) {\n                System.out.print(\">> \");\n                String line = scanner.nextLine();\n                if (\"exit\".equals(line)) {\n                    break;\n                }\n                writer.write(line);\n                writer.newLine();   // 写入换行符\n                writer.flush();     // 立即刷盘\n                System.out.println(\"已记录\");\n            }\n            System.out.println(\"聊天记录已保存到：\" + filename);\n        } catch (IOException e) {\n            // 异常处理\n            System.err.println(\"文件操作出错：\" + e.getMessage());\n        } finally {\n            scanner.close();\n        }\n    }\n}\n```\n\n**运行示例：**\n```\n请输入本次聊天记录文件名：chat.txt\n开始记录聊天（输入 exit 结束）：\n>> 你好\n已记录\n>> 今天天气不错\n已记录\n>> exit\n聊天记录已保存到：chat.txt\n```\n\n**知识点覆盖：** 输入输出流（`FileWriter`, `BufferedWriter`）、异常捕获（`IOException`）、`finally` 块、字符串比较 `equals`、`Scanner` 使用。这些是后续学习 Socket 通信时直接复用的基础——服务器端读写客户端消息用的正是同一套 I/O 操作。\n\n---\n\n## 三、3～5个易错点\n\n**1. 字符串比较用了 `==` 而不是 `equals()`**  \n`==` 比较的是引用地址，`equals()` 比较内容。新手常写出 `if (str1 == str2)` 导致逻辑错误。建议统一使用 `\"xxx\".equals(str)` 可避免空指针。\n\n**2. 基本类型包装类的“自动拆箱”空指针**  \n`Integer num = null;` 后直接 `int n = num;` 会在运行时抛出 `NullPointerException`。拆箱前务必判空。\n\n**3. 异常捕获范围过大或过小**  \n`catch (Exception e)` 一把兜底会吞掉关键异常，难以定位问题；而只捕获极细的子类可能漏掉其他异常。应遵循“先具体，后一般”的顺序，并在 `catch` 块中记录日志而非空处理。\n\n**4. 重载与重写混淆**  \n重载是同一个类中方法名相同、参数列表不同；重写是子类对父类方法签名完全一致地重新实现。用 `@Override` 注解可以提前发现拼写错误。\n\n**5. 静态方法“假重写”**  \n父类静态方法无法被子类真正覆盖，调用哪个版本由引用类型决定。一律用类名调用静态方法可以避免歧义。\n\n---\n\n## 四、学习建议\n\n**1. 从“画图纸”做起**  \n每学一个新概念，立即写一个最短的小程序验证它。比如学了数组，就写个冒泡排序；学了继承，就造一个动物→猫狗的层次。代码量是内化基础的不二法门。\n\n**2. 把异常当作朋友**  \n不要害怕红色的错误信息，每一条异常都是 Java 在告诉你哪里出问题。养成阅读异常堆栈的习惯，从最上面的 `Caused by` 一层层向下追溯。\n\n**3. 边学基础边瞄后续目标**  \n你现在可能觉得线程、Socket 很难，但其实它们就是把基础的 I/O、类、异常处理组合起来。试着提前看一眼 TCP 三次握手的流程，再用今天学的 `FileWriter` 去理解 `Socket.getOutputStream()`，你会发现两者惊人地相似——都是流操作。这样学习既巩固基础，又为难点提前铺路。\n\n**4. 重视“命名”和“缩进”**  \n命名靠拼音、代码毫无缩进是后续痛苦的根源。从第一个 `HelloWorld` 就坚持驼峰命名、合理空行，三个月后你会感谢现在的自己。\n\n基础打得越厚，后面的多线程服务器、超时处理这些高楼才能盖得越快。现在多写一行 `Student` 类，将来调试一次死锁就能省下半天。加油！",
+  "mindmap": "graph TD\n    A[Java基础]\n    A --> B[语言基础]\n    A --> C[面向对象]\n    A --> D[异常处理]\n    A --> E[集合框架]\n    A --> F[IO流]\n    A --> G[多线程]\n    A --> H[反射]\n    B --> B1[数据类型]\n    B --> B2[运算符]\n    B --> B3[流程控制]\n    C --> C1[类与对象]\n    C --> C2[封装继承多态]\n    C --> C3[接口与抽象类]\n    D --> D1[\"try-catch-finally\"]\n    D --> D2[\"throws与throw\"]\n    D --> D3[自定义异常]\n    E --> E1[\"List与Set\"]\n    E --> E2[Map]\n    E --> E3[迭代器]\n    F --> F1[字节流]\n    F --> F2[字符流]\n    F --> F3[缓冲流]\n    G --> G1[线程创建]\n    G --> G2[同步与锁]\n    G --> G3[线程状态]\n    H --> H1[Class对象]\n    H --> H2[获取成员]\n    H --> H3[动态调用]",
+  "quiz": [
+    {
+      "type": "choice",
+      "difficulty": "基础",
+      "question": "学习 Java 基础 时，最应该先掌握哪一项？",
+      "options": [
+        "基本定义、使用场景和常见错误",
+        "直接背诵全部代码",
+        "跳过概念直接做难题",
+        "只看答案不练习"
+      ],
+      "answer": "基本定义、使用场景和常见错误",
+      "analysis": "当前薄弱点包括：TCP 三次握手、Socket 超时处理、多线程服务器、Java 基础，应先建立概念框架。"
+    },
+    {
+      "type": "judge",
+      "difficulty": "基础",
+      "question": "判断：只要能背出 Java 基础 的定义，就一定能解决相关编程题。",
+      "answer": "错误",
+      "analysis": "编程题还需要理解边界条件、输入输出和具体实现过程。"
+    },
+    {
+      "type": "short_answer",
+      "difficulty": "中等",
+      "question": "请用自己的话解释 Java 基础 解决了什么问题。",
+      "answer": "Java 基础 的价值在于帮助我们组织或处理特定类型的数据与过程。",
+      "analysis": "这道题检查是否真正理解概念，而不是机械背诵。"
+    },
+    {
+      "type": "code_reading",
+      "difficulty": "中等",
+      "question": "阅读一段与 Java 基础 相关的代码，指出可能遗漏的边界条件。",
+      "answer": "需要检查空输入、极端规模、递归终止条件或索引越界等情况。",
+      "analysis": "代码阅读题用于暴露常见错误模式。"
+    },
+    {
+      "type": "practice",
+      "difficulty": "提高",
+      "question": "请写一个 Java 小例子，演示 Java 基础 的核心思想。",
+      "answer": "答案应包含核心逻辑、注释说明和一个简单测试用例。",
+      "analysis": "实践题用于把概念迁移到代码实现中。"
+    }
+  ],
+  "extended_reading": "### 拓展阅读：从 Java 基础走向实战深处\n\n你已经掌握了变量、循环、面向对象等 Java 基础，下一步可以关注这些让代码更优雅、更可靠的进阶概念。\n\n**1. 泛型与类型擦除**  \n基础中的 `ArrayList` 其实就用到了泛型。泛型让代码在编译期就能捕获类型错误，避免运行时的 `ClassCastException`。但 Java 的泛型通过“类型擦除”实现，很多限制由此而来。理解通配符（`? extends`、`? super`）、泛型方法与类型边界，能读懂并设计出更安全的集合与工具类。\n\n**2. 注解与反射**  \n从 `@Override` 起步，到自定义注解，注解本身只是元数据。配合反射机制，可以在运行时动态获取类信息、创建对象、调用方法。这是大量框架（如 Spring、JUnit）的基石，理解它们能让你看清“魔法”背后的原理。\n\n**3. 函数式编程与 Stream API**  \nJava 8 引入的 Lambda 表达式和 Stream，让集合操作从命令式转向声明式。学会将 `filter-map-reduce` 组合成流水线，不仅能减少循环和临时变量，还天然适合并行处理，是处理数据的现代方式。\n\n**实际项目应用场景**  \n- **用户数据筛选与统计**：使用 Stream 从百万级用户列表中过滤活跃用户、按地区分组并计算平均消费，代码简洁且可轻松转为并行流提升性能。  \n- **简易 Web 框架**：通过注解标记 URL 映射，用反射自动分发请求到对应方法，体会 Spring MVC 的核心思路。  \n- **通用数据访问层**：利用泛型封装增删改查操作，让 `UserDao` 和 `OrderDao` 共享一套类型安全的基类，减少重复代码。\n\n**进一步学习资源方向**  \n- **书籍**：《Effective Java》是必读进阶经典，深入探讨最佳实践；《Java 核心技术 卷 II》覆盖流、网络、安全等高级特性。  \n- **开源项目**：阅读小型的 Java Web 框架源码（如 Javalin、Blade），观察注解、反射和流如何协同工作。  \n- **文档与实践**：Oracle 官方教程的泛型和集合部分值得细读；在 LeetCode 或实际数据处理任务中刻意使用 Stream、Optional 代替传统写法，逐步内化新思维。",
+  "code_practice": "public class Java基础Practice {\n    public static void main(String[] args) {\n        System.out.println(\"学习主题：Java 基础\");\n        System.out.println(\"请你根据下方注释补充代码逻辑：\");\n        // TODO: 实现 Java 基础 的核心操作\n        // TODO: 添加边界条件检查\n        // TODO: 测试并输出结果\n    }\n}\n"
+}

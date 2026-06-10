@@ -1,0 +1,30 @@
+{
+  "major": "信息类相关专业",
+  "grade": "未知年级",
+  "course": "Java 程序设计",
+  "topic": "Java 基础",
+  "learning_goal": "掌握线程创建、同步机制和线程池使用",
+  "knowledge_base": "有一定编程基础，了解基本语法",
+  "cognitive_style": "偏好实操驱动学习",
+  "weaknesses": [
+    "线程安全",
+    "死锁排查",
+    "synchronized 原理",
+    "Java 基础"
+  ],
+  "mistake_patterns": [
+    "线程状态混淆",
+    "忘记释放锁"
+  ],
+  "resource_preference": [
+    "代码案例",
+    "讲解文档",
+    "练习题",
+    "思维导图"
+  ],
+  "pace": "中速",
+  "last_updated": "2026-05-26T20:40:52",
+  "username": "student001",
+  "last_score": 78,
+  "last_suggestion": "建议继续完成 Java 基础 的练习题和代码实操。"
+}

@@ -1,0 +1,49 @@
+{
+  "course_doc": "```markdown\n# Java 基础：从 Socket 通信看扎实的语法功底\n\n很多同学一上来就直奔 TCP 三次握手、Socket 超时和多线程服务器，却常常因为 **Java 基础** 不牢而卡在莫名其妙的编译错误、资源泄漏或线程死锁上。本讲以经典的“客户端-服务器”通信为例，带你夯实四个最重要的 Java 基础支柱：**类组织与导入、异常处理、IO 流资源管理以及多线程入门**。学完后你会发现，所谓网络编程的棘手问题，八成源于基础细节没处理对。\n\n---\n\n## 1. 核心概念通俗讲解\n\n**（1）类、包与导入——代码的“收纳箱”**  \nJava 用 `package` 声明类所属的文件夹，用 `import` 引入其他类。写 Socket 程序时，必须导入 `java.net.*` 和 `java.io.*`，否则编译器会告诉你“找不到符号”。就像工具分门别类放在不同抽屉，不打开抽屉就拿不到扳手。\n\n**（2）异常处理——给程序装上“安全气囊”**  \n网络通信随时可能断连、超时，如果不用 `try-catch` 捕获 `IOException`，程序会直接崩溃。Java 强制检查异常（Checked Exception），提醒你必须处理潜在风险。比如 `ServerSocket` 的构造方法抛出 `IOException`，你不能假装它不存在。\n\n**（3）IO 流与资源管理——数据的水管系统**  \n客户端和服务器之间通过“流”传送数据：`InputStream`/`OutputStream` 处理字节，`Reader`/`Writer` 处理字符。关键原则是 **用完即关**，否则端口会被占满、内存会泄漏。Java 7 以后的 `try-with-resources` 可以自动关门，省心又安全。\n\n**（4）多线程入门——让服务器同时招待多位客人**  \n单线程服务器一次只能服务一个客户端：`accept()` 之后必须等当前客户端断开，才能接下一个。引入 `Thread` 或 `Runnable` 后，每个连接分配一条独立“工作线”，大家互不阻塞，这就是多线程服务器的雏形。\n\n---\n\n## 2. 可运行代码示例\n\n### 示例 1：单线程回显服务器（演示 try-with-resources 与基础 IO）\n\n```java\nimport java.io.*;\nimport java.net.*;\n\npublic class EchoServer {\n    public static void main(String[] args) {\n        // try-with-resources 自动关闭 ServerSocket\n        try (ServerSocket serverSocket = new ServerSocket(8888)) {\n            System.out.println(\"服务器启动，等待连接...\");\n            Socket client = serverSocket.accept();\n            System.out.println(\"客户端已连接：\" + client.getInetAddress());\n\n            // 从客户端读，并向客户端回写\n            try (\n                BufferedReader in = new BufferedReader(\n                    new InputStreamReader(client.getInputStream()));\n                PrintWriter out = new PrintWriter(\n                    client.getOutputStream(), true)\n            ) {\n                String line;\n                while ((line = in.readLine()) != null) {\n                    System.out.println(\"收到：\" + line);\n                    out.println(\"Echo: \" + line);\n                }\n            } // in, out 自动关闭\n        } catch (IOException e) {\n            e.printStackTrace();\n        }\n    }\n}\n```\n\n### 示例 2：多线程服务器（演示 Runnable 接口与 Thread）\n\n```java\nimport java.io.*;\nimport java.net.*;\n\npublic class MultiThreadServer {\n    public static void main(String[] args) throws IOException {\n        ServerSocket server = new ServerSocket(8888);\n        System.out.println(\"多线程服务器已启动...\");\n        while (true) {\n            Socket client = server.accept();\n            // 为每个客户端启动一个新线程\n            new Thread(new ClientHandler(client)).start();\n        }\n    }\n}\n\nclass ClientHandler implements Runnable {\n    private Socket socket;\n    ClientHandler(Socket socket) { this.socket = socket; }\n\n    @Override\n    public void run() {\n        try (\n            BufferedReader in = new BufferedReader(\n                new InputStreamReader(socket.getInputStream()));\n            PrintWriter out = new PrintWriter(\n                socket.getOutputStream(), true)\n        ) {\n            String msg;\n            while ((msg = in.readLine()) != null) {\n                System.out.println(Thread.currentThread().getName()\n                                   + \" 收到：\" + msg);\n                out.println(\"Echo: \" + msg);\n            }\n        } catch (IOException e) {\n            e.printStackTrace();\n        }\n    }\n}\n```\n\n> **运行提示**：先用 `javac` 编译，启动服务器后，用 `telnet localhost 8888` 或浏览器测试，或配合简单的 `Socket` 客户端运行。\n\n---\n\n## 3. 易错点清单（3～5 个）\n\n1. **流没有成对关闭**  \n   `Socket` 的输入输出流若只关其中之一，或忘记关闭 `Socket`，会导致连接泄漏。**解药**：始终使用 `try-with-resources`，或 `finally` 块按顺序关闭。\n\n2. **`readLine()` 阻塞至海枯石烂**  \n   `BufferedReader.readLine()` 遇到对方未发送换行符时会永久阻塞，客户端以为自己崩溃了。解决办法：改用 `read()` 自定义协议，或使用 `setSoTimeout()` 设置超时。\n\n3. **字节流与字符流混用导致乱码**  \n   网络传输的是字节，若想读中文必须用 `InputStreamReader` 指定字符集（如 `UTF-8`），两端统一。不要在字节流上直接读写 `String`。\n\n4. **单线程服务器阻塞所有后来者**  \n   `accept()` 后的 `while` 循环处理一个客户端时，后续客户端无法连接。这是典型的“基础不牢，架构遭殃”。解决方案：学好多线程或 NIO，让服务器并发。\n\n5. **异常被生吞活剥**  \n   很多初学者写 `catch (IOException e) { }`，导致程序静静崩溃，找不到原因。最少应打印 `e.printStackTrace()`，或记录日志，不要留空。\n\n---\n\n## 4. 学习建议\n\n- **画类图与流图**：拿起纸笔画出 `ServerSocket` → `Socket` → `InputStream`/`OutputStream` → `Reader`/`Writer` 的关系。理清“谁创建谁”后，代码自然成型。\n- **强制使用 `try-with-resources`**：从今天起，不再手写 `close()`。这个习惯能避免 90% 的资源泄漏。\n- **单线程→多线程→线程池逐步演进**：先把单线程回显跑通，再封装 `Runnable` 用 `new Thread`，最后引入 `Executors.newFixedThreadPool`。每次只增加一个环节，出错也不慌。\n- **搭配网络抓包工具**：Wireshark 或 tcpdump 能让你直观看到 TCP 三次握手、数据传输和四次挥手，把 Java 代码与协议行为一一对应。\n- **写一百行不如调试十行**：在 `readLine()` 前后打日志、用 `jstack` 查看线程状态，这些基础调试本领会让你的网络编程之路一马平川。\n\n打好 Java 基础，TCP 握手、Socket 超时、多线程并发这些难题都将变成有章可循的填空题。现在就去动手运行上面的例子，改一改端口号、加一句超时设置，感受基础的力量吧。\n```",
+  "mindmap": "graph TD\nA[Java 基础] --> B[核心概念]\nA --> C[应用场景]\nA --> D[易错点]\nA --> E[进阶延伸]\nB --> B1[定义]\nB --> B2[关键特性]\nC --> C1[代码示例]\nC --> C2[实际项目]\nD --> D1[常见误区]\nD --> D2[边界问题]\nE --> E1[相关知识点]\nE --> E2[推荐阅读]\n",
+  "quiz": [
+    {
+      "type": "choice",
+      "difficulty": "基础",
+      "question": "学习 Java 基础 时，最应该先掌握哪一项？",
+      "options": [
+        "基本定义、使用场景和常见错误",
+        "直接背诵全部代码",
+        "跳过概念直接做难题",
+        "只看答案不练习"
+      ],
+      "answer": "基本定义、使用场景和常见错误",
+      "analysis": "当前薄弱点包括：TCP 三次握手、Socket 超时处理、多线程服务器、Java 基础，应先建立概念框架。"
+    },
+    {
+      "type": "judge",
+      "difficulty": "基础",
+      "question": "判断：只要能背出 Java 基础 的定义，就一定能解决相关编程题。",
+      "answer": "错误",
+      "analysis": "编程题还需要理解边界条件、输入输出和具体实现过程。"
+    },
+    {
+      "type": "short_answer",
+      "difficulty": "中等",
+      "question": "请用自己的话解释 Java 基础 解决了什么问题。",
+      "answer": "Java 基础 的价值在于帮助我们组织或处理特定类型的数据与过程。",
+      "analysis": "这道题检查是否真正理解概念，而不是机械背诵。"
+    },
+    {
+      "type": "code_reading",
+      "difficulty": "中等",
+      "question": "阅读一段与 Java 基础 相关的代码，指出可能遗漏的边界条件。",
+      "answer": "需要检查空输入、极端规模、递归终止条件或索引越界等情况。",
+      "analysis": "代码阅读题用于暴露常见错误模式。"
+    },
+    {
+      "type": "practice",
+      "difficulty": "提高",
+      "question": "请写一个 Java 小例子，演示 Java 基础 的核心思想。",
+      "answer": "答案应包含核心逻辑、注释说明和一个简单测试用例。",
+      "analysis": "实践题用于把概念迁移到代码实现中。"
+    }
+  ],
+  "extended_reading": "## 拓展阅读：从 Java 基础走向工程实践\n\n掌握变量、循环、面向对象等基础语法后，你可以通过以下进阶概念进一步理解 Java 的设计精髓，并了解它们在实际项目中的价值。\n\n### 1. 泛型与类型安全\n泛型让类或方法在定义时不指定具体类型，而在使用时才确定。它能在编译期发现类型错误，避免运行时的 `ClassCastException`。  \n**应用场景**：集合框架大量使用泛型，如 `List<Order>` 存储订单对象；在 DAO 层封装通用增删改查时，通过泛型避免重复代码。  \n**延伸资源**：《Effective Java》中“泛型”章节；Oracle 官方教程《Generics》。\n\n### 2. Lambda 表达式与函数式编程\nJava 8 引入的 Lambda 让你可以用更简洁的方式传递行为，配合 `Stream` API 实现声明式数据处理，大幅减少样板代码。  \n**应用场景**：对订单列表按金额过滤、排序、统计；在 GUI 中为按钮绑定事件；在 Spring WebFlux 中构建响应式流水线。  \n**延伸资源**：《Java 8 实战》；Baeldung 网站的“Java 8 Streams”系列。\n\n### 3. 异常处理与日志规范\n从基础的 `try-catch` 进阶到区分检查型与非检查型异常、自定义业务异常，再结合 SLF4J/Logback 输出关键信息，是编写健壮应用的必备技能。  \n**应用场景**：远程调用失败重试、事务回滚、全局异常拦截器统一返回前端错误信息，并能通过日志快速排障。  \n**延伸资源**：《阿里巴巴 Java 开发手册》异常与日志章节；SLF4J 官方文档。\n\n**下一步学习路径建议**：先阅读《On Java 8》巩固进阶特性，然后通过 Spring Boot 实战项目（如个人博客、电商后台）串联知识，最终可深入 JVM 调优与并发编程。",
+  "code_practice": "public class Java基础Practice {\n    public static void main(String[] args) {\n        System.out.println(\"学习主题：Java 基础\");\n        System.out.println(\"请你根据下方注释补充代码逻辑：\");\n        // TODO: 实现 Java 基础 的核心操作\n        // TODO: 添加边界条件检查\n        // TODO: 测试并输出结果\n    }\n}\n"
+}
