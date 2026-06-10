@@ -124,20 +124,52 @@
 
         <!-- 为你推荐的个性化资源 -->
 
-        <!-- 动态调整记录 -->
-        <el-card class="adjust-card" shadow="never" style="margin-top: 20px">
+        <!-- 历史错题 -->
+        <el-card class="wrong-card" shadow="never" style="margin-top: 20px">
           <template #header>
-            <span>动态调整记录</span>
+            <span>历史错题</span>
+            <el-tag v-if="wrongQuestions.length" type="danger" size="small" style="float: right">
+              共 {{ wrongQuestions.length }} 题
+            </el-tag>
           </template>
-          <div class="adjust-list">
-            <div v-if="adjustRecords.length === 0" class="adjust-item">
-              <div class="adjust-content">暂无调整记录</div>
+
+          <!-- 加载中 -->
+          <div v-if="wrongLoading" class="wrong-loading">加载中...</div>
+
+          <!-- 错题列表 -->
+          <div v-else-if="wrongQuestions.length" class="wrong-list">
+            <div
+              v-for="(q, i) in visibleWrongQuestions"
+              :key="q.id"
+              class="wrong-item"
+              @click="goToWrongDetail(q)"
+            >
+              <div class="wrong-header">
+                <span class="wrong-num">{{ i + 1 }}</span>
+                <span class="wrong-question">{{ q.question }}</span>
+              </div>
+              <div class="wrong-body">
+                <div class="wrong-answer wrong-user-answer">
+                  <span class="wrong-label">你的答案：</span>
+                  <span class="wrong-text">{{ q.userAnswer || '（未作答）' }}</span>
+                </div>
+                <div class="wrong-answer wrong-correct-answer">
+                  <span class="wrong-label">正确答案：</span>
+                  <span class="wrong-text">{{ q.correctAnswer }}</span>
+                </div>
+              </div>
+              <div class="wrong-go-hint">查看详情 →</div>
             </div>
-            <div v-for="(record, idx) in adjustRecords" :key="idx" class="adjust-item">
-              <div class="adjust-time">{{ record.time }}</div>
-              <div class="adjust-content">{{ record.content }}</div>
+            <!-- 查看全部 -->
+            <div v-if="wrongQuestions.length > 1" class="wrong-load-more">
+              <el-button text size="small" @click.stop="goToList">
+                查看全部 {{ wrongQuestions.length }} 题 →
+              </el-button>
             </div>
           </div>
+
+          <!-- 空状态 -->
+          <div v-else class="wrong-empty">暂无错题记录，继续加油！</div>
         </el-card>
       </el-col>
     </el-row>
@@ -146,8 +178,10 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { getLearningPath, generateLearningPath } from '@/api/learning'
+import { getLearningPath, generateLearningPath, updateTaskStatus } from '@/api/learning'
+import { getWrongQuestions } from '@/api/tutor'
 import request from '@/utils/request'
 
 // 阶段
@@ -156,6 +190,8 @@ const activeResourceTab = ref('doc')
 const calendarDate = ref(new Date())
 const pathLoading = ref(false)
 const pathError = ref(false)
+
+const router = useRouter()
 
 // ===== 后端数据 =====
 const pathData = ref<any>(null)
@@ -224,6 +260,38 @@ const currentResources = computed(() => resources.value[activeResourceTab.value 
 // 动态调整记录
 const adjustRecords = computed(() => pathData.value?.adjustRecords || [])
 
+// ===== 历史错题 =====
+const wrongQuestions = ref<any[]>([])
+const wrongLoading = ref(false)
+
+/** 当前显示的错题（只展示最新 1 道） */
+const visibleWrongQuestions = computed(() =>
+  wrongQuestions.value.slice(0, 1)
+)
+
+/** 加载历史错题 */
+const loadWrongQuestions = async () => {
+  wrongLoading.value = true
+  try {
+    const data = await getWrongQuestions()
+    wrongQuestions.value = data || []
+  } catch {
+    // 后端不可用时静默失败
+  } finally {
+    wrongLoading.value = false
+  }
+}
+
+/** 点击错题跳转到详情页 */
+const goToWrongDetail = (q: any) => {
+  router.push(`/student/wrong-questions/${q.id}`)
+}
+
+/** 跳转到错题列表页 */
+const goToList = () => {
+  router.push('/student/wrong-questions')
+}
+
 // ===== 模板字段兼容 =====
 const stageDesc = computed(() => {
   if (!pathData.value?.stages?.length) return '基于学习画像、掌握度与目标，为你规划动态学习路线'
@@ -232,33 +300,39 @@ const stageDesc = computed(() => {
 })
 
 // ===== 操作函数 =====
-/** 任务打勾/取消打勾：直接改 pathData 源数据触发响应式 + 进度条 + 画像更新 */
+/** 任务打勾/取消打勾：调后端持久化 + 本地响应式更新 */
 const handleTaskCheck = (checkedTask: any) => {
-  // 找到 pathData 中的原始任务并修改
   if (!pathData.value?.stages) return
   const currentKey = stageNameToKey[activeStage.value] || activeStage.value
+
+  // 找到要更新的 stage 名和 task 标题
+  let foundStage = ''
+  let foundTask = ''
   for (const stage of pathData.value.stages) {
     if (stageNameToKey[stage.name] === currentKey || stage.name === activeStage.value) {
       const hit = stage.tasks?.find((t: any) => t.title === checkedTask.name)
       if (hit) {
+        foundStage = stage.name
+        foundTask = hit.title
+        // 乐观更新本地状态
+        hit.status = checkedTask.checked ? 2 : 0
+        hit.progress = checkedTask.checked ? 100 : 0
         if (checkedTask.checked) {
-          hit.status = 2
-          hit.progress = 100
-          ElMessage.success({
-            message: `✅ "${hit.title}" 已完成！`,
-            duration: 1500,
-            offset: 60
-          })
-          console.log(`[学习路径] ✅ 任务完成: ${hit.title}, 进度: ${completedCount.value}/${totalTasks.value}`)
-        } else {
-          hit.status = 0
-          hit.progress = 0
-          console.log(`[学习路径] ↩️ 任务取消: ${hit.title}, 进度: ${completedCount.value}/${totalTasks.value}`)
+          ElMessage.success({ message: `✅ "${hit.title}" 已完成！`, duration: 1500, offset: 60 })
         }
       }
       break
     }
   }
+
+  if (!foundTask) return
+
+  // 调后端持久化
+  updateTaskStatus(foundStage, foundTask, checkedTask.checked).then((res: any) => {
+    console.log(`[学习路径] ✅ 已持久化: ${foundTask}, 总体进度: ${res?.progress || 0}%`)
+  }).catch((e: any) => {
+    console.warn('[学习路径] ⚠️ 持久化失败:', e)
+  })
 
   // 更新画像
   const userInfoStr = localStorage.getItem('userInfo')
@@ -327,6 +401,7 @@ const handleRegenerate = async () => {
 
 onMounted(() => {
   loadPath()
+  loadWrongQuestions()
 })
 </script>
 
@@ -538,20 +613,92 @@ onMounted(() => {
   100% { background-color: transparent; transform: scale(1); }
 }
 
-.adjust-list {
-  max-height: 300px;
+/* ===== 历史错题 ===== */
+.wrong-loading {
+  text-align: center;
+  padding: 20px 0;
+  color: #909399;
+  font-size: 14px;
+}
+.wrong-empty {
+  text-align: center;
+  padding: 20px 0;
+  color: #909399;
+  font-size: 14px;
+}
+.wrong-list {
+  max-height: 420px;
   overflow-y: auto;
 }
-.adjust-item {
-  padding: 12px 0;
-  border-bottom: 1px solid #ebeef5;
+.wrong-item {
+  background: #f8f9fb;
+  padding: 14px;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  border-left: 3px solid #e64553;
 }
-.adjust-time {
-  font-size: 12px;
+.wrong-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+  margin-bottom: 10px;
+}
+.wrong-num {
+  display: inline-flex;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #e64553;
+  color: #fff;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  flex-shrink: 0;
+}
+.wrong-question {
+  font-size: 13px;
+  color: #303133;
+  line-height: 1.5;
+}
+.wrong-body {
+  margin-left: 30px;
+}
+.wrong-answer {
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+.wrong-label {
   color: #909399;
-  margin-bottom: 6px;
+  margin-right: 4px;
 }
-.adjust-content {
-  font-size: 14px;
+.wrong-user-answer .wrong-text {
+  color: #e64553;
+  font-weight: 500;
+}
+.wrong-correct-answer .wrong-text {
+  color: #52c41a;
+  font-weight: 500;
+}
+.wrong-load-more {
+  text-align: center;
+  padding: 8px 0;
+}
+.wrong-load-more .el-button {
+  color: #409eff !important;
+  font-size: 12px !important;
+}
+.wrong-item {
+  cursor: pointer;
+  transition: box-shadow 0.2s;
+}
+.wrong-item:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+.wrong-go-hint {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #409eff;
+  text-align: right;
 }
 </style>

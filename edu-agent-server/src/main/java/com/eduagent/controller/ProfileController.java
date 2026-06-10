@@ -4,6 +4,8 @@ import com.eduagent.common.Result;
 import com.eduagent.agent.AiClient;
 import com.eduagent.entity.StudentProfile;
 import com.eduagent.mapper.StudentProfileMapper;
+import com.eduagent.mapper.QuizAnswerMapper;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -19,6 +21,7 @@ import java.util.*;
 public class ProfileController {
 
     private final StudentProfileMapper studentProfileMapper;
+    private final QuizAnswerMapper quizAnswerMapper;
     private final AiClient aiClient;
 
     @GetMapping
@@ -54,6 +57,21 @@ public class ProfileController {
                 map.put("overall_type", sp.getOverallType());
                 map.put("last_suggestion", sp.getLastSuggestion());
                 map.put("last_updated", sp.getUpdateTime() != null ? sp.getUpdateTime().toString().replace("T", " ") : null);
+                // 返回六维画像分数
+                if (sp.getProfileData() != null) {
+                    try {
+                        com.fasterxml.jackson.databind.ObjectMapper om = new com.fasterxml.jackson.databind.ObjectMapper();
+                        map.put("profile_data", om.readValue(sp.getProfileData(), Map.class));
+                    } catch (Exception ignored) {}
+                }
+                // 答题统计
+                try {
+                    long quizCount = quizAnswerMapper.selectCount(
+                        new LambdaQueryWrapper<com.eduagent.entity.QuizAnswer>()
+                            .eq(com.eduagent.entity.QuizAnswer::getStudentId, id)
+                    );
+                    map.put("quizCount", quizCount);
+                } catch (Exception ignored) {}
                 map.put("exists", true);
             } else {
                 log.warn("⚠️ 未找到画像 studentId={}", id);

@@ -52,3 +52,8 @@ export function getLearningPath() {
 export function generateLearningPath() {
   return request.post<unknown, any>('/student/learning-path/generate')
 }
+
+/** 更新单个任务完成状态 */
+export function updateTaskStatus(stageName: string, taskTitle: string, completed: boolean) {
+  return request.put<unknown, any>('/student/learning-path/task', { stageName, taskTitle, completed })
+}

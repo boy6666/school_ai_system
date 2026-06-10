@@ -1,0 +1,45 @@
+{
+  "_onboarding_phase": "complete",
+  "_onboarding_complete": true,
+  "initialized": true,
+  "knowledge_mastery": {
+    "level": "level_1",
+    "score": 35,
+    "evidence": [],
+    "last_updated": "2026-06-08T15:56:42.790720"
+  },
+  "learning_goal_clarity": {
+    "level": "level_1",
+    "score": 30,
+    "evidence": [],
+    "last_updated": "2026-06-08T15:56:42.790733"
+  },
+  "cognitive_adaptation": {
+    "level": "level_2",
+    "score": 50,
+    "evidence": [],
+    "last_updated": "2026-06-08T15:56:42.790736"
+  },
+  "mistake_avoidance": {
+    "level": "level_1",
+    "score": 30,
+    "evidence": [],
+    "last_updated": "2026-06-08T15:56:42.790739"
+  },
+  "learning_autonomy": {
+    "level": "level_2",
+    "score": 60,
+    "evidence": [],
+    "last_updated": "2026-06-08T15:56:42.790742"
+  },
+  "overall_level": {
+    "level": "level_1",
+    "score": 40,
+    "evidence": [],
+    "last_updated": "2026-06-08T15:56:42.790745"
+  },
+  "topic": "JavaSE循环",
+  "course": "JavaSE",
+  "knowledge_base": "基础学习中，能理解概念但尚未达到熟练应用",
+  "pace": "中速"
+}

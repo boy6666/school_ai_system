@@ -71,3 +71,24 @@ export function getAnsweredQuestions(resourceId: number) {
     params: { resourceId }
   })
 }
+
+/** 错题条目 */
+export interface WrongQuestionItem {
+  id: number
+  question: string
+  questionType: string
+  userAnswer: string
+  correctAnswer: string
+  explanation: string
+  createTime: string
+}
+
+/** 获取学生所有历史错题 */
+export function getWrongQuestions() {
+  return request.get<unknown, WrongQuestionItem[]>('/quiz/wrong-questions')
+}
+
+/** 获取单道历史错题详情 */
+export function getWrongQuestionById(id: number) {
+  return request.get<unknown, WrongQuestionItem>(`/quiz/wrong-questions/${id}`)
+}

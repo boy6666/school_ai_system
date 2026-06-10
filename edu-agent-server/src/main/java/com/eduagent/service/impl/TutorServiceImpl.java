@@ -5,7 +5,14 @@ import com.eduagent.agent.AiChatResponse;
 import com.eduagent.entity.Conversation;
 import com.eduagent.mapper.ConversationMapper;
 import com.eduagent.mapper.StudentProfileMapper;
+import com.eduagent.mapper.QuizAnswerMapper;
+import com.eduagent.mapper.LearningPathHistoryMapper;
+import com.eduagent.mapper.LearningTaskMapper;
 import com.eduagent.entity.StudentProfile;
+import com.eduagent.entity.QuizAnswer;
+import com.eduagent.entity.LearningPathHistory;
+import com.eduagent.entity.LearningTask;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.eduagent.service.TutorService;
 import com.eduagent.vo.TutorReplyVO;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -30,6 +37,9 @@ public class TutorServiceImpl implements TutorService {
     private final AiClient aiClient;
     private final ConversationMapper conversationMapper;
     private final StudentProfileMapper studentProfileMapper;
+    private final QuizAnswerMapper quizAnswerMapper;
+    private final LearningPathHistoryMapper learningPathHistoryMapper;
+    private final LearningTaskMapper learningTaskMapper;
     private final ObjectMapper objectMapper;
 
     @Override
@@ -54,7 +64,56 @@ public class TutorServiceImpl implements TutorService {
             log.warn("读取画像失败: {}", e.getMessage());
         }
 
-        // 调用 Python AI 引擎（带画像）
+        // 查询最近错题（isCorrect=0，取最近5条）
+        try {
+            List<QuizAnswer> wrongAnswers = quizAnswerMapper.selectList(
+                    new LambdaQueryWrapper<QuizAnswer>()
+                            .eq(QuizAnswer::getStudentId, studentId)
+                            .eq(QuizAnswer::getIsCorrect, 0)
+                            .orderByDesc(QuizAnswer::getCreateTime)
+                            .last("LIMIT 5")
+            );
+            if (!wrongAnswers.isEmpty()) {
+                List<Map<String, Object>> wrongList = wrongAnswers.stream().map(a -> {
+                    Map<String, Object> m = new HashMap<>();
+                    m.put("question", a.getQuestion());
+                    m.put("userAnswer", a.getUserAnswer());
+                    m.put("correctAnswer", a.getCorrectAnswer());
+                    m.put("explanation", a.getExplanation());
+                    return m;
+                }).collect(Collectors.toList());
+                profileMap.put("wrong_questions", wrongList);
+                log.info("已加载 {} 道错题到 profile", wrongList.size());
+            }
+        } catch (Exception e) {
+            log.warn("加载错题失败: {}", e.getMessage());
+        }
+
+        // 查询学习路径和任务进度
+        try {
+            List<LearningPathHistory> paths = learningPathHistoryMapper.findByStudentId(studentId);
+            if (!paths.isEmpty()) {
+                LearningPathHistory latest = paths.get(0);
+                Map<String, Object> pathInfo = new HashMap<>();
+                pathInfo.put("goal", latest.getGoal());
+                pathInfo.put("pathData", latest.getPathData());
+                profileMap.put("learning_path", pathInfo);
+            }
+            List<LearningTask> tasks = learningTaskMapper.selectByUserId(studentId);
+            if (!tasks.isEmpty()) {
+                long total = tasks.size();
+                long completed = tasks.stream().filter(t -> "done".equals(t.getStatus())).count();
+                Map<String, Object> taskInfo = new HashMap<>();
+                taskInfo.put("total", total);
+                taskInfo.put("completed", completed);
+                taskInfo.put("progress", total > 0 ? Math.round((float) completed / total * 100) : 0);
+                profileMap.put("tasks", taskInfo);
+            }
+        } catch (Exception e) {
+            log.warn("加载学习路径/任务数据失败: {}", e.getMessage());
+        }
+
+        // 调用 Python AI 引擎（带增强画像）
         AiChatResponse aiResp = aiClient.chat(String.valueOf(studentId), sessionId, message, profileMap);
 
         // AI 返回后，把画像变更写回 MySQL
@@ -142,6 +201,7 @@ public class TutorServiceImpl implements TutorService {
         }
 
         return convs.stream().map(c -> TutorReplyVO.builder()
+                .question(c.getQuestion())
                 .answer(c.getAnswer())
                 .intent(c.getIntent())
                 .resourceDir(c.getResourceDir())

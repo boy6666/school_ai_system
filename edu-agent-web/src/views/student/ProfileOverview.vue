@@ -34,15 +34,7 @@
           </div>
         </el-card>
 
-        <el-card class="suggestion-card" shadow="never" style="margin-top: 20px">
-          <template #header>
-            <span>个性化学习建议</span>
-            <el-button type="text" style="float: right" @click="refreshSuggestions">刷新</el-button>
-          </template>
-          <ul class="suggestion-list">
-            <li v-for="(s, idx) in suggestions" :key="idx">{{ s }}</li>
-          </ul>
-        </el-card>
+        <!-- 学习建议已移至学习报告页 -->
       </el-col>
     </el-row>
 
@@ -101,29 +93,38 @@ const typeDescription = computed(() => {
   return '基础薄弱，需要系统性地补充核心知识和加强练习'
 })
 
-const dimensionDetails = computed(() => [
-  { label: '知识基础', score: radarValues.value[0], color: '#409EFF', text: profileData.value.knowledge_base || '-' },
-  { label: '学习目标', score: radarValues.value[1], color: '#67C23A', text: profileData.value.learning_goal || '-' },
-  { label: '当前掌握度', score: radarValues.value[2], color: '#E6A23C', text: profileData.value.current_mastery || '-' },
-  { label: '认知风格', score: radarValues.value[3], color: '#F56C6C', text: profileData.value.cognitive_style || '-' },
-  { label: '易错点类型', score: radarValues.value[4], color: '#909399', text: profileData.value.mistake_patterns?.join('、') || '-' },
-  { label: '学习行为', score: radarValues.value[5], color: '#9C27B0', text: profileData.value.learning_behavior || '-' },
-])
+/** 维度详情：使用真实分数 + 对应描述文本 */
+const dimLabels = ['知识掌握度', '目标清晰度', '认知适配', '错误规避', '学习自主', '综合能力']
+const dimKeys = ['knowledge_mastery', 'learning_goal_clarity', 'cognitive_adaptation',
+                 'mistake_avoidance', 'learning_autonomy', 'overall_level']
+const dimColors = ['#409EFF', '#67C23A', '#E6A23C', '#F56C6C', '#9C27B0', '#303133']
+const dimDescKeys = ['knowledge_base', 'learning_goal', 'cognitive_style', 'mistake_patterns', 'pace', 'last_score']
 
-const suggestions = ref<string[]>([])
+const dimensionDetails = computed(() =>
+  dimLabels.map((label, i) => ({
+    label,
+    score: radarValues.value[i],
+    color: dimColors[i],
+    text: formatDimText(dimDescKeys[i], profileData.value),
+  }))
+)
 
-function calcRadar(p: ProfileData): number[] {
-  const scores = [50, 50, 50, 50, 50, 50]
-  if (p.knowledge_base && p.knowledge_base.length > 10) scores[0] = 65
-  if (p.learning_goal && p.learning_goal.length > 5) scores[1] = 70
-  if (p.current_mastery) {
-    const m = p.current_mastery.match(/(\d+)\s*分/)
-    scores[2] = m ? parseInt(m[1]) : 60
-  }
-  if (p.cognitive_style && p.cognitive_style.length > 2) scores[3] = 65
-  if (p.mistake_patterns?.length) scores[4] = 40 + p.mistake_patterns.length * 10
-  if (p.learning_behavior && p.learning_behavior.length > 5) scores[5] = 65
-  return scores.map(s => Math.min(100, s))
+function formatDimText(key: string, p: any): string {
+  if (key === 'last_score') return p.last_score != null ? p.last_score + '分' : '-'
+  if (key === 'mistake_patterns') return p.mistake_patterns?.join('、') || '-'
+  return p[key] || '-'
+}
+
+// suggestions 已移至学习报告页
+
+// calcRadar 已替换为 readRealScores（从 profile_data 取真实分数）
+
+/** 从 profile_data 读取六维真实分数 */
+function readRealScores(res: any): number[] {
+  const pd = res?.profile_data || {}
+  const keys = ['knowledge_mastery', 'learning_goal_clarity', 'cognitive_adaptation',
+                'mistake_avoidance', 'learning_autonomy', 'overall_level']
+  return keys.map(k => pd[k]?.score ?? 50)
 }
 
 async function loadProfile() {
@@ -135,47 +136,19 @@ async function loadProfile() {
     if (res && res.exists) {
       profileExists.value = true
       profileData.value = res
-      radarValues.value = calcRadar(res)
-      suggestions.value = res.profile_suggestions?.length ? res.profile_suggestions : buildDefaultSuggestions()
+      radarValues.value = readRealScores(res)  // 用真实分数替换启发式估算
       return
     }
   } catch { /* not found */ }
-
-  suggestions.value = buildDefaultSuggestions()
   loading.value = false
   await nextTick()
   initRadarChart()
   return
 }
 
-function buildDefaultSuggestions() {
-  return [
-    '从Java基础语法开始，每天坚持30分钟代码练习',
-    '使用思维导图整理面向对象三大特性',
-    '通过实战项目理解集合框架和多线程',
-    '阅读《深入理解Java虚拟机》补充JVM知识',
-  ]
-}
+// 已移至学习报告页
 
-async function refreshSuggestions() {
-  const userId = userStore.userInfo?.id
-  if (!userId) return
-  try {
-    const res: any = await request.post('/profile/generate-suggestions', { userId })
-    if (res?.suggestions?.length) {
-      suggestions.value = res.suggestions
-      console.log('[画像] ✅ AI 建议已刷新:', res.suggestions)
-    }
-  } catch (e) {
-    console.warn('[画像] ⚠️ AI 建议生成失败，使用本地:', e)
-    suggestions.value = [
-      '针对薄弱知识点，每天做3道相关编程练习',
-      '结合视频教程和官方文档构建知识体系',
-      '参与开源项目，在实际场景中巩固所学',
-      '使用AI智能体进行自适应题目练习和纠错',
-    ]
-  }
-}
+// 已移至学习报告页
 
 function initRadarChart() {
   if (!radarChartRef.value) return
@@ -226,7 +199,6 @@ onMounted(async () => {
 .dim-row { display: flex; flex-direction: column; gap: 4px; }
 .dim-name { font-weight: 600; font-size: 13px; color: #303133; }
 .dim-text { font-size: 12px; color: #909399; margin-top: 2px; }
-.suggestion-list { padding-left: 20px; margin: 0; }
-.suggestion-list li { margin-bottom: 12px; line-height: 1.5; color: #4a5568; }
+/* .suggestion-list 已移至学习报告页 */
 .empty-hint { text-align: center; color: #909399; padding: 24px 0; }
 </style>

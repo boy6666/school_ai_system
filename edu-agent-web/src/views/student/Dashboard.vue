@@ -61,7 +61,7 @@
             <div v-if="aiSummary.weaknessAnalysis" class="ai-summary-item"><span class="ai-label">📉 不足：</span>{{ aiSummary.weaknessAnalysis }}</div>
             <div v-if="aiSummary.suggestion" class="ai-summary-item"><span class="ai-label">💡 建议：</span>{{ aiSummary.suggestion }}</div>
             <div v-if="aiSummary.focusNext" class="ai-summary-item"><span class="ai-label">🎯 重点：</span>{{ aiSummary.focusNext }}</div>
-            <div v-if="aiSummary.score" class="ai-summary-score">综合评分：<strong>{{ aiSummary.score }}</strong></div>
+            <!-- 综合评分已移除 -->
           </div>
           <div v-else class="grid-2">
             <div v-for="s in summaryDims" :key="s.label" class="gi">
@@ -273,6 +273,5 @@ onMounted(async () => {
 .ai-summary-text { font-size: 14px; line-height: 1.7; color: #303133; margin-bottom: 12px; padding: 12px; background: #f0f9ff; border-radius: 8px; }
 .ai-summary-item { font-size: 13px; line-height: 1.6; color: #606266; margin-bottom: 8px; }
 .ai-label { font-weight: 600; color: #303133; }
-.ai-summary-score { margin-top: 12px; padding-top: 10px; border-top: 1px solid #eee; font-size: 14px; text-align: center; }
-.ai-summary-score strong { color: #409eff; font-size: 22px; margin-left: 6px; }
+/* .ai-summary-score 已移除 */
 </style>

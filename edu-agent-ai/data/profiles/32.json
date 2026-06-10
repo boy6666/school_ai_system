@@ -1,0 +1,45 @@
+{
+  "_onboarding_phase": "complete",
+  "_onboarding_complete": true,
+  "initialized": true,
+  "knowledge_mastery": {
+    "level": "level_1",
+    "score": 45,
+    "evidence": [],
+    "last_updated": "2026-06-08T15:10:01.791192"
+  },
+  "learning_goal_clarity": {
+    "level": "level_1",
+    "score": 35,
+    "evidence": [],
+    "last_updated": "2026-06-08T15:10:01.791204"
+  },
+  "cognitive_adaptation": {
+    "level": "level_1",
+    "score": 40,
+    "evidence": [],
+    "last_updated": "2026-06-08T15:10:01.791207"
+  },
+  "mistake_avoidance": {
+    "level": "level_1",
+    "score": 35,
+    "evidence": [],
+    "last_updated": "2026-06-08T15:10:01.791210"
+  },
+  "learning_autonomy": {
+    "level": "level_2",
+    "score": 55,
+    "evidence": [],
+    "last_updated": "2026-06-08T15:10:01.791212"
+  },
+  "overall_level": {
+    "level": "level_1",
+    "score": 40,
+    "evidence": [],
+    "last_updated": "2026-06-08T15:10:01.791215"
+  },
+  "topic": "未确定",
+  "course": "未确定",
+  "knowledge_base": "未确定",
+  "pace": "未确定"
+}

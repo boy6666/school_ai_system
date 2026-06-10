@@ -20,8 +20,9 @@ from school_agent.agents.retrieval_agent import retrieval_agent, retrieve_knowle
 from school_agent.agents.router_agent import classify_intent, route_by_intent
 from school_agent.agents.safety_agent import route_after_safety, safety_postcheck, safety_precheck
 from school_agent.agents.tutor_agent import tutor_agent
+from school_agent.agents.chat_agent import chat_agent
 from school_agent.constants import (
-    INTENT_EXPLAIN, INTENT_ONBOARDING, INTENT_QUIZ, INTENT_REJECT,
+    INTENT_CHAT, INTENT_EXPLAIN, INTENT_ONBOARDING, INTENT_QUIZ, INTENT_REJECT,
     INTENT_RESOURCE, INTENT_RETRIEVE, INTENT_TUTOR,
 )
 from school_agent.services.resource_store import save_resources
@@ -76,6 +77,9 @@ class SimpleGraph:
         if intent == INTENT_ONBOARDING:
             print(f"[GRAPH] → 调用 onboarding_agent（引导画像采集）")
             state.update(onboarding_agent(state))
+        elif intent == INTENT_CHAT:
+            print(f"[GRAPH] → 调用 chat_agent（通用对话）")
+            state.update(chat_agent(state))
         elif intent == INTENT_EXPLAIN:
             state.update(explain_agent(state))
         elif intent == INTENT_QUIZ:
@@ -121,6 +125,7 @@ def _build_langgraph():
     builder.add_node("resource_agent", resource_agent)
     builder.add_node("path_agent", path_agent)
     builder.add_node("tutor_agent", tutor_agent)
+    builder.add_node("chat_agent", chat_agent)
     builder.add_node("safety_postcheck", safety_postcheck)
     builder.add_node("evaluate_learning", evaluate_learning)
     builder.add_node("extract_profile", extract_profile)
@@ -131,12 +136,13 @@ def _build_langgraph():
     builder.add_edge("classify_intent", "safety_precheck")
     builder.add_conditional_edges("safety_precheck", route_after_safety, {"continue": "retrieve_knowledge", "reject": "finalize_output"})
     builder.add_conditional_edges("retrieve_knowledge", route_by_intent, {
-        INTENT_ONBOARDING: "onboarding_agent", INTENT_EXPLAIN: "explain_agent", INTENT_QUIZ: "quiz_agent",
+        INTENT_ONBOARDING: "onboarding_agent", INTENT_CHAT: "chat_agent", INTENT_EXPLAIN: "explain_agent",
+        INTENT_QUIZ: "quiz_agent",
         INTENT_RETRIEVE: "retrieval_agent", INTENT_RESOURCE: "resource_agent", INTENT_TUTOR: "tutor_agent",
     })
     builder.add_edge("resource_agent", "path_agent")
     builder.add_edge("path_agent", "safety_postcheck")
-    for node_name in ["onboarding_agent", "explain_agent", "quiz_agent", "retrieval_agent", "tutor_agent"]:
+    for node_name in ["onboarding_agent", "chat_agent", "explain_agent", "quiz_agent", "retrieval_agent", "tutor_agent"]:
         builder.add_edge(node_name, "safety_postcheck")
     builder.add_edge("safety_postcheck", "evaluate_learning")
     builder.add_edge("evaluate_learning", "extract_profile")

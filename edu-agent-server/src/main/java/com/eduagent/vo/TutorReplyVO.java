@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class TutorReplyVO {
+    private String question;
     private String answer;
     private String intent;
     private String routeReason;

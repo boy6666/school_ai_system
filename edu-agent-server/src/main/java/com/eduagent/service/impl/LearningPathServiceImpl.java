@@ -28,18 +28,63 @@ public class LearningPathServiceImpl implements LearningPathService {
     private final LearningPathMapper learningPathMapper;
     private final StudentProfileMapper studentProfileMapper;
     private final AiClient aiClient;
+    private final com.eduagent.mapper.LearningTaskMapper learningTaskMapper;
 
     @Override
     public LearningPathVO getCurrentPath(Long studentId) {
-        // 先查 DB 是否有缓存
-        LearningPath lp = learningPathMapper.findByStudentId(studentId);
-        if (lp != null && lp.getSteps() != null) {
-            log.info("✅ DB 有学习路径缓存, id={}, studentId={}", lp.getId(), studentId);
-            return parsePathFromJson(lp.getSteps());
+        // 从 learning_tasks 表读取任务
+        List<com.eduagent.entity.LearningTask> tasks = learningTaskMapper.selectByUserId(studentId);
+        if (tasks == null || tasks.isEmpty()) {
+            log.info("learning_tasks 无数据, 自动 AI 生成...");
+            return generatePath(studentId);
         }
-        // 无缓存 → 自动 AI 生成
-        log.info("DB 无学习路径缓存，自动 AI 生成...");
-        return generatePath(studentId);
+
+        log.info("✅ learning_tasks 共 {} 条任务", tasks.size());
+
+        // 按 stage 分组
+        Map<String, String> stageNameMap = Map.of(
+            "today", "今日计划", "week", "本周路径", "exam", "考试冲刺", "practice", "实践提升"
+        );
+        Map<String, List<com.eduagent.entity.LearningTask>> grouped = new LinkedHashMap<>();
+        for (com.eduagent.entity.LearningTask t : tasks) {
+            String raw = t.getStage() != null && !t.getStage().isBlank() ? t.getStage() : "待办任务";
+            String stage = stageNameMap.getOrDefault(raw, raw);
+            grouped.computeIfAbsent(stage, k -> new ArrayList<>()).add(t);
+        }
+
+        // 构建 StageVO 列表
+        List<StageVO> stages = new ArrayList<>();
+        int totalTasks = 0;
+        int completedTasks = 0;
+        for (Map.Entry<String, List<com.eduagent.entity.LearningTask>> entry : grouped.entrySet()) {
+            StageVO stage = new StageVO();
+            stage.setName(entry.getKey());
+            List<TaskVO> taskVOs = new ArrayList<>();
+            for (com.eduagent.entity.LearningTask t : entry.getValue()) {
+                TaskVO tv = new TaskVO();
+                tv.setId(t.getId());
+                tv.setTitle(t.getTitle());
+                tv.setDuration(30);
+                tv.setStatus("done".equals(t.getStatus()) ? 2 : 0);
+                tv.setProgress(t.getProgress() != null ? t.getProgress() : 0);
+                taskVOs.add(tv);
+                totalTasks++;
+                if ("done".equals(t.getStatus())) completedTasks++;
+            }
+            stage.setTasks(taskVOs);
+            stages.add(stage);
+        }
+
+        // 计算进度
+        int progress = totalTasks > 0 ? (int) Math.round((double) completedTasks / totalTasks * 100) : 0;
+
+        LearningPathVO vo = new LearningPathVO();
+        vo.setGoal("完成任务清单");
+        vo.setTargetMastery("≥85%");
+        vo.setTotalTasks(totalTasks);
+        vo.setCompletedTasks(completedTasks);
+        vo.setStages(stages);
+        return vo;
     }
 
     @Override
@@ -245,5 +290,33 @@ public class LearningPathServiceImpl implements LearningPathService {
         vo.setStatus(status);
         vo.setProgress(progress);
         return vo;
+    }
+
+    @Override
+    public LearningPathVO updateTaskStatus(Long studentId, String stageName, String taskTitle, boolean completed) {
+        // 从 learning_tasks 查找并更新
+        List<com.eduagent.entity.LearningTask> tasks = learningTaskMapper.selectByUserId(studentId);
+        if (tasks == null || tasks.isEmpty()) {
+            log.warn("learning_tasks 无数据");
+            return getCurrentPath(studentId);
+        }
+
+        boolean found = false;
+        for (com.eduagent.entity.LearningTask t : tasks) {
+            if (t.getTitle().equals(taskTitle)) {
+                t.setStatus(completed ? "done" : "todo");
+                t.setProgress(completed ? 100 : 0);
+                learningTaskMapper.updateById(t);
+                found = true;
+                log.info("✅ 更新 learning_tasks: id={}, title={}, status={}", t.getId(), taskTitle, completed ? "done" : "todo");
+                break;
+            }
+        }
+
+        if (!found) {
+            log.warn("未找到要更新的任务: {}", taskTitle);
+        }
+
+        return getCurrentPath(studentId);
     }
 }

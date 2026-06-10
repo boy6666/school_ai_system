@@ -1,0 +1,185 @@
+$ npx --prefix edu-agent-web vue-tsc --noEmit --project edu-agent-web/tsconfig.app.json 2>&1
+[exit 2]
+edu-agent-web/src/api/index.ts(10,3): error TS2305: Module '"./admin"' has no exported member 'createBackup'.
+edu-agent-web/src/api/index.ts(11,3): error TS2305: Module '"./admin"' has no exported member 'createRole'.
+edu-agent-web/src/api/index.ts(12,3): error TS2305: Module '"./admin"' has no exported member 'createUser'.
+edu-agent-web/src/api/index.ts(13,3): error TS2305: Module '"./admin"' has no exported member 'deleteBackup'.
+edu-agent-web/src/api/index.ts(14,3): error TS2305: Module '"./admin"' has no exported member 'deleteRole'.
+edu-agent-web/src/api/index.ts(16,3): error TS2305: Module '"./admin"' has no exported member 'downloadBackup'.
+edu-agent-web/src/api/index.ts(17,3): error TS2305: Module '"./admin"' has no exported member 'exportData'.
+edu-agent-web/src/api/index.ts(22,3): error TS2305: Module '"./admin"' has no exported member 'getBackupList'.
+edu-agent-web/src/api/index.ts(23,3): error TS2305: Module '"./admin"' has no exported member 'getLearningData'.
+edu-agent-web/src/api/index.ts(24,3): error TS2305: Module '"./admin"' has no exported member 'getOperationLogs'.
+edu-agent-web/src/api/index.ts(25,3): error TS2305: Module '"./admin"' has no exported member 'getRoleList'.
+edu-agent-web/src/api/index.ts(26,3): error TS2724: '"./admin"' has no exported member named 'getSystemSettings'. Did you mean 'SystemSetting'?
+edu-agent-web/src/api/index.ts(27,3): error TS2305: Module '"./admin"' has no exported member 'getUserGrowth'.
+edu-agent-web/src/api/index.ts(30,3): error TS2305: Module '"./admin"' has no exported member 'restoreBackup'.
+edu-agent-web/src/api/index.ts(32,3): error TS2305: Module '"./admin"' has no exported member 'toggleUserStatus'.
+edu-agent-web/src/api/index.ts(36,3): error TS2305: Module '"./admin"' has no exported member 'updateRole'.
+edu-agent-web/src/api/index.ts(37,3): error TS2305: Module '"./admin"' has no exported member 'updateSystemSettings'.
+edu-agent-web/src/api/index.ts(38,3): error TS2305: Module '"./admin"' has no exported member 'updateUser'.
+edu-agent-web/src/api/index.ts(41,3): error TS2305: Module '"./admin"' has no exported member 'AdminAgentListQuery'.
+edu-agent-web/src/api/index.ts(42,3): error TS2305: Module '"./admin"' has no exported member 'AdminAgentListResponse'.
+edu-agent-web/src/api/index.ts(44,3): error TS2305: Module '"./admin"' has no exported member 'AdminCourseListResponse'.
+edu-agent-web/src/api/index.ts(45,3): error TS2305: Module '"./admin"' has no exported member 'AdminManageListQuery'.
+edu-agent-web/src/api/index.ts(47,3): error TS2724: '"./admin"' has no exported member named 'AdminResourceListResponse'. Did you mean 'AdminResourceItem'?
+edu-agent-web/src/api/index.ts(48,3): error TS2724: '"./admin"' has no exported member named 'AdminReviewListQuery'. Did you mean 'getAdminReviewList'?
+edu-agent-web/src/api/index.ts(49,3): error TS2305: Module '"./admin"' has no exported member 'AdminReviewListResponse'.
+edu-agent-web/src/components/MermaidRenderer.vue(57,34): error TS2307: Cannot find module 'mermaid' or its corresponding type declarations.
+edu-agent-web/src/components/MermaidRenderer.vue(92,3): error TS2322: Type '{ x: number; y: number; }' is not assignable to type '{ x: number; y: number; sx: number; sy: number; } | { x: number; y: number; sx: number; sy: number; }'.
+  Type '{ x: number; y: number; }' is missing the following properties from type '{ x: number; y: number; sx: number; sy: number; }': sx, sy
+edu-agent-web/src/edu-agent-web/src/api/index.ts(10,3): error TS2305: Module '"./admin"' has no exported member 'createBackup'.
+edu-agent-web/src/edu-agent-web/src/api/index.ts(11,3): error TS2305: Module '"./admin"' has no exported member 'createRole'.
+edu-agent-web/src/edu-agent-web/src/api/index.ts(12,3): error TS2305: Module '"./admin"' has no exported member 'createUser'.
+edu-agent-web/src/edu-agent-web/src/api/index.ts(13,3): error TS2305: Module '"./admin"' has no exported member 'deleteBackup'.
+edu-agent-web/src/edu-agent-web/src/api/index.ts(14,3): error TS2305: Module '"./admin"' has no exported member 'deleteRole'.
+edu-agent-web/src/edu-agent-web/src/api/index.ts(16,3): error TS2305: Module '"./admin"' has no exported member 'downloadBackup'.
+edu-agent-web/src/edu-agent-web/src/api/index.ts(17,3): error TS2305: Module '"./admin"' has no exported member 'exportData'.
+edu-agent-web/src/edu-agent-web/src/api/index.ts(22,3): error TS2305: Module '"./admin"' has no exported member 'getBackupList'.
+edu-agent-web/src/edu-agent-web/src/api/index.ts(23,3): error TS2305: Module '"./admin"' has no exported member 'getLearningData'.
+edu-agent-web/src/edu-agent-web/src/api/index.ts(24,3): error TS2305: Module '"./admin"' has no exported member 'getOperationLogs'.
+edu-agent-web/src/edu-agent-web/src/api/index.ts(25,3): error TS2305: Module '"./admin"' has no exported member 'getRoleList'.
+edu-agent-web/src/edu-agent-web/src/api/index.ts(26,3): error TS2724: '"./admin"' has no exported member named 'getSystemSettings'. Did you mean 'SystemSetting'?
+edu-agent-web/src/edu-agent-web/src/api/index.ts(27,3): error TS2305: Module '"./admin"' has no exported member 'getUserGrowth'.
+edu-agent-web/src/edu-agent-web/src/api/index.ts(30,3): error TS2305: Module '"./admin"' has no exported member 'restoreBackup'.
+edu-agent-web/src/edu-agent-web/src/api/index.ts(32,3): error TS2305: Module '"./admin"' has no exported member 'toggleUserStatus'.
+edu-agent-web/src/edu-agent-web/src/api/index.ts(36,3): error TS2305: Module '"./admin"' has no exported member 'updateRole'.
+edu-agent-web/src/edu-agent-web/src/api/index.ts(37,3): error TS2305: Module '"./admin"' has no exported member 'updateSystemSettings'.
+edu-agent-web/src/edu-agent-web/src/api/index.ts(38,3): error TS2305: Module '"./admin"' has no exported member 'updateUser'.
+edu-agent-web/src/edu-agent-web/src/api/index.ts(41,3): error TS2305: Module '"./admin"' has no exported member 'AdminAgentListQuery'.
+edu-agent-web/src/edu-agent-web/src/api/index.ts(42,3): error TS2305: Module '"./admin"' has no exported member 'AdminAgentListResponse'.
+edu-agent-web/src/edu-agent-web/src/api/index.ts(44,3): error TS2305: Module '"./admin"' has no exported member 'AdminCourseListResponse'.
+edu-agent-web/src/edu-agent-web/src/api/index.ts(45,3): error TS2305: Module '"./admin"' has no exported member 'AdminManageListQuery'.
+edu-agent-web/src/edu-agent-web/src/api/index.ts(47,3): error TS2724: '"./admin"' has no exported member named 'AdminResourceListResponse'. Did you mean 'AdminResourceItem'?
+edu-agent-web/src/edu-agent-web/src/api/index.ts(48,3): error TS2724: '"./admin"' has no exported member named 'AdminReviewListQuery'. Did you mean 'getAdminReviewList'?
+edu-agent-web/src/edu-agent-web/src/api/index.ts(49,3): error TS2305: Module '"./admin"' has no exported member 'AdminReviewListResponse'.
+edu-agent-web/src/edu-agent-web/src/api/resource.ts(85,7): error TS6133: 'typeLabelMap' is declared but its value is never read.
+edu-agent-web/src/edu-agent-web/src/router/index.ts(6,60): error TS7016: Could not find a declaration file for module '@/views/Login.vue'. 'E:/college_information/edu-agent/edu-agent-web/src/views/Login.vue' implicitly has an 'any' type.
+edu-agent-web/src/edu-agent-web/src/router/index.ts(7,66): error TS7016: Could not find a declaration file for module '@/views/Register.vue'. 'E:/college_information/edu-agent/edu-agent-web/src/views/Register.vue' implicitly has an 'any' type.
+edu-agent-web/src/edu-agent-web/src/router/index.ts(51,49): error TS2307: Cannot find module '@/views/admin/AgentManage.vue' or its corresponding type declarations.
+edu-agent-web/src/edu-agent-web/src/views/admin/AgentManage.vue(77,33): error TS2339: Property 'description' does not exist on type '{ id: number; name: string; type: string; model: string; configJson: string; status: AgentStatus; createTime: string; }'.
+edu-agent-web/src/edu-agent-web/src/views/admin/AgentManage.vue(81,16): error TS2367: This comparison appears to be unintentional because the types 'AgentStatus' and '"running"' have no overlap.
+edu-agent-web/src/edu-agent-web/src/views/admin/AgentManage.vue(88,38): error TS2339: Property 'callCount' does not exist on type '{ id: number; name: string; type: string; model: string; configJson: string; status: AgentStatus; createTime: string; }'.
+edu-agent-web/src/edu-agent-web/src/views/admin/AgentManage.vue(93,38): error TS2339: Property 'activeUsers' does not exist on type '{ id: number; name: string; type: string; model: string; configJson: string; status: AgentStatus; createTime: string; }'.
+edu-agent-web/src/edu-agent-web/src/views/admin/AgentManage.vue(98,38): error TS2339: Property 'satisfaction' does not exist on type '{ id: number; name: string; type: string; model: string; configJson: string; status: AgentStatus; createTime: string; }'.
+edu-agent-web/src/edu-agent-web/src/views/admin/AgentManage.vue(103,38): error TS2339: Property 'solveRate' does not exist on type '{ id: number; name: string; type: string; model: string; configJson: string; status: AgentStatus; createTime: string; }'.
+edu-agent-web/src/edu-agent-web/src/views/admin/AgentManage.vue(130,43): error TS2339: Property 'promptVersion' does not exist on type '{ id: number; name: string; type: string; model: string; configJson: string; status: AgentStatus; createTime: string; }'.
+edu-agent-web/src/edu-agent-web/src/views/admin/AgentManage.vue(137,46): error TS2339: Property 'description' does not exist on type '{ id: number; name: string; type: string; model: string; configJson: string; status: AgentStatus; createTime: string; }'.
+edu-agent-web/src/edu-agent-web/src/views/admin/AgentManage.vue(145,48): error TS2339: Property 'tools' does not exist on type '{ id: number; name: string; type: string; model: string; configJson: string; status: AgentStatus; createTime: string; }'.
+edu-agent-web/src/edu-agent-web/src/views/admin/AgentManage.vue(193,5): error TS2322: Type '"running"' is not assignable to type 'AgentStatus'.
+edu-agent-web/src/edu-agent-web/src/views/admin/AgentManage.vue(208,5): error TS2322: Type '"running"' is not assignable to type 'AgentStatus'.
+edu-agent-web/src/edu-agent-web/src/views/admin/AgentManage.vue(223,5): error TS2322: Type '"stopped"' is not assignable to type 'AgentStatus'.
+edu-agent-web/src/edu-agent-web/src/views/admin/AgentManage.vue(253,44): error TS2345: Argument of type '{ keyword: string; status: string; type: string; }' is not assignable to parameter of type '{ page: number; pageSize: number; keyword?: string | undefined; status?: string | undefined; type?: string | undefined; }'.
+  Type '{ keyword: string; status: string; type: string; }' is missing the following properties from type '{ page: number; pageSize: number; keyword?: string | undefined; status?: string | undefined; type?: string | undefined; }': page, pageSize
+edu-agent-web/src/edu-agent-web/src/views/admin/AgentManage.vue(259,27): error TS2339: Property 'list' does not exist on type 'PageResult<AgentItem>'.
+edu-agent-web/src/edu-agent-web/src/views/admin/AgentManage.vue(260,34): error TS2339: Property 'list' does not exist on type 'PageResult<AgentItem>'.
+edu-agent-web/src/edu-agent-web/src/views/admin/AgentManage.vue(277,9): error TS2322: Type '"running" | "stopped"' is not assignable to type 'AgentStatus'.
+  Type '"running"' is not assignable to type 'AgentStatus'.
+edu-agent-web/src/edu-agent-web/src/views/admin/AgentManage.vue(278,5): error TS2367: This comparison appears to be unintentional because the types 'AgentStatus' and '"running"' have no overlap.
+edu-agent-web/src/edu-agent-web/src/views/admin/AgentManage.vue(309,5): error TS2322: Type '"stopped"' is not assignable to type 'AgentStatus'.
+edu-agent-web/src/edu-agent-web/src/views/admin/AgentManage.vue(325,5): error TS2353: Object literal may only specify known properties, and 'running' does not exist in type 'Record<AgentStatus, string>'.
+edu-agent-web/src/edu-agent-web/src/views/admin/ContentReview.vue(101,29): error TS2339: Property 'title' does not exist on type '{ id: number; studentId: number; question: string; answer: string; intent: string; status: ReviewStatus; riskLevel: RiskLevel; createTime: string; }'.
+edu-agent-web/src/edu-agent-web/src/views/admin/ContentReview.vue(102,29): error TS2339: Property 'type' does not exist on type '{ id: number; studentId: number; question: string; answer: string; intent: string; status: ReviewStatus; riskLevel: RiskLevel; createTime: string; }'.
+edu-agent-web/src/edu-agent-web/src/views/admin/ContentReview.vue(103,29): error TS2339: Property 'source' does not exist on type '{ id: number; studentId: number; question: string; answer: string; intent: string; status: ReviewStatus; riskLevel: RiskLevel; createTime: string; }'.
+edu-agent-web/src/edu-agent-web/src/views/admin/ContentReview.vue(114,29): error TS2339: Property 'submitter' does not exist on type '{ id: number; studentId: number; question: string; answer: string; intent: string; status: ReviewStatus; riskLevel: RiskLevel; createTime: string; }'.
+edu-agent-web/src/edu-agent-web/src/views/admin/ContentReview.vue(115,29): error TS2339: Property 'submitTime' does not exist on type '{ id: number; studentId: number; question: string; answer: string; intent: string; status: ReviewStatus; riskLevel: RiskLevel; createTime: string; }'.
+edu-agent-web/src/edu-agent-web/src/views/admin/ContentReview.vue(135,33): error TS2339: Property 'title' does not exist on type '{ id: number; studentId: number; question: string; answer: string; intent: string; status: ReviewStatus; riskLevel: RiskLevel; createTime: string; }'.
+edu-agent-web/src/edu-agent-web/src/views/admin/ContentReview.vue(139,39): error TS2339: Property 'type' does not exist on type '{ id: number; studentId: number; question: string; answer: string; intent: string; status: ReviewStatus; riskLevel: RiskLevel; createTime: string; }'.
+edu-agent-web/src/edu-agent-web/src/views/admin/ContentReview.vue(140,39): error TS2339: Property 'source' does not exist on type '{ id: number; studentId: number; question: string; answer: string; intent: string; status: ReviewStatus; riskLevel: RiskLevel; createTime: string; }'.
+edu-agent-web/src/edu-agent-web/src/views/admin/ContentReview.vue(145,33): error TS2339: Property 'content' does not exist on type '{ id: number; studentId: number; question: string; answer: string; intent: string; status: ReviewStatus; riskLevel: RiskLevel; createTime: string; }'.
+edu-agent-web/src/edu-agent-web/src/views/admin/ContentReview.vue(149,40): error TS2339: Property 'reviewer' does not exist on type '{ id: number; studentId: number; question: string; answer: string; intent: string; status: ReviewStatus; riskLevel: RiskLevel; createTime: string; }'.
+edu-agent-web/src/edu-agent-web/src/views/admin/ContentReview.vue(150,41): error TS2339: Property 'reviewTime' does not exist on type '{ id: number; studentId: number; question: string; answer: string; intent: string; status: ReviewStatus; riskLevel: RiskLevel; createTime: string; }'.
+edu-agent-web/src/edu-agent-web/src/views/admin/ContentReview.vue(151,39): error TS2339: Property 'reason' does not exist on type '{ id: number; studentId: number; question: string; answer: string; intent: string; status: ReviewStatus; riskLevel: RiskLevel; createTime: string; }'.
+edu-agent-web/src/edu-agent-web/src/views/admin/ContentReview.vue(151,70): error TS2339: Property 'reason' does not exist on type '{ id: number; studentId: number; question: string; answer: string; intent: string; status: ReviewStatus; riskLevel: RiskLevel; createTime: string; }'.
+edu-agent-web/src/edu-agent-web/src/views/admin/ContentReview.vue(224,5): error TS2353: Object literal may only specify known properties, and 'title' does not exist in type 'ReviewItem'.
+edu-agent-web/src/edu-agent-web/src/views/admin/ContentReview.vue(239,5): error TS2322: Type '"middle"' is not assignable to type 'RiskLevel'.
+edu-agent-web/src/edu-agent-web/src/views/admin/ContentReview.vue(248,5): error TS2353: Object literal may only specify known properties, and 'title' does not exist in type 'ReviewItem'.
+edu-agent-web/src/edu-agent-web/src/views/admin/ContentReview.vue(263,5): error TS2353: Object literal may only specify known properties, and 'title' does not exist in type 'ReviewItem'.
+edu-agent-web/src/edu-agent-web/src/views/admin/ContentReview.vue(281,12): error TS2339: Property 'title' does not exist on type 'ReviewItem'.
+edu-agent-web/src/edu-agent-web/src/views/admin/ContentReview.vue(282,12): error TS2339: Property 'source' does not exist on type 'ReviewItem'.
+edu-agent-web/src/edu-agent-web/src/views/admin/ContentReview.vue(283,12): error TS2339: Property 'submitter' does not exist on type 'ReviewItem'.
+edu-agent-web/src/edu-agent-web/src/views/admin/ContentReview.vue(286,43): error TS2339: Property 'type' does not exist on type 'ReviewItem'.
+edu-agent-web/src/edu-agent-web/src/views/admin/ContentReview.vue(308,7): error TS2353: Object literal may only specify known properties, and 'status' does not exist in type '{ page: number; pageSize: number; keyword?: string | undefined; }'.
+edu-agent-web/src/edu-agent-web/src/views/admin/ContentReview.vue(313,28): error TS2339: Property 'list' does not exist on type 'PageResult<ReviewItem>'.
+edu-agent-web/src/edu-agent-web/src/views/admin/ContentReview.vue(314,35): error TS2339: Property 'list' does not exist on type 'PageResult<ReviewItem>'.
+edu-agent-web/src/edu-agent-web/src/views/admin/ContentReview.vue(327,29): error TS2339: Property 'reason' does not exist on type 'ReviewItem'.
+edu-agent-web/src/edu-agent-web/src/views/admin/ContentReview.vue(334,24): error TS2339: Property 'reviewer' does not exist on type '{ id: number; studentId: number; question: string; answer: string; intent: string; status: ReviewStatus; riskLevel: RiskLevel; createTime: string; }'.
+edu-agent-web/src/edu-agent-web/src/views/admin/ContentReview.vue(335,24): error TS2339: Property 'reviewTime' does not exist on type '{ id: number; studentId: number; question: string; answer: string; intent: string; status: ReviewStatus; riskLevel: RiskLevel; createTime: string; }'.
+edu-agent-web/src/edu-agent-web/src/views/admin/ContentReview.vue(336,24): error TS2339: Property 'reason' does not exist on type '{ id: number; studentId: number; question: string; answer: string; intent: string; status: ReviewStatus; riskLevel: RiskLevel; createTime: string; }'.
+edu-agent-web/src/edu-agent-web/src/views/admin/ContentReview.vue(354,24): error TS2339: Property 'reason' does not exist on type '{ id: number; studentId: number; question: string; answer: string; intent: string; status: ReviewStatus; riskLevel: RiskLevel; createTime: string; }'.
+edu-agent-web/src/edu-agent-web/src/views/admin/ContentReview.vue(355,24): error TS2339: Property 'reviewer' does not exist on type '{ id: number; studentId: number; question: string; answer: string; intent: string; status: ReviewStatus; riskLevel: RiskLevel; createTime: string; }'.
+edu-agent-web/src/edu-agent-web/src/views/admin/ContentReview.vue(356,24): error TS2339: Property 'reviewTime' does not exist on type '{ id: number; studentId: number; question: string; answer: string; intent: string; status: ReviewStatus; riskLevel: RiskLevel; createTime: string; }'.
+edu-agent-web/src/edu-agent-web/src/views/admin/ContentReview.vue(378,5): error TS2353: Object literal may only specify known properties, and 'middle' does not exist in type 'Record<RiskLevel, string>'.
+edu-agent-web/src/edu-agent-web/src/views/admin/Dashboard.vue(72,1): error TS6192: All imports in import declaration are unused.
+edu-agent-web/src/edu-agent-web/src/views/admin/ResourceManage.vue(101,29): error TS2339: Property 'name' does not exist on type '{ id: number; title: string; type: string; status: ManageStatus; createTime: string; }'.
+edu-agent-web/src/edu-agent-web/src/views/admin/ResourceManage.vue(102,29): error TS2339: Property 'code' does not exist on type '{ id: number; title: string; type: string; status: ManageStatus; createTime: string; }'.
+edu-agent-web/src/edu-agent-web/src/views/admin/ResourceManage.vue(103,29): error TS2339: Property 'teacher' does not exist on type '{ id: number; title: string; type: string; status: ManageStatus; createTime: string; }'.
+edu-agent-web/src/edu-agent-web/src/views/admin/ResourceManage.vue(104,29): error TS2339: Property 'department' does not exist on type '{ id: number; title: string; type: string; status: ManageStatus; createTime: string; }'.
+edu-agent-web/src/edu-agent-web/src/views/admin/ResourceManage.vue(105,29): error TS2339: Property 'semester' does not exist on type '{ id: number; title: string; type: string; status: ManageStatus; createTime: string; }'.
+edu-agent-web/src/edu-agent-web/src/views/admin/ResourceManage.vue(106,29): error TS2339: Property 'studentCount' does not exist on type '{ id: number; title: string; type: string; status: ManageStatus; createTime: string; }'.
+edu-agent-web/src/edu-agent-web/src/views/admin/ResourceManage.vue(107,29): error TS2339: Property 'resourceCount' does not exist on type '{ id: number; title: string; type: string; status: ManageStatus; createTime: string; }'.
+edu-agent-web/src/edu-agent-web/src/views/admin/ResourceManage.vue(113,29): error TS2339: Property 'updateTime' does not exist on type '{ id: number; title: string; type: string; status: ManageStatus; createTime: string; }'.
+edu-agent-web/src/edu-agent-web/src/views/admin/ResourceManage.vue(148,31): error TS2339: Property 'courseName' does not exist on type '{ id: number; title: string; type: string; status: ManageStatus; createTime: string; }'.
+edu-agent-web/src/edu-agent-web/src/views/admin/ResourceManage.vue(149,31): error TS2339: Property 'difficulty' does not exist on type '{ id: number; title: string; type: string; status: ManageStatus; createTime: string; }'.
+edu-agent-web/src/edu-agent-web/src/views/admin/ResourceManage.vue(150,31): error TS2339: Property 'uploader' does not exist on type '{ id: number; title: string; type: string; status: ManageStatus; createTime: string; }'.
+edu-agent-web/src/edu-agent-web/src/views/admin/ResourceManage.vue(156,31): error TS2339: Property 'updateTime' does not exist on type '{ id: number; title: string; type: string; status: ManageStatus; createTime: string; }'.
+edu-agent-web/src/edu-agent-web/src/views/admin/ResourceManage.vue(246,5): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'AdminCourseItem'.
+edu-agent-web/src/edu-agent-web/src/views/admin/ResourceManage.vue(258,5): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'AdminCourseItem'.
+edu-agent-web/src/edu-agent-web/src/views/admin/ResourceManage.vue(270,5): error TS2353: Object literal may only specify known properties, and 'name' does not exist in type 'AdminCourseItem'.
+edu-agent-web/src/edu-agent-web/src/views/admin/ResourceManage.vue(287,5): error TS2353: Object literal may only specify known properties, and 'courseName' does not exist in type 'AdminResourceItem'.
+edu-agent-web/src/edu-agent-web/src/views/admin/ResourceManage.vue(297,5): error TS2353: Object literal may only specify known properties, and 'courseName' does not exist in type 'AdminResourceItem'.
+edu-agent-web/src/edu-agent-web/src/views/admin/ResourceManage.vue(307,5): error TS2353: Object literal may only specify known properties, and 'courseName' does not exist in type 'AdminResourceItem'.
+edu-agent-web/src/edu-agent-web/src/views/admin/ResourceManage.vue(317,5): error TS2353: Object literal may only specify known properties, and 'courseName' does not exist in type 'AdminResourceItem'.
+edu-agent-web/src/edu-agent-web/src/views/admin/ResourceManage.vue(343,12): error TS2339: Property 'name' does not exist on type '{ id: number; title: string; type: string; status: ManageStatus; createTime: string; }'.
+edu-agent-web/src/edu-agent-web/src/views/admin/ResourceManage.vue(344,12): error TS2339: Property 'code' does not exist on type '{ id: number; title: string; type: string; status: ManageStatus; createTime: string; }'.
+edu-agent-web/src/edu-agent-web/src/views/admin/ResourceManage.vue(345,12): error TS2339: Property 'teacher' does not exist on type '{ id: number; title: string; type: string; status: ManageStatus; createTime: string; }'.
+edu-agent-web/src/edu-agent-web/src/views/admin/ResourceManage.vue(358,12): error TS2339: Property 'courseName' does not exist on type '{ id: number; title: string; type: string; status: ManageStatus; createTime: string; }'.
+edu-agent-web/src/edu-agent-web/src/views/admin/ResourceManage.vue(359,12): error TS2339: Property 'uploader' does not exist on type '{ id: number; title: string; type: string; status: ManageStatus; createTime: string; }'.
+edu-agent-web/src/edu-agent-web/src/views/admin/ResourceManage.vue(382,30): error TS2339: Property 'list' does not exist on type 'PageResult<AdminCourseItem>'.
+edu-agent-web/src/edu-agent-web/src/views/admin/ResourceManage.vue(385,32): error TS2339: Property 'list' does not exist on type 'PageResult<AdminResourceItem>'.
+edu-agent-web/src/edu-agent-web/src/views/admin/ResourceManage.vue(406,22): error TS2339: Property 'name' does not exist on type 'AdminCourseItem'.
+edu-agent-web/src/edu-agent-web/src/views/admin/ResourceManage.vue(448,9): error TS2741: Property 'archived' is missing in type '{ published: string; draft: string; offline: string; reviewing: string; }' but required in type 'Record<ManageStatus, string>'.
+edu-agent-web/src/edu-agent-web/src/views/admin/Settings.vue(380,23): error TS6133: 'updateSetting' is declared but its value is never read.
+edu-agent-web/src/edu-agent-web/src/views/admin/Settings.vue(629,5): error TS2304: Cannot find name 'settings'.
+edu-agent-web/src/edu-agent-web/src/views/admin/Settings.vue(630,13): error TS2304: Cannot find name 'settings'.
+edu-agent-web/src/edu-agent-web/src/views/admin/Statistics.vue(228,1): error TS6192: All imports in import declaration are unused.
+edu-agent-web/src/edu-agent-web/src/views/admin/Statistics.vue(261,7): error TS6133: 'loading' is declared but its value is never read.
+edu-agent-web/src/edu-agent-web/src/views/admin/UserManage.vue(43,30): error TS2339: Property 'fetchUsers' does not exist on type '{ handleAdd: () => void; dialogVisible: boolean; form: { username: string; password: string; nickname: string; role: string; }; submitAdd: () => Promise<void>; searchKeyword: string; userList: any[]; ... 22 more ...; _pStores?: Record<...> | undefined; }'.
+edu-agent-web/src/edu-agent-web/src/views/admin/UserManage.vue(72,32): error TS2339: Property 'operationLogs' does not exist on type '{ handleAdd: () => void; dialogVisible: boolean; form: { username: string; password: string; nickname: string; role: string; }; submitAdd: () => Promise<void>; searchKeyword: string; userList: any[]; ... 22 more ...; _pStores?: Record<...> | undefined; }'.
+edu-agent-web/src/edu-agent-web/src/views/admin/UserManage.vue(134,7): error TS6133: 'handleDelete' is declared but its value is never read.
+edu-agent-web/src/edu-agent-web/src/views/student/CourseCenter.vue(122,1): error TS6133: 'getAdminResourceList' is declared but its value is never read.
+edu-agent-web/src/edu-agent-web/src/views/student/CourseDetail.vue(170,44): error TS2365: Operator '+' cannot be applied to types 'number' and 'string | number'.
+edu-agent-web/src/edu-agent-web/src/views/student/Dashboard.vue(142,1): error TS6133: 'getAdminStats' is declared but its value is never read.
+edu-agent-web/src/edu-agent-web/src/views/student/Dashboard.vue(143,25): error TS6133: 'onMounted' is declared but its value is never read.
+edu-agent-web/src/edu-agent-web/src/views/student/Dashboard.vue(146,7): error TS6133: 'dashboardStats' is declared but its value is never read.
+edu-agent-web/src/edu-agent-web/src/views/student/ResourceChapter.vue(73,25): error TS6133: 'reactive' is declared but its value is never read.
+edu-agent-web/src/edu-agent-web/src/views/student/TutorChat.vue(65,7): error TS6133: 'STORAGE_KEY' is declared but its value is never read.
+edu-agent-web/src/edu-agent-web/src/views/student/TutorChat.vue(82,7): error TS6133: 'saveSessions' is declared but its value is never read.
+edu-agent-web/src/edu-agent-web/src/views/student/TutorChat.vue(156,46): error TS2339: Property 'finalAnswer' does not exist on type 'TutorReply'.
+edu-agent-web/src/router/index.ts(6,60): error TS7016: Could not find a declaration file for module '@/views/Login.vue'. 'E:/college_information/edu-agent/edu-agent-web/src/views/Login.vue' implicitly has an 'any' type.
+edu-agent-web/src/router/index.ts(7,66): error TS7016: Could not find a declaration file for module '@/views/Register.vue'. 'E:/college_information/edu-agent/edu-agent-web/src/views/Register.vue' implicitly has an 'any' type.
+edu-agent-web/src/views/admin/AdminLogin.vue(50,13): error TS2339: Property 'token' does not exist on type 'AxiosResponse<any, any, {}>'.
+edu-agent-web/src/views/admin/AdminLogin.vue(51,30): error TS2339: Property 'token' does not exist on type 'AxiosResponse<any, any, {}>'.
+edu-agent-web/src/views/admin/AdminLogin.vue(52,33): error TS2339: Property 'userInfo' does not exist on type 'AxiosResponse<any, any, {}>'.
+edu-agent-web/src/views/admin/ContentReview.vue(68,7): error TS6133: 'fetchAll' is declared but its value is never read.
+edu-agent-web/src/views/admin/Dashboard.vue(46,16): error TS6133: 'Monitor' is declared but its value is never read.
+edu-agent-web/src/views/admin/Dashboard.vue(46,65): error TS6133: 'Tickets' is declared but its value is never read.
+edu-agent-web/src/views/admin/ResourceManage.vue(31,43): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ mindmap: string; quiz: string; reading: string; code: string; }'.
+edu-agent-web/src/views/admin/Settings.vue(380,23): error TS6133: 'updateSetting' is declared but its value is never read.
+edu-agent-web/src/views/admin/Settings.vue(629,5): error TS2304: Cannot find name 'settings'.
+edu-agent-web/src/views/admin/Settings.vue(630,13): error TS2304: Cannot find name 'settings'.
+edu-agent-web/src/views/admin/UserManage.vue(30,60): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ admin: string; teacher: string; student: string; }'.
+edu-agent-web/src/views/student/CourseCenter.vue(122,1): error TS6133: 'getAdminResourceList' is declared but its value is never read.
+edu-agent-web/src/views/student/CourseDetail.vue(234,10): error TS2305: Module '"@/api/resource"' has no exported member 'adjustDifficulty'.
+edu-agent-web/src/views/student/LearningPath.vue(194,7): error TS6133: 'targetMastery' is declared but its value is never read.
+edu-agent-web/src/views/student/LearningPath.vue(196,7): error TS6133: 'profileText' is declared but its value is never read.
+edu-agent-web/src/views/student/LearningPath.vue(208,7): error TS6133: 'masteryRate' is declared but its value is never read.
+edu-agent-web/src/views/student/LearningPath.vue(209,7): error TS6133: 'learningRateVal' is declared but its value is never read.
+edu-agent-web/src/views/student/LearningPath.vue(210,7): error TS6133: 'unmasteredRate' is declared but its value is never read.
+edu-agent-web/src/views/student/LearningPath.vue(222,7): error TS6133: 'currentResources' is declared but its value is never read.
+edu-agent-web/src/views/student/OnboardOverlay.vue(67,7): error TS6133: 'userStore' is declared but its value is never read.
+edu-agent-web/src/views/student/OnboardOverlay.vue(128,28): error TS2339: Property 'final_answer' does not exist on type 'AxiosResponse<any, any, {}>'.
+edu-agent-web/src/views/student/OnboardOverlay.vue(129,17): error TS2339: Property 'profile' does not exist on type 'AxiosResponse<any, any, {}>'.
+edu-agent-web/src/v
+
+[… truncated 1787 chars …]

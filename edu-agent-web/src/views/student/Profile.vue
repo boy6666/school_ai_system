@@ -19,11 +19,7 @@
               </div>
               <div class="stat-item">
                 <span class="stat-label">完成练习</span>
-                <span class="stat-value">45题</span>
-              </div>
-              <div class="stat-item">
-                <span class="stat-label">完成项目</span>
-                <span class="stat-value">3个</span>
+                <span class="stat-value">{{ quizCount }}题</span>
               </div>
             </div>
           </div>
@@ -46,22 +42,6 @@
             >
               <el-icon><Lock /></el-icon>
               <span>账户安全</span>
-            </div>
-            <div
-              class="menu-item"
-              :class="{ active: activeMenu === 'preference' }"
-              @click="activeMenu = 'preference'"
-            >
-              <el-icon><Setting /></el-icon>
-              <span>学习偏好</span>
-            </div>
-            <div
-              class="menu-item"
-              :class="{ active: activeMenu === 'notifications' }"
-              @click="activeMenu = 'notifications'"
-            >
-              <el-icon><Bell /></el-icon>
-              <span>消息通知</span>
             </div>
           </div>
         </el-card>
@@ -173,154 +153,10 @@
             </div>
           </div>
 
-          <!-- 学习偏好 -->
-          <div v-if="activeMenu === 'preference'" class="preference-section">
-            <h2 class="section-title">学习偏好</h2>
+          <!-- 学习偏好已移除 -->
 
-            <el-form :model="preferenceForm" label-width="120px">
-              <el-form-item label="学习语言">
-                <el-radio-group v-model="preferenceForm.language">
-                  <el-radio label="zh">中文</el-radio>
-                  <el-radio label="en">English</el-radio>
-                </el-radio-group>
-              </el-form-item>
-
-              <el-form-item label="主题设置">
-                <el-radio-group v-model="preferenceForm.theme">
-                  <el-radio label="light">浅色主题</el-radio>
-                  <el-radio label="dark">深色主题</el-radio>
-                  <el-radio label="auto">跟随系统</el-radio>
-                </el-radio-group>
-              </el-form-item>
-
-              <el-form-item label="每日学习目标">
-                <el-input-number
-                  v-model="preferenceForm.dailyGoal"
-                  :min="1"
-                  :max="24"
-                  :step="0.5"
-                />
-                <span class="unit">小时</span>
-              </el-form-item>
-
-              <el-form-item label="提醒时间">
-                <el-time-picker
-                  v-model="preferenceForm.reminderTime"
-                  placeholder="选择提醒时间"
-                  format="HH:mm"
-                />
-              </el-form-item>
-
-              <el-form-item label="学习提醒">
-                <el-checkbox-group v-model="preferenceForm.reminders">
-                  <el-checkbox label="daily">每日提醒</el-checkbox>
-                  <el-checkbox label="deadline">截止日期提醒</el-checkbox>
-                  <el-checkbox label="achievement">成就解锁提醒</el-checkbox>
-                  <el-checkbox label="new">新内容提醒</el-checkbox>
-                </el-checkbox-group>
-              </el-form-item>
-
-              <el-form-item label="学习兴趣">
-                <el-checkbox-group v-model="preferenceForm.interests">
-                  <el-checkbox label="frontend">前端开发</el-checkbox>
-                  <el-checkbox label="backend">后端开发</el-checkbox>
-                  <el-checkbox label="database">数据库</el-checkbox>
-                  <el-checkbox label="algorithm">算法</el-checkbox>
-                  <el-checkbox label="devops">运维</el-checkbox>
-                  <el-checkbox label="ai">人工智能</el-checkbox>
-                </el-checkbox-group>
-              </el-form-item>
-
-              <el-form-item label="难度偏好">
-                <el-radio-group v-model="preferenceForm.difficulty">
-                  <el-radio label="easy">简单</el-radio>
-                  <el-radio label="medium">中等</el-radio>
-                  <el-radio label="hard">困难</el-radio>
-                  <el-radio label="mixed">混合</el-radio>
-                </el-radio-group>
-              </el-form-item>
-
-              <el-form-item>
-                <el-button type="primary" @click="savePreference">保存设置</el-button>
-              </el-form-item>
-            </el-form>
-          </div>
-
-          <!-- 消息通知 -->
-          <div v-if="activeMenu === 'notifications'" class="notifications-section">
-            <h2 class="section-title">消息通知设置</h2>
-
-            <div class="notification-group">
-              <h3>系统通知</h3>
-              <div class="notification-item">
-                <div class="item-content">
-                  <strong>系统公告</strong>
-                  <p>接收系统重要公告和更新通知</p>
-                </div>
-                <el-switch v-model="notificationSettings.system.announcement" />
-              </div>
-              <div class="notification-item">
-                <div class="item-content">
-                  <strong>系统维护</strong>
-                  <p>系统维护前的提醒通知</p>
-                </div>
-                <el-switch v-model="notificationSettings.system.maintenance" />
-              </div>
-            </div>
-
-            <div class="notification-group">
-              <h3>学习通知</h3>
-              <div class="notification-item">
-                <div class="item-content">
-                  <strong>学习提醒</strong>
-                  <p>每日学习时间提醒</p>
-                </div>
-                <el-switch v-model="notificationSettings.learning.reminder" />
-              </div>
-              <div class="notification-item">
-                <div class="item-content">
-                  <strong>任务到期</strong>
-                  <p>学习任务即将到期的提醒</p>
-                </div>
-                <el-switch v-model="notificationSettings.learning.deadline" />
-              </div>
-              <div class="notification-item">
-                <div class="item-content">
-                  <strong>作业反馈</strong>
-                  <p>作业批改完成的提醒</p>
-                </div>
-                <el-switch v-model="notificationSettings.learning.feedback" />
-              </div>
-            </div>
-
-            <div class="notification-group">
-              <h3>社交通知</h3>
-              <div class="notification-item">
-                <div class="item-content">
-                  <strong>新私信</strong>
-                  <p>收到新私信的提醒</p>
-                </div>
-                <el-switch v-model="notificationSettings.social.message" />
-              </div>
-              <div class="notification-item">
-                <div class="item-content">
-                  <strong>评论回复</strong>
-                  <p>评论被回复的提醒</p>
-                </div>
-                <el-switch v-model="notificationSettings.social.comment" />
-              </div>
-              <div class="notification-item">
-                <div class="item-content">
-                  <strong>关注通知</strong>
-                  <p>用户关注你的提醒</p>
-                </div>
-                <el-switch v-model="notificationSettings.social.follow" />
-              </div>
-            </div>
-
-            <el-button type="primary" @click="saveNotificationSettings">保存设置</el-button>
-          </div>
-        </el-card>
+<!-- 消息通知已移除 -->
+</el-card>
       </el-col>
     </el-row>
 
@@ -369,16 +205,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
-  User, Lock, Setting, Bell, Cellphone, Message, Key
+  User, Lock, Cellphone, Message, Key
 } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
-
+import { getProfile } from '@/api/profile'
 const userStore = useUserStore()
 const userInfo = computed(() => userStore.userInfo)
 
+const quizCount = ref(0)
 const activeMenu = ref('info')
 const twoFactorAuth = ref(false)
 const passwordDialogVisible = ref(false)
@@ -400,32 +237,7 @@ const passwordForm = reactive({
   confirmPassword: ''
 })
 
-const preferenceForm = reactive({
-  language: 'zh',
-  theme: 'light',
-  dailyGoal: 2,
-  reminderTime: null,
-  reminders: ['daily', 'deadline'],
-  interests: ['frontend', 'backend'],
-  difficulty: 'medium'
-})
 
-const notificationSettings = reactive({
-  system: {
-    announcement: true,
-    maintenance: true
-  },
-  learning: {
-    reminder: true,
-    deadline: true,
-    feedback: true
-  },
-  social: {
-    message: true,
-    comment: true,
-    follow: false
-  }
-})
 
 const deleteForm = reactive({
   password: '',
@@ -450,6 +262,16 @@ const cityOptions = [
     ]
   }
 ]
+
+onMounted(async () => {
+  try {
+    const uid = userStore.userInfo?.id
+    if (uid) {
+      const res = await getProfile(uid)
+      if (res?.quizCount) quizCount.value = res.quizCount
+    }
+  } catch {}
+})
 
 const changeAvatar = () => {
   ElMessage.info('头像上传功能开发中...')
@@ -540,13 +362,8 @@ const deleteAccount = () => {
   }).catch(() => {})
 }
 
-const savePreference = () => {
-  ElMessage.success('学习偏好保存成功！')
-}
 
-const saveNotificationSettings = () => {
-  ElMessage.success('通知设置保存成功！')
-}
+
 </script>
 
 <style scoped>
@@ -706,39 +523,5 @@ const saveNotificationSettings = () => {
   color: #999;
 }
 
-.preference-section {
-  max-width: 600px;
-}
 
-.notification-group {
-  margin-bottom: 30px;
-}
-
-.notification-group h3 {
-  margin: 0 0 15px 0;
-  color: #333;
-  font-size: 16px;
-}
-
-.notification-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 15px 20px;
-  background: #f5f7fa;
-  border-radius: 8px;
-  margin-bottom: 10px;
-}
-
-.item-content strong {
-  display: block;
-  color: #333;
-  margin-bottom: 5px;
-}
-
-.item-content p {
-  margin: 0;
-  font-size: 14px;
-  color: #999;
-}
 </style>

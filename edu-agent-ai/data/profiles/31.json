@@ -1,0 +1,45 @@
+{
+  "_onboarding_phase": "complete",
+  "_onboarding_complete": true,
+  "initialized": true,
+  "knowledge_mastery": {
+    "level": "level_1",
+    "score": 35,
+    "evidence": [],
+    "last_updated": "2026-06-08T15:02:57.679492"
+  },
+  "learning_goal_clarity": {
+    "level": "level_1",
+    "score": 30,
+    "evidence": [],
+    "last_updated": "2026-06-08T15:02:57.679502"
+  },
+  "cognitive_adaptation": {
+    "level": "level_1",
+    "score": 30,
+    "evidence": [],
+    "last_updated": "2026-06-08T15:02:57.679505"
+  },
+  "mistake_avoidance": {
+    "level": "level_1",
+    "score": 30,
+    "evidence": [],
+    "last_updated": "2026-06-08T15:02:57.679506"
+  },
+  "learning_autonomy": {
+    "level": "level_3",
+    "score": 70,
+    "evidence": [],
+    "last_updated": "2026-06-08T15:02:57.679508"
+  },
+  "overall_level": {
+    "level": "level_1",
+    "score": 30,
+    "evidence": [],
+    "last_updated": "2026-06-08T15:02:57.679510"
+  },
+  "topic": "循环",
+  "course": "JavaSE",
+  "knowledge_base": "基础学习阶段，对循环有初步理解",
+  "pace": "中速"
+}

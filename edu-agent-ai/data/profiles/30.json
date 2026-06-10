@@ -1,0 +1,45 @@
+{
+  "_onboarding_phase": "complete",
+  "_onboarding_complete": true,
+  "initialized": true,
+  "knowledge_mastery": {
+    "level": "level_2",
+    "score": 45,
+    "evidence": [],
+    "last_updated": "2026-06-08T09:40:39.585059"
+  },
+  "learning_goal_clarity": {
+    "level": "level_1",
+    "score": 30,
+    "evidence": [],
+    "last_updated": "2026-06-08T09:40:39.585071"
+  },
+  "cognitive_adaptation": {
+    "level": "level_2",
+    "score": 40,
+    "evidence": [],
+    "last_updated": "2026-06-08T09:40:39.585075"
+  },
+  "mistake_avoidance": {
+    "level": "level_1",
+    "score": 30,
+    "evidence": [],
+    "last_updated": "2026-06-08T09:40:39.585078"
+  },
+  "learning_autonomy": {
+    "level": "level_2",
+    "score": 40,
+    "evidence": [],
+    "last_updated": "2026-06-08T09:40:39.585082"
+  },
+  "overall_level": {
+    "level": "level_1",
+    "score": 35,
+    "evidence": [],
+    "last_updated": "2026-06-08T09:40:39.585085"
+  },
+  "topic": "JavaSE",
+  "course": "Java程序设计",
+  "knowledge_base": "基础还行，已入门",
+  "pace": "中速"
+}

@@ -1,0 +1,45 @@
+{
+  "_onboarding_phase": "complete",
+  "_onboarding_complete": true,
+  "initialized": true,
+  "knowledge_mastery": {
+    "level": "level_2",
+    "score": 50,
+    "evidence": [],
+    "last_updated": "2026-06-08T15:43:08.918722"
+  },
+  "learning_goal_clarity": {
+    "level": "level_1",
+    "score": 30,
+    "evidence": [],
+    "last_updated": "2026-06-08T15:43:08.918734"
+  },
+  "cognitive_adaptation": {
+    "level": "level_2",
+    "score": 60,
+    "evidence": [],
+    "last_updated": "2026-06-08T15:43:08.918736"
+  },
+  "mistake_avoidance": {
+    "level": "level_1",
+    "score": 45,
+    "evidence": [],
+    "last_updated": "2026-06-08T15:43:08.918738"
+  },
+  "learning_autonomy": {
+    "level": "level_2",
+    "score": 70,
+    "evidence": [],
+    "last_updated": "2026-06-08T15:43:08.918740"
+  },
+  "overall_level": {
+    "level": "level_2",
+    "score": 50,
+    "evidence": [],
+    "last_updated": "2026-06-08T15:43:08.918742"
+  },
+  "topic": "循环和边界条件",
+  "course": "Java基础（JavaSE）",
+  "knowledge_base": "掌握循环概念但边界易错",
+  "pace": "中速"
+}
