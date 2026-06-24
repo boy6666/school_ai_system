@@ -115,11 +115,13 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public void markOnboarded(Long userId) {
         User user = userMapper.selectById(userId);
-        if (user != null) {
-            user.setOnboarded(1);
-            userMapper.updateById(user);
-            log.info("引导完成: userId={}", userId);
+        if (user == null) {
+            log.warn("引导标记失败: 用户不存在 userId={}", userId);
+            throw new RuntimeException("用户不存在");
         }
+        user.setOnboarded(1);
+        userMapper.updateById(user);
+        log.info("引导完成: userId={}", userId);
     }
 
     private UserInfoVO toUserInfoVO(User user) {

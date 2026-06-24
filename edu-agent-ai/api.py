@@ -53,6 +53,7 @@ else:
         _log(f"[API] profile keys: {list(req.profile.keys()) if req.profile else 'none'}")
         if req.profile:
             _log(f"[API] profile._onboarding_phase: {req.profile.get('_onboarding_phase', 'not set')}")
+            _log(f"[API] profile raw(前500字): {str(req.profile)[:500]}")
 
         initial_state = {
             "student_id": req.student_id,
@@ -70,6 +71,13 @@ else:
         _log(f"[API] intent: {result.get('intent')}")
         _log(f"[API] final_answer: {str(result.get('final_answer', ''))[:150]}")
         _log(f"[API] profile._onboarding_phase: {result.get('profile', {}).get('_onboarding_phase', 'not set')}")
+        ret_profile = result.get('profile', {})
+        _log(f"[API] profile keys: {list(ret_profile.keys())[:15]}")
+        if isinstance(ret_profile, dict) and 'profile' in ret_profile:
+            inner = ret_profile['profile']
+            if isinstance(inner, dict):
+                _log(f"[API] ⚠️ profile 被嵌套! 内层 profile keys: {list(inner.keys())[:10]}")
+                _log(f"[API] ⚠️ 内层 _onboarding_phase: {inner.get('_onboarding_phase', 'not set')}")
         _log(f"{'='*60}\n")
 
         return {

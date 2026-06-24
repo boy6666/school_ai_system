@@ -63,10 +63,14 @@ import OnboardOverlay from '@/views/student/OnboardOverlay.vue'
 const router = useRouter()
 const userStore = useUserStore()
 
-const onboardKey = localStorage.getItem('tutor_init_done')
 console.log('[DEBUG] StudentLayout mounted')
+// 引导判断：后端 onboarded=0 时必须显示引导，不受 localStorage 残留影响
+const onboardKey = localStorage.getItem('tutor_init_done')
+const backendOnboarded = userStore.userInfo?.onboarded
 console.log('[DEBUG] tutor_init_done in localStorage:', onboardKey)
-const showOnboard = ref(!onboardKey)
+console.log('[DEBUG] userInfo.onboarded from backend:', backendOnboarded)
+// 只要后端说还没引导(onboarded=0)，就显示引导，忽略 localStorage 残留
+const showOnboard = ref(backendOnboarded === 0 || !onboardKey)
 console.log('[DEBUG] showOnboard =', showOnboard.value)
 
 const onOnboardDone = () => {

@@ -76,7 +76,13 @@ class SimpleGraph:
 
         if intent == INTENT_ONBOARDING:
             print(f"[GRAPH] → 调用 onboarding_agent（引导画像采集）")
+            print(f"[DEBUG GRAPH] 调用前 state.profile keys: {list(state.get('profile', {}).keys())[:10]}")
+            print(f"[DEBUG GRAPH] 调用前 state.profile._onboarding_phase: '{state.get('profile', {}).get('_onboarding_phase', 'NOT_FOUND')}'")
+            old_len = len(state.get('profile', {}).get('_onboarding_log', []))
+            print(f"[DEBUG GRAPH] 调用前 _onboarding_log 条数: {old_len}")
             state.update(onboarding_agent(state))
+            print(f"[DEBUG GRAPH] 调用后 state.profile._onboarding_phase: '{state.get('profile', {}).get('_onboarding_phase', 'NOT_FOUND')}'")
+            print(f"[DEBUG GRAPH] 调用后 _onboarding_log 条数: {len(state.get('profile', {}).get('_onboarding_log', []))}")
         elif intent == INTENT_CHAT:
             print(f"[GRAPH] → 调用 chat_agent（通用对话）")
             state.update(chat_agent(state))
@@ -94,8 +100,30 @@ class SimpleGraph:
         else:
             state.update(explain_agent(state))
         print(f"[GRAPH] Step 6: 闭环节点 (安全→评估→画像→日志→输出)")
+        print(f"[DEBUG GRAPH] 闭环节点前 state.profile._onboarding_phase: '{state.get('profile', {}).get('_onboarding_phase', 'NOT_FOUND')}'")
+        print(f"[DEBUG GRAPH] 闭环节点前 state.profile 外层 keys: {list(state.get('profile', {}).keys())[:10]}")
         for func in [safety_postcheck, evaluate_learning, extract_profile, log_interaction, finalize_output]:
-            state.update(func(state))
+            fname = func.__name__
+            old_phase = state.get('profile', {}).get('_onboarding_phase', 'N/A')
+            old_keys = list(state.get('profile', {}).keys())[:10]
+            func_result = func(state)
+            state.update(func_result)
+            new_phase = state.get('profile', {}).get('_onboarding_phase', 'N/A')
+            new_keys = list(state.get('profile', {}).keys())[:10]
+            if old_phase != new_phase or old_keys != new_keys:
+                print(f"[DEBUG GRAPH]   → {fname}:")
+                print(f"[DEBUG GRAPH]     _onboarding_phase: '{old_phase}' → '{new_phase}'")
+                print(f"[DEBUG GRAPH]     keys 变化: {set(old_keys) ^ set(new_keys)}")
+                if fname == 'extract_profile':
+                    print(f"[DEBUG GRAPH]     extract_profile 返回 keys: {list(func_result.keys())}")
+                    if 'profile' in func_result:
+                        inner = func_result['profile']
+                        if isinstance(inner, dict):
+                            print(f"[DEBUG GRAPH]     extract_profile 返回的 profile 类型: {type(inner)}")
+                            print(f"[DEBUG GRAPH]     extract_profile 返回的 profile keys: {list(inner.keys())[:10]}")
+                            print(f"[DEBUG GRAPH]     extract_profile 返回的 profile 中的 _onboarding_phase: '{inner.get('_onboarding_phase', 'NOT_FOUND')}'")
+        print(f"[DEBUG GRAPH] 闭环节点后 state.profile._onboarding_phase: '{state.get('profile', {}).get('_onboarding_phase', 'NOT_FOUND')}'")
+        print(f"[DEBUG GRAPH] 闭环节点后 state.profile 外层 keys: {list(state.get('profile', {}).keys())[:10]}")
 
         print(f"[GRAPH] 流程完成")
         print(f"[GRAPH] final_answer: {str(state.get('final_answer', ''))[:150]}")

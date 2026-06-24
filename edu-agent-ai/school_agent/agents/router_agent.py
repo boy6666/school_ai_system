@@ -8,11 +8,21 @@ from school_agent.services.llm_client import call_llm
 
 def classify_intent(state: dict) -> dict:
     session_id = state.get("session_id", "")
-    onboarding_phase = state.get("profile", {}).get("_onboarding_phase", "")
+    profile_from_state = state.get("profile", {})
+    onboarding_phase = profile_from_state.get("_onboarding_phase", "")
     text = state.get("user_input", "")
+
+    # ===== DEBUG: 意图分类 =====
+    print(f"\n  [DEBUG router] session_id: {session_id}")
+    print(f"  [DEBUG router] session_id.startswith('onboard_'): {session_id.startswith('onboard_')}")
+    print(f"  [DEBUG router] profile keys: {list(profile_from_state.keys())[:10]}...")
+    print(f"  [DEBUG router] _onboarding_phase: '{onboarding_phase}'")
+    print(f"  [DEBUG router] user_input: '{text[:50]}'")
+    print(f"  [DEBUG router] 走 onboard?: {session_id.startswith('onboard_') and onboarding_phase != 'complete'}")
 
     # 引导会话走 onboarding（不受 LLM 影响）
     if session_id.startswith("onboard_") and onboarding_phase != "complete":
+        print(f"  [DEBUG router] → 返回 INTENT_ONBOARDING")
         return {"intent": INTENT_ONBOARDING, "intent_confidence": 1.0, "route_reason": "session_id=onboard_"}
 
     # Step 1: LLM 意图分类

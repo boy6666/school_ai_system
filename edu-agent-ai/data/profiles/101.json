@@ -1,0 +1,55 @@
+{
+  "_onboarding_phase": "collecting",
+  "_onboarding_complete": false,
+  "initialized": true,
+  "weaknesses": [],
+  "mistake_patterns": [],
+  "conversation_count": 2,
+  "last_updated": "2026-06-24T13:58:20.211748",
+  "knowledge_mastery": {
+    "level": "level_1",
+    "score": 30,
+    "evidence": [],
+    "last_updated": "2026-06-24T13:58:17.844232"
+  },
+  "learning_goal_clarity": {
+    "level": "level_1",
+    "score": 30,
+    "evidence": [],
+    "last_updated": "2026-06-24T13:58:17.844243"
+  },
+  "cognitive_adaptation": {
+    "level": "level_1",
+    "score": 30,
+    "evidence": [],
+    "last_updated": "2026-06-24T13:58:17.844246"
+  },
+  "mistake_avoidance": {
+    "level": "level_1",
+    "score": 30,
+    "evidence": [],
+    "last_updated": "2026-06-24T13:58:17.844249"
+  },
+  "learning_autonomy": {
+    "level": "level_1",
+    "score": 30,
+    "evidence": [],
+    "last_updated": "2026-06-24T13:58:17.844252"
+  },
+  "overall_level": {
+    "level": "level_1",
+    "score": 30,
+    "evidence": [],
+    "last_updated": "2026-06-24T13:58:17.844255"
+  },
+  "topic": "Java",
+  "course": "未知",
+  "knowledge_base": "未知",
+  "pace": "未知",
+  "_onboarding_log": [
+    {
+      "user": "Java",
+      "ai": "嗨，你好呀！我是小航，很高兴认识你～Java 是个很扎实的编程语言呢！你最近是在学 Java 吗？是学校里上课还是自己感兴趣在学呀？"
+    }
+  ]
+}

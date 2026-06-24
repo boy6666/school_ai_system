@@ -147,12 +147,42 @@ def onboarding_agent(state: dict) -> dict:
     user_input = state.get("user_input", "")
     student_id = state.get("student_id", "student_001")
 
-    # 从文件读取自身状态（覆盖 init_profile 加载的版本）
-    profile = load_student_profile(student_id)
+    # ===== DEBUG: 打印完整入参 =====
+    print(f"\n  [DEBUG onboarding_agent] === 入口 ===")
+    print(f"  [DEBUG] student_id: {student_id}")
+    print(f"  [DEBUG] user_input: '{user_input}'")
+    state_profile = state.get("profile", {})
+    print(f"  [DEBUG] state profile keys: {list(state_profile.keys())}")
+    print(f"  [DEBUG] state profile._onboarding_phase: {state_profile.get('_onboarding_phase', 'NOT_FOUND')}")
+    print(f"  [DEBUG] state profile._onboarding_log length: {len(state_profile.get('_onboarding_log', []))}")
+    print(f"  [DEBUG] state profile 原始内容(前500字): {str(state_profile)[:500]}")
+
+    # 优先使用 state 中的 profile（由前端迭代传递，结构干净）
+    # 文件仅作为冷启动回退（新用户首次请求时 state 中为空）
+    profile = state.get("profile", {})
     if not profile:
-        profile = state.get("profile", {})
+        print(f"  [DEBUG] state profile 为空，尝试从文件加载")
+        profile = load_student_profile(student_id)
+        print(f"  [DEBUG] 文件 profile keys: {list(profile.keys()) if profile else '空'}")
+    else:
+        print(f"  [DEBUG] 使用 state profile (非空)")
+        # 如果文件中有之前的对话历史，合并到 state profile 中
+        file_profile = load_student_profile(student_id)
+        if file_profile:
+            print(f"  [DEBUG] 文件存在，keys={list(file_profile.keys())}")
+            if file_profile.get("_onboarding_log"):
+                log_len = len(file_profile["_onboarding_log"])
+                print(f"  [DEBUG] 从文件合并对话历史: {log_len} 条")
+                profile["_onboarding_log"] = file_profile["_onboarding_log"]
+            else:
+                print(f"  [DEBUG] 文件中无 _onboarding_log")
+        else:
+            print(f"  [DEBUG] 文件不存在")
 
     onboarding_phase = profile.get("_onboarding_phase", "")
+    print(f"  [DEBUG] 最终 onboarding_phase: '{onboarding_phase}'")
+    print(f"  [DEBUG] 最终 profile keys: {list(profile.keys())}")
+    print(f"  [DEBUG] =========================")
 
     # Phase 1: 首次对话 → 欢迎语
     if not onboarding_phase:

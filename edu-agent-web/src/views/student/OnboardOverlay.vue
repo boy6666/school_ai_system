@@ -218,8 +218,11 @@ async function startGeneration() {
   // ---- 标记引导完成 ----
   try {
     await request.post('/auth/onboard-done')
-    localStorage.setItem('tutor_init_done', '1')
-  } catch {}
+  } catch {
+    console.warn('[Onboard] /auth/onboard-done 失败，本地标记仍然写入')
+  }
+  // 无论后端是否成功，都写入本地标记，防止用户重复走引导
+  localStorage.setItem('tutor_init_done', '1')
 
   loading.value = false
   stage.value = 'done'
