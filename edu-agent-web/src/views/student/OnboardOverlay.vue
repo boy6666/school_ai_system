@@ -167,7 +167,16 @@ async function startGeneration() {
       resource_preference: profile.resource_preference || [],
       mistake_patterns: profile.mistake_patterns || [],
       overall_type: profile.overall_type,
-      dimensions: profile.dimensions || {}
+      // Python AI 把六维分数放在 profile 顶层而非 profile.dimensions 中
+      // 手动组装 dimensions 对象，确保数据存入数据库
+      dimensions: profile.dimensions || {
+        knowledge_mastery: profile.knowledge_mastery,
+        learning_goal_clarity: profile.learning_goal_clarity,
+        cognitive_adaptation: profile.cognitive_adaptation,
+        mistake_avoidance: profile.mistake_avoidance,
+        learning_autonomy: profile.learning_autonomy,
+        overall_level: profile.overall_level
+      }
     })
     genSteps[0].status = 'done'
   } catch {

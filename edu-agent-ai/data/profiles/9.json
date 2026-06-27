@@ -1,10 +1,10 @@
 {
   "major": "信息类相关专业",
   "grade": "未知年级",
-  "course": "Java 程序设计",
-  "topic": "Java 基础",
+  "course": "暂未明确",
+  "topic": "暂未明确",
   "learning_goal": "掌握 TCP/UDP 通信和简易服务器开发",
-  "knowledge_base": "有一定编程基础",
+  "knowledge_base": "暂未明确",
   "cognitive_style": "偏好项目实战驱动",
   "weaknesses": [
     "TCP 三次握手",
@@ -24,9 +24,63 @@
     "思维导图",
     "练习题"
   ],
-  "pace": "中速",
-  "last_updated": "2026-05-27T10:20:47",
+  "pace": "暂未明确",
+  "last_updated": "2026-06-26T12:59:34.181565",
   "username": "test",
   "last_score": 78,
-  "last_suggestion": "建议继续完成 Java 基础 的练习题和代码实操。"
+  "last_suggestion": "建议继续完成 Java 基础 的练习题和代码实操。",
+  "_onboarding_phase": "collecting",
+  "_onboarding_complete": false,
+  "initialized": true,
+  "conversation_count": 4,
+  "knowledge_mastery": {
+    "level": "level_1",
+    "score": 30,
+    "evidence": [],
+    "last_updated": "2026-06-26T12:59:25.090222"
+  },
+  "learning_goal_clarity": {
+    "level": "level_1",
+    "score": 30,
+    "evidence": [],
+    "last_updated": "2026-06-26T12:59:25.090230"
+  },
+  "cognitive_adaptation": {
+    "level": "level_1",
+    "score": 30,
+    "evidence": [],
+    "last_updated": "2026-06-26T12:59:25.090232"
+  },
+  "mistake_avoidance": {
+    "level": "level_1",
+    "score": 30,
+    "evidence": [],
+    "last_updated": "2026-06-26T12:59:25.090234"
+  },
+  "learning_autonomy": {
+    "level": "level_1",
+    "score": 30,
+    "evidence": [],
+    "last_updated": "2026-06-26T12:59:25.090235"
+  },
+  "overall_level": {
+    "level": "level_1",
+    "score": 30,
+    "evidence": [],
+    "last_updated": "2026-06-26T12:59:25.090237"
+  },
+  "_onboarding_log": [
+    {
+      "user": "的撒发生",
+      "ai": "哈哈，你好呀！我是小航，你的学习伙伴～刚才你说的“的撒发生”是手误吗？没关系，我们随便聊聊～你最近在学什么科目呀？"
+    },
+    {
+      "user": "好玩的",
+      "ai": "哈哈，好玩的～那最近有没有什么科目让你觉得特别有意思呀？"
+    },
+    {
+      "user": "开始",
+      "ai": "开始啦！听起来你状态不错～那现在你最想先聊聊哪方面，是学科内容，还是自己的学习节奏呢？"
+    }
+  ]
 }

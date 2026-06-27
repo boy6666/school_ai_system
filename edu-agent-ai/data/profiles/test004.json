@@ -1,0 +1,53 @@
+{
+  "_onboarding_phase": "collecting",
+  "knowledge_mastery": {
+    "level": "level_1",
+    "score": 30,
+    "evidence": [],
+    "last_updated": "2026-06-26T12:47:29.710807"
+  },
+  "learning_goal_clarity": {
+    "level": "level_1",
+    "score": 30,
+    "evidence": [],
+    "last_updated": "2026-06-26T12:47:29.710834"
+  },
+  "cognitive_adaptation": {
+    "level": "level_1",
+    "score": 30,
+    "evidence": [],
+    "last_updated": "2026-06-26T12:47:29.710836"
+  },
+  "mistake_avoidance": {
+    "level": "level_1",
+    "score": 30,
+    "evidence": [],
+    "last_updated": "2026-06-26T12:47:29.710838"
+  },
+  "learning_autonomy": {
+    "level": "level_1",
+    "score": 30,
+    "evidence": [],
+    "last_updated": "2026-06-26T12:47:29.710839"
+  },
+  "overall_level": {
+    "level": "level_1",
+    "score": 30,
+    "evidence": [],
+    "last_updated": "2026-06-26T12:47:29.710840"
+  },
+  "topic": "Java编程",
+  "course": "Java课程",
+  "knowledge_base": "基础入门阶段",
+  "pace": "中速",
+  "_onboarding_log": [
+    {
+      "user": "我在学Java",
+      "ai": "你好呀！我是你的学习伙伴小航，可以陪你一起梳理学习思路、轻松聊聊学习情况~听说你在学Java，感觉这是个很有趣的方向！你目前学到什么程度啦？"
+    }
+  ],
+  "weaknesses": [],
+  "mistake_patterns": [],
+  "conversation_count": 1,
+  "last_updated": "2026-06-26T12:47:36.107573"
+}
