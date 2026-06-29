@@ -1,0 +1,53 @@
+{
+  "_onboarding_phase": "collecting",
+  "knowledge_mastery": {
+    "level": "level_1",
+    "score": 30,
+    "evidence": [],
+    "last_updated": "2026-06-27T17:03:51.835235"
+  },
+  "learning_goal_clarity": {
+    "level": "level_1",
+    "score": 30,
+    "evidence": [],
+    "last_updated": "2026-06-27T17:03:51.835264"
+  },
+  "cognitive_adaptation": {
+    "level": "level_1",
+    "score": 30,
+    "evidence": [],
+    "last_updated": "2026-06-27T17:03:51.835267"
+  },
+  "mistake_avoidance": {
+    "level": "level_1",
+    "score": 30,
+    "evidence": [],
+    "last_updated": "2026-06-27T17:03:51.835269"
+  },
+  "learning_autonomy": {
+    "level": "level_1",
+    "score": 30,
+    "evidence": [],
+    "last_updated": "2026-06-27T17:03:51.835272"
+  },
+  "overall_level": {
+    "level": "level_1",
+    "score": 30,
+    "evidence": [],
+    "last_updated": "2026-06-27T17:03:51.835273"
+  },
+  "topic": "学习Java",
+  "course": "计算机科学",
+  "knowledge_base": "基础入门",
+  "pace": "平稳",
+  "_onboarding_log": [
+    {
+      "user": "我在学Java",
+      "ai": "Java是一种广泛使用的编程语言，它有许多优点，比如跨平台、面向对象、安全性高等。"
+    }
+  ],
+  "weaknesses": [],
+  "mistake_patterns": [],
+  "conversation_count": 1,
+  "last_updated": "2026-06-27T17:03:55.810493"
+}

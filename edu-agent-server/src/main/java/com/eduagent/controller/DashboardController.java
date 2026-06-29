@@ -450,6 +450,14 @@ public class DashboardController {
             result.put("pace", sp.getPace());
             result.put("course", sp.getCourse());
             result.put("topic", sp.getTopic());
+            // Parse profile_data JSON (六维画像分数)
+            if (sp.getProfileData() != null) {
+                try {
+                    com.fasterxml.jackson.databind.ObjectMapper om = new com.fasterxml.jackson.databind.ObjectMapper();
+                    Map<String, Object> pd = om.readValue(sp.getProfileData(), Map.class);
+                    result.putAll(pd);
+                } catch (Exception ignored) {}
+            }
             // Parse weaknesses JSON if available
             if (sp.getWeaknesses() != null) {
                 try {
