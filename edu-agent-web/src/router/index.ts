@@ -100,9 +100,22 @@ router.beforeEach((to, _from, next) => {
 
   if (!token) {
     next('/login')
-  } else {
-    next()
+    return
   }
+
+  // 学生端路由：禁止 admin 角色访问
+  if (to.path.startsWith('/student')) {
+    const role = localStorage.getItem('role')
+    if (role === 'admin') {
+      next('/admin/dashboard')
+      return
+    }
+    next()
+    return
+  }
+
+  // 其他已认证路由放行
+  next()
 })
 
 export default router
