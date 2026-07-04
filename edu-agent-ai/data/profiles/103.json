@@ -1,0 +1,59 @@
+{
+  "_onboarding_phase": "collecting",
+  "_onboarding_complete": false,
+  "initialized": true,
+  "weaknesses": [],
+  "mistake_patterns": [],
+  "conversation_count": 3,
+  "last_updated": "2026-06-30T20:35:21.212071",
+  "knowledge_mastery": {
+    "level": "level_1",
+    "score": 30,
+    "evidence": [],
+    "last_updated": "2026-06-30T20:35:18.858478"
+  },
+  "learning_goal_clarity": {
+    "level": "level_1",
+    "score": 30,
+    "evidence": [],
+    "last_updated": "2026-06-30T20:35:18.858486"
+  },
+  "cognitive_adaptation": {
+    "level": "level_1",
+    "score": 30,
+    "evidence": [],
+    "last_updated": "2026-06-30T20:35:18.858488"
+  },
+  "mistake_avoidance": {
+    "level": "level_1",
+    "score": 30,
+    "evidence": [],
+    "last_updated": "2026-06-30T20:35:18.858490"
+  },
+  "learning_autonomy": {
+    "level": "level_1",
+    "score": 30,
+    "evidence": [],
+    "last_updated": "2026-06-30T20:35:18.858491"
+  },
+  "overall_level": {
+    "level": "level_1",
+    "score": 30,
+    "evidence": [],
+    "last_updated": "2026-06-30T20:35:18.858493"
+  },
+  "topic": "JavaSE入门",
+  "course": "计算机科学",
+  "knowledge_base": "level_1",
+  "pace": "慢速",
+  "_onboarding_log": [
+    {
+      "user": "JavaSE",
+      "ai": "JavaSE是Java的入门级，主要学习Java语言的基础语法和概念。"
+    },
+    {
+      "user": "我的基础很差",
+      "ai": "没关系，每个人都有自己的学习节奏。我们可以从基础开始，慢慢提升。"
+    }
+  ]
+}

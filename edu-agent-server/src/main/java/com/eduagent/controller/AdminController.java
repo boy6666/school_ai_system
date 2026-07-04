@@ -6,6 +6,7 @@ import com.eduagent.agent.AiClient;
 import com.eduagent.common.PageResult;
 import com.eduagent.common.Result;
 import com.eduagent.entity.*;
+import com.eduagent.mapper.LearningTaskMapper;
 import com.eduagent.service.*;
 import com.eduagent.vo.UserInfoVO;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +28,7 @@ public class AdminController {
     private final ResourceService resourceService;
     private final SystemSettingService systemSettingService;
     private final AiClient aiClient;
+    private final LearningTaskMapper learningTaskMapper;
 
     // ==================== 统计 ====================
     @GetMapping("/stats")
@@ -43,6 +45,18 @@ public class AdminController {
     @GetMapping("/statistics")
     public Result<Map<String, Object>> statistics() {
         return getStats();
+    }
+
+    @GetMapping("/task-stats")
+    public Result<Map<String, Object>> taskStats() {
+        List<com.eduagent.entity.LearningTask> all = learningTaskMapper.selectList(null);
+        long total = all.size();
+        long done = all.stream().filter(t -> "done".equals(t.getStatus())).count();
+        long pending = total - done;
+        int completionRate = total > 0 ? (int) Math.round(done * 100.0 / total) : 0;
+        return Result.success(Map.of(
+            "total", total, "done", done, "pending", pending, "completionRate", completionRate
+        ));
     }
 
     // ==================== 用户管理 ====================
