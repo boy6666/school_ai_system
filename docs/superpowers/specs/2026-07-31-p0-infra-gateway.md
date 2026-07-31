@@ -39,7 +39,7 @@
 | chroma | `chromadb/chroma:0.5.5` | 8000 | 向量库；无需账号（后续 ai-service 连） |
 | nacos | `nacos/nacos-server:v2.3.2` | 8848 / 9848 | **standalone 模式** `MODE=standalone`；建议开 `NACOS_AUTH_ENABLE=true` |
 | skywalking-oap | `apache/skywalking-oap-server:9.7.0` | 11800 / 12800 | 存储用内置 H2（演示够用） |
-| skywalking-ui | `apache/skywalking-ui:9.7.0` | 8081→8080 | `SW_OAP_ADDRESS` 指向 oap |
+| skywalking-ui | `apache/skywalking-ui:9.7.0` | 18081→8080 | `SW_OAP_ADDRESS` 指向 oap |
 
 > 说明：Chroma/Nacos/SkyWalking 镜像版本请以各服务接入时的最新稳定版为准；端口冲突时改宿主端口。
 
@@ -141,7 +141,12 @@ CREATE TABLE role_user (
 | `/api/resource/**` | `resource-service`（P1 接入） |
 | `/api/code/**` | `code-service`（P2 接入） |
 | `/api/teacher/**` | `teacher-service`（P3 接入） |
-| `/api/ai/**` | `ai-service`（P1 接入，Python） |
+| `/api/ai/chat` | `ai-service`（P1 接入，Python） |
+| `/api/ai/resource/generate` | `ai-service` |
+| `/api/ai/path/generate` | `ai-service` |
+| `/api/ai/kb/rebuild` | `ai-service`（仅 ADMIN/教师触发） |
+| `/api/ai/health` | `ai-service` |
+> ⚠️ **`/api/ai/code/analyze` 不在此表**：吴友诚 §1.7/§1.9 要求其为内网专用（仅 code-service 经 Feign 直连），经网关须返回 404。切勿用 `/api/ai/**` 通配，否则会暴露该内网端点。 |
 
 > 路由用 **Nacos 服务发现**（lb://service-name），不用硬编码 IP。
 
