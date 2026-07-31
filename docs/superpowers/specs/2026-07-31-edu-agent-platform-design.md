@@ -469,7 +469,7 @@ Monaco 提交源码 → code-service
 - [x] `specs/2026-07-31-dev-chenjiacheng.md` — **陈嘉成**：resource-service（资源生成调 ai） + **RAG 知识库基础语料采集与清洗**（寻找→清洗→去重→分块→落库，交付 ai 向量化）【已完成】
 - [x] `specs/2026-07-31-dev-chenhaiyang.md` — **陈海洋**：learning-service(学情核心) + teacher-service(教师端后端)【已完成】
 - [x] `specs/2026-07-31-dev-zengziyan.md` — **曾姿妍**：全部前端（学生端调整 / 教师端 / 管理端治理·监控·审计；零 mock 策略）【已完成】
-- [x] `specs/2026-07-31-contract-resolution.md` — **《契约对齐决议》**：跨文档契约冲突裁定（C1/C3/C4/C6 及卫星项；9 项纯一致性已落地，决策项待吴友诚确认）【已起草·待架构确认】
+- [x] `specs/2026-07-31-contract-resolution.md` — **《契约对齐决议》**：跨文档契约冲突裁定（C1/C3/C4/C6 及卫星项；9 项纯一致性已落地，决策项已按推荐方案确认）【已生效】
 
 > 每份开发文档均按「需求 → 接口契约 → 数据模型 → 关键实现 → 测试 → 验收」粒度展开，并复用 P0 的 `common`（AuthContext / AuthFeignInterceptor）与 auth/Gateway 契约。
 
