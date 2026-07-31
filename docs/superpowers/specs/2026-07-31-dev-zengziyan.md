@@ -227,7 +227,7 @@ export const logout = () => request.post('/api/auth/logout')
 | user | `/user/info` `/user/info`(put) `/user/avatar` `/user/change-password` | `/api/auth/user/info` `/api/auth/user/info` `/api/auth/user/avatar` `/api/auth/user/change-password` | auth | 用户信息归 auth |
 | **profile（⚠️ 整改）** | `aiClient.post('/profile/build')` `aiClient.get('/profile/:id')` | **`/api/ai/profile/build`** `/api/ai/profile/:id` | ai | **删除 rogue `aiClient`（baseURL:/ai）** |
 | profile | `/profile/:id` `/profile`(post) | `/api/learning/profile/:id` `/api/learning/profile` | learning | 画像读取/存储走 learning |
-| dashboard（散落在 `Dashboard.vue` 的硬编码） | `/dashboard/summary` `/dashboard/tasks` `/dashboard/path` `/dashboard/evaluation` `/dashboard/ai-summary` `/dashboard/learning-review` | `/api/learning/dashboard/summary` `/tasks` `/path` `/evaluation`；AI 类 → `/api/ai/dashboard/summary` `/learning-review` | learning / ai | **移入 `api/learning.ts`/`api/ai.ts`，删除组件内硬编码** |
+| dashboard（散落在 `Dashboard.vue` 的硬编码） | `/dashboard/summary` `/dashboard/tasks` `/dashboard/path` `/dashboard/evaluation` `/dashboard/ai-summary` `/dashboard/learning-review` | `/api/learning/dashboard/summary` `/tasks` `/path` `/evaluation`；AI 类 → `/api/learning/dashboard/ai-summary` `/learning-review`（归属 learning-service，见陈海洋 A.2.5；ai-service 无 `/api/ai/dashboard/*` 端点） | learning | **移入 `api/learning.ts`，删除组件内硬编码** |
 
 > 执行顺序：先批量改 `api/*.ts` 的 path（组件 import 不变），再处理 `Dashboard.vue` 内 6 处 `request.post('/dashboard/...')` 硬编码（抽到 `api/learning.ts` 的 `getDashboardSummary()` 等）。改完跑 `tsc` + 起网关联调。
 

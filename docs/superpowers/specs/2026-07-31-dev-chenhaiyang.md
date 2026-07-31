@@ -59,7 +59,7 @@
 |------|------|------|------|------|
 | GET | `/api/learning/profile` | S | —（userId 取 AuthContext） | `Result<ProfileVO>` |
 | GET | `/api/learning/profile/{studentId}` | T,A | path `studentId` | `Result<ProfileVO>`（教师查看学生画像） |
-| POST | `/api/learning/profile/save` | S | body：`pace,learningGoal,topic,course,knowledgeBase,cognitiveStyle,overallType,weaknesses[],resourcePreference[],mistakePatterns[],dimensions{}` | `Result<{id,status}>` |
+| POST | `/api/learning/profile/save` | S | body：`pace,learningGoal,topic,course,knowledgeBase,cognitiveStyle,overallType,weaknesses[],resourcePreference[],mistakePatterns[]`（六维 `dimensions` 由 AI 合并进 `profile_data`，不在此 body） | `Result<{id,status}>` |
 | POST | `/api/learning/profile/generate-suggestions` | S | body：`{userId?}`（默认取 AuthContext） | `Result<{suggestions:[]}>`（Feign→ai `/resource/generate` mode=suggestion） |
 
 `ProfileVO`（出参，含六维）：
@@ -374,7 +374,7 @@ public class StudyProgressEvent {
     private Integer masteryRate;   // 六维平均
     private LocalDateTime eventTime;
 }
-// 发送：RabbitTemplate.convertAndSend("study.progress.exchange","study.progress", event);
+// 发送：RabbitTemplate.convertAndSend("study.progress","study.progress", event);  // exchange 名 = 事件名（与 resource.generate 风格统一，见《契约对齐决议》C12）
 ```
 
 ### A.4.5 跨服务调用（仅 Feign → ai-service）
@@ -776,7 +776,7 @@ List<CompletableFuture<StudentProgressVO>> futures = studentIds.stream()
 
 ### B.4.5 RabbitMQ 异步
 **发布**（teacher-service → 学生通知/资源）：
-- `assignment.published.exchange` / routing `assignment.published`：作业发布后发事件 `{assignmentId, classId, title, type, deadline}`，供前端轮询/通知（当前无独立通知服务，先落事件，前端可轮询 assignments 列表）。
+- `assignment.published` / routing `assignment.published`：作业发布后发事件 `{assignmentId, classId, title, type, deadline}`，供前端轮询/通知（当前无独立通知服务，先落事件，前端可轮询 assignments 列表）。exchange 名 = 事件名（与 study.progress / resource.generate 风格统一，见《契约对齐决议》C12）。
 **消费**（teacher-service 作为订阅方，对齐主蓝图 §8）：
 - `study.progress`（来自 learning-service）：`StudyProgressConsumer` 接收后**更新内存/Redis 班级看板缓存**（`teacher:class:{classId}:dashboard`），使教师看板近实时，避免每次重算聚合。
 - `assignment.graded`（来自 code-service）：`AssignmentGradedConsumer` 接收后把判分结果回写 `grades`（status→1，score 填充），并触发教师端"待复核"提醒计数。

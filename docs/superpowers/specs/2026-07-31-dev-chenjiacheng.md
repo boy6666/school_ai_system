@@ -15,7 +15,7 @@
 ```
 前端 ──(Bearer)──▶ Gateway ──X-User-Id/X-User-Roles──▶ resource-service:8083
                                                         │  ├─ Feign ▶ ai-service:8001   (/api/ai/resource/generate …)
-                                                        │  ├─ Feign ▶ learning-service:8082 (/api/learning/profile/me)
+                                                        │  ├─ Feign ▶ learning-service:8082 (/api/learning/profile)
                                                         │  ├─ Redis 缓存热门章节资源
                                                         │  └─ RabbitMQ 发 resource.generate 任务 → 同服务 worker 消费
 ```
@@ -469,7 +469,7 @@ public class AiResourceClientFallback implements FallbackFactory<AiResourceClien
 ```java
 @FeignClient(name = "learning-service", path = "/api/learning")
 public interface LearningProfileClient {
-    @GetMapping("/profile/me")
+    @GetMapping("/profile")
     LearningProfileVO myProfile(@RequestHeader("X-User-Id") Long userId);
 }
 @Data public class LearningProfileVO {
@@ -478,7 +478,7 @@ public interface LearningProfileClient {
     private Integer lastScore;
 }
 ```
-> 画像字段沿用单体 `ResourceServiceImpl.loadStudentProfile` 的键（course/topic/knowledge_base/weaknesses/pace/resource_preference/last_score）。
+> 画像字段沿用单体 `ResourceServiceImpl.loadStudentProfile` 的键（course/topic/knowledgeBase/weaknesses/pace/resourcePreference/lastScore），与 `LearningProfileVO` 一致（camelCase）。
 > **联调风险**：learning-service 路径/字段名由陈海洋定，本文为提案契约；P1 初必须二人对齐（见 §6 契约测试）。
 
 ### 4.6 RabbitMQ 异步生成（对齐蓝图 §8 `resource.generate`）
@@ -589,8 +589,8 @@ spring:
 | `student_id` | string | `AuthContext.getUserId()` | `ResourceGenRequest.student_id` | 透传，ai 用于画像/日志。 |
 | `chapter` | string | `req.chapterName` | `chapter` | 章节名。 |
 | `topic` | string | `req.topic` | `topic` | 知识点。 |
-| `resourceType` | string | `req.type` | `resourceType` | 枚举：mindmap/quiz/reading/code/learning_path/review/summary/evaluation/suggestion/explain/judge。**我生成的类型限定 mindmap/quiz/reading/code/learning_path**。 |
-| `level` | string | `req.difficulty` | `level` | easy/medium/hard（注意 api.py 是 `level` 不是 `difficulty`，我侧映射 difficulty→level）。 |
+| `resourceType` | string | `req.type` | `resourceType` | 枚举（生成产物类型，与吴友诚 §1.3.2 一致）：**mindmap/quiz/reading/code/learning_path**。`suggestion/judge/evaluation/review/summary/explain` 属 ai-service 的 `mode` 轴（见《契约对齐决议》C3），非本字段取值。 |
+| `level` | string | `req.difficulty` | `level` | 取值与 ai 一致：`basic`（吴友诚 §1.3.2 `easy→basic`）；我侧 easy/medium/hard → basic/intermediate/advanced 映射后透传。 |
 | `prompt` | string | 我本地 `buildPrompt()` 拼装 | `prompt`（api.py 直接用） | 沿用单体 `AiClient.buildResourcePrompt` 的 JavaSE 限定 + 画像拼接逻辑。 |
 | `profile` | object | learning-service 画像 | api.py 未用此字段，但单体 `AiClient.generateResource` 有传 | **新增协商字段**：建议 ai-service 接收后注入 prompt，使生成个性化；若吴友诚暂不支持，我侧把 profile 拼进 `prompt` 即可，不阻塞。 |
 
@@ -769,7 +769,7 @@ cloud:
     config:
       server-addr: nacos:8848
       namespace: edu-dev
-      group: RESOURCE_GROUP
+      group: resource-group
 ```
 
 ## 附录 B：依赖 P0 约定（照抄，不重新发明）
