@@ -716,12 +716,21 @@ CREATE TABLE kb_corpus (
 ```
 > 与 ai-service 的边界：本表只存清洗后文本 + 元数据；向量（Chroma）由 ai-service 写入。本服务**不连 Chroma**。
 
-### 8.7 与 ai-service 的对接契约
-- 触发：管理端 / 教师触发 `POST /api/ai/kb/rebuild`（吴友诚实现），拉取本服务 `status=0` 的 `kb_corpus` → embed → 写 Chroma（按 source / course 隔离）。
-- 交付方式二选一（与吴友诚定稿）：
-  - **方式 B（推荐，避免跨库）**：本服务提供 `GET /api/resource/kb/corpus?status=0` 供 ai-service 拉取；
-  - 方式 A：ai-service 直连 `resource_db.kb_corpus` 只读（需吴友诚授权）。
-- 向量化完成后，本服务将对应行 `status` 回写为 `1`，避免重复嵌入。
+### 8.7 与 ai-service 的对接契约（依《契约对齐决议》C6 定稿）
+- 触发：管理端 / 教师触发 `POST /api/ai/kb/rebuild`（吴友诚实现，入参 `{}` 或 `{collection, force}` 不变）；语义改为「从 resource-service 拉取 `kb_corpus`(status=0) → embed → 写 Chroma(collection) → 回调 `mark-indexed`」。
+- 语料权威源 = `kb_corpus`（本服务清洗流水线产出）；吴友诚的 `java_notes` 本地 md 仅作开发期种子/兜底，不进生产向量化主链路。
+- 交付方式（**已定稿，采用方式 B，避免 ai 直连库**）：
+  - ai-service 经 `GET /api/resource/kb/corpus?status=0` 拉取待向量化语料（本服务提供，ai 不直连库）；
+  - ai-service 嵌入写 Chroma 后，**回调** `POST /api/resource/kb/mark-indexed`（body `{ids:[Long], collection}`，见 §8.7.1）通知本服务把对应行 `status` 置 `1`；
+  - **明确硬约束**：ai-service **不连、不写任何 MySQL 关系表（含 `resource_db`）**——呼应吴友诚 §1.4.1 的 DB-per-service 硬约束。`kb_corpus.status` 由本服务（resource-service）维护，ai 不在自己侧维护任何关系表。
+- 由此避免重复嵌入：本服务在收到 `mark-indexed` 回调后，把对应行 `status` 回写为 `1`。
+
+#### 8.7.1 回调端点：`POST /api/resource/kb/mark-indexed`（供 ai-service 向量化完成后回调）
+- **角色**：A（ADMIN）。仅 ai-service 在向量化完成后经内网 / 网关白名单回调。
+- **请求体**：`{ "ids": [Long], "collection": "String" }`（`ids` 为 `kb_corpus` 中待置位行 id；`collection` 为 Chroma 集合名，用于对账）。
+- **作用**：把 `kb_corpus` 中对应 `id` 的行 `status` 置 `1`（已向量化）。本服务写库，**ai 不碰任何关系表**。
+- **幂等**：重复回调同批 id 安全（已 `status=1` 的行保持不变）。
+- **呼应**：本端点是 ai-service 唯一的「反向通知」入口；ai 不连、不写 `resource_db`，满足 DB-per-service 硬约束。
 
 ### 8.8 质量校验（DoD）
 - 覆盖率：JavaSE 各章节均有语料（缺失章节告警）。
@@ -732,7 +741,8 @@ CREATE TABLE kb_corpus (
 ### 8.9 新增端点（ADMIN / 教师）
 | 方法 | 路径 | 说明 | 角色 |
 |------|------|------|------|
-| GET | `/api/resource/kb/corpus` | 语料列表 / 查询（含 status） | A / T |
+| GET | `/api/resource/kb/corpus` | 语料列表 / 查询（含 status），ai-service 经 `?status=0` 拉取待向量化语料 | A / T |
+| POST | `/api/resource/kb/mark-indexed` | ai-service 向量化完成后回调，把 `kb_corpus` 对应行 `status` 置 `1`（body `{ids:[Long], collection}`） | A |
 | POST | `/api/resource/kb/import` | 触发一次采集 + 清洗流水线（文件 / DB 源） | A |
 | POST | `/api/resource/kb/rebuild` | 转发 / 触发 ai-service `/api/ai/kb/rebuild` | A |
 | GET | `/api/resource/kb/stats` | 覆盖率 / 重复率 / 章节完整性统计 | A |

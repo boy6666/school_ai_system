@@ -99,6 +99,7 @@
   "suggestions":"...", "applicationAdvice":"...", "examAdvice":"...",
   "masteryRate":72, "learningRate":18, "unmasteredRate":10, "recommendTime":"每天19:00-21:00" }
 ```
+> 字段来源（见《契约对齐决议》C9）：`POST /api/learning/path/generate` 调 ai-service `/path/generate` 后，**ai 返回** `goal / targetMastery / totalHours / masteryRate / stages[]`（含 tasks 的 title/duration/status/progress）/ `suggestions / applicationAdvice / examAdvice / recommendTime`；learning-service **自算补全** `totalTasks / completedTasks / learningRate / unmasteredRate`（基于 stages 与 `study_logs` 聚合），并为每个 `tasks[].id` 生成落库 ID，最后整体返回 `LearningPathVO`。
 
 ### A.2.3 学习日志 StudyLog（看板数据源）
 | 方法 | 路径 | 角色 | 入参 | 出参 |
@@ -386,6 +387,11 @@ public interface AiServiceClient {
     @PostMapping("/path/generate")       Result<LearningPathVO> generatePath(@RequestBody AiPathRequest req);
     @PostMapping("/resource/generate")   Result<Map<String,Object>> generateResource(@RequestBody AiResourceRequest req);
 }
+// generateResource 的 AiResourceRequest 必须带 mode 字段（见《契约对齐决议》C3），按 mode 解析：
+//   mode=suggestion → 解析 {suggestions:[]}                              （profile/generate-suggestions A.2.1）
+//   mode=judge      → 解析 {score(0|1), correct, comment, explanation?}  （quiz/judge A.2.4）
+//   mode=resource   → 解析 {content, resourceType, chapter}               （默认，资源生成）
+// 结果 Map 按 mode 反序列化为对应结构，再包装成各端点出参。
 // AiChatRequest{ userInput, studentId, sessionId, profile }
 // AiChatResult{ intent, finalAnswer, profile, resources, learningPath, safetyReport,
 //               evaluationReport, resourceDir, profileComplete }
@@ -690,43 +696,27 @@ teacher-service/
 └── resources/    application.yml, mapper/*.xml
 ```
 
-### B.4.2 与 code-service 的作业-判分对接契约（★需与吴友诚对齐）
-teacher-service 提交代码题时调 `code-service`。**约定契约如下（吴友诚在 code-service 实现，路径前缀 `/api/code/**`，网关已路由）**：
+### B.4.2 与 code-service 的作业-判分对接契约（异步两段式，见《契约对齐决议》C1）
+teacher-service 提交代码题时调 `code-service`，采用**异步两段式**（提交仅拿受理号，判分结果经事件/结果端点回填）。**约定契约如下（吴友诚在 code-service 实现，路径前缀 `/api/code/**`，网关已路由）**：
 
-**请求** `POST /api/code/submit`
+**请求** `POST /api/code/submit`（HTTP 202 Accepted）
 ```json
 { "studentId": 12,
+  "assignmentId": 7,
+  "assignmentItemId": 45,
   "language": "java",
   "sourceCode": "public class Main{...}",
-  "assignmentItemId": 45,
-  "assignmentId": 7 }
+  "expectedOutput": "...",
+  "className": "Main" }
 ```
-**响应** `Result<CodeSubmissionVO>`
+**响应**（仅受理回执，**非**全量 VO，HTTP 202）
 ```json
-{ "code": 0, "data": {
-    "submissionId": 901,
-    "status": 1,                 // 0待运行 1成功 2失败 3超时
-    "stdout": "...", "stderr": "...",
-    "runTimeMs": 120,
-    "compileOk": 1, "compileMsg": "",
-    "checkstyle": { "violations": [...] },
-    "pmd": { "violations": [...] },
-    "aiSuggestion": "建议...",
-    "overallScore": 85 },
-  "message": "ok" }
+{ "submissionId": 901, "status": "pending" }   // status: pending/running/done/failed
 ```
-
-**teacher-service 落库映射**（写 `grades`）：
-```java
-grade.setRunResult(Map.of("stdout", vo.stdout, "stderr", vo.stderr,
-                          "runTimeMs", vo.runTimeMs, "status", vo.status));
-grade.setStaticReport(Map.of("compileOk", vo.compileOk, "compileMsg", vo.compileMsg,
-                              "checkstyle", vo.checkstyle, "pmd", vo.pmd));
-grade.setAiReport(Map.of("aiSuggestion", vo.aiSuggestion));
-grade.setScore(vo.overallScore);
-```
+> submit 仅返回 `{submissionId, status}` 受理回执，**不**在此同步返回 stdout/compileOk/checkstyle/pmd/aiSuggestion/overallScore 等全量报告（原"submit 同步返回 `CodeSubmissionVO` 直接落 `grades`"的错误假设已作废）。teacher-service 提交后**不读取 submit 响应落库**。
+> **采用方案 A（事件驱动，见《契约对齐决议》C1）**：判分结果由 `AssignmentGradedConsumer` 消费 `assignment.graded` 完整事件体回填 `grades`（见 B.4.5），teacher-service **不轮询**。退路 B：在 `CodeServiceClient` 新增 `GET /api/code/result/{id}`，submit 后轮询至 `status=done` 再落库（code-service 该端点返回 `{submissionId, status, stdout, runTimeMs, compileOk, checkstyle, pmd, aiSuggestion, overallScore}`）。
 > 选择题/填空题（choice/blank）：不调 code-service，本地比对 `questions.answer` 判分（或小题调 ai `/resource/generate` mode=judge）。仅 `code` 类型走 code-service。
-> 该契约是**双向约定**：吴友诚的 code-service 必须提供 `POST /api/code/submit` 且响应字段如上；陈海洋侧 `CodeServiceClient` 按此签名实现。AI 分析底层复用 ai-service `/code/analyze`（由 code-service 内部调用，teacher-service 不直接调）。
+> 该契约是**双向约定**：吴友诚的 code-service 必须提供 `POST /api/code/submit`（202 + 上述受理回执），并按 `expectedOutput/className/assignmentId` 参与判分权重与事件回填关联；陈海洋侧 `CodeServiceClient` 按此签名实现。AI 分析底层复用 ai-service `/code/analyze`（由 code-service 内部调用，teacher-service 不直接调）。
 
 ### B.4.3 跨服务 Feign 客户端
 ```java
@@ -744,10 +734,13 @@ public interface LearningServiceClient {
 }
 
 // feign/CodeServiceClient.java  → 代码判分（路径带 /api/code 前缀，与网关一致）
+// 异步两段式（见《契约对齐决议》C1）：submit 仅返回受理回执 {submissionId, status}（HTTP 202），
+// 判分结果经 AssignmentGradedConsumer 消费 assignment.graded 事件体落库（方案 A，不轮询）。
+// 退路 B 可增 GET /api/code/result/{id} 轮询至 status=done（见 B.4.2）。
 @FeignClient(name = "code-service", url = "${code.base-url:}", path = "/api/code")
 public interface CodeServiceClient {
     @PostMapping("/submit")
-    Result<CodeSubmissionVO> submit(@RequestBody CodeSubmissionRequest req);
+    Result<CodeSubmitReceiptVO> submit(@RequestBody CodeSubmissionRequest req);
 }
 
 // feign/AiServiceClient.java  → AI 助教（路径带 /api/ai 前缀，与网关一致）
@@ -756,6 +749,10 @@ public interface AiServiceClient {
     @PostMapping("/chat") Result<AiChatResult> chat(@RequestBody AiChatRequest req);
     @PostMapping("/resource/generate") Result<Map<String,Object>> generate(@RequestBody AiResourceRequest req);
 }
+// generate 的 AiResourceRequest 必须带 mode 字段（见《契约对齐决议》C3），按 mode 解析：
+//   mode=quiz        → 解析 {items:[...]}        （questions/generate B.2.2，出题草稿）
+//   mode=evaluation  → 解析 {analysis}          （ai/explain-grade B.2.6，成绩解读）
+//   mode=resource   → 解析 {content, resourceType, chapter}（默认）
 ```
 > 三个 Feign 客户端均自动套用 `common` 的 `AuthFeignInterceptor`，把当前 `AuthContext`（教师/学生身份）透传下游；下游（learning/code/ai）均从 `X-User-*` 头读取。
 
@@ -779,7 +776,25 @@ List<CompletableFuture<StudentProgressVO>> futures = studentIds.stream()
 - `assignment.published` / routing `assignment.published`：作业发布后发事件 `{assignmentId, classId, title, type, deadline}`，供前端轮询/通知（当前无独立通知服务，先落事件，前端可轮询 assignments 列表）。exchange 名 = 事件名（与 study.progress / resource.generate 风格统一，见《契约对齐决议》C12）。
 **消费**（teacher-service 作为订阅方，对齐主蓝图 §8）：
 - `study.progress`（来自 learning-service）：`StudyProgressConsumer` 接收后**更新内存/Redis 班级看板缓存**（`teacher:class:{classId}:dashboard`），使教师看板近实时，避免每次重算聚合。
-- `assignment.graded`（来自 code-service）：`AssignmentGradedConsumer` 接收后把判分结果回写 `grades`（status→1，score 填充），并触发教师端"待复核"提醒计数。
+- `assignment.graded`（来自 code-service）：`AssignmentGradedConsumer` **事件驱动**消费（方案 A，见《契约对齐决议》C1）。code-service 判分完成后发该事件，**payload 必须携带完整报告体**（不只 overallScore/aiSuggestion）：
+  `{ assignmentId, assignmentItemId, studentId, submissionId, status, runPassed, compileOk, stdout, runTimeMs, checkstyle, pmd, aiSuggestion, overallScore }`。
+  据此回写 `grades` 的 `run_result`/`static_report`/`ai_report`/`score` 列（status→1 已批），并触发教师端"待复核"提醒计数：
+  ```java
+  @RabbitListener(queues = "teacher.assignment.graded.queue")
+  public void onAssignmentGraded(AssignmentGradedEvent e) {
+      Grade grade = gradeMapper.selectByStuItem(e.getAssignmentId(), e.getStudentId(), e.getAssignmentItemId());
+      if (grade == null) return;
+      grade.setRunResult(Map.of("stdout", e.getStdout(), "runTimeMs", e.getRunTimeMs(),
+                                "status", e.getStatus(), "runPassed", e.getRunPassed()));
+      grade.setStaticReport(Map.of("compileOk", e.getCompileOk(), "checkstyle", e.getCheckstyle(), "pmd", e.getPmd()));
+      grade.setAiReport(Map.of("aiSuggestion", e.getAiSuggestion()));
+      grade.setScore(e.getOverallScore());
+      grade.setStatus(1);
+      grade.setGradedAt(LocalDateTime.now());
+      gradeMapper.updateById(grade);
+      // 触发教师端"待复核"提醒计数
+  }
+  ```
 ```java
 @RabbitListener(queues = "teacher.study.progress.queue")
 public void onStudyProgress(StudyProgressEvent e) {

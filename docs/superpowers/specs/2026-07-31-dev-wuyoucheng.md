@@ -60,15 +60,17 @@
 
 所有端点统一包 `common.Result` 风格。**网关鉴权已在前置完成**，ai-service 收到的请求里已带网关注入的 `X-User-Id`/`X-User-Roles`（仅用于审计/限流，不用于业务鉴权，因为 AI 不持有用户库）。
 
+> **契约字段命名（C4 / C20）**：本文契约（**wire JSON 与 Java DTO**）字段统一为 **camelCase**（如 `userInput` / `studentId` / `sessionId` / `sourceCode` / `finalAnswer` / `learningPath` / `resourceDir` / `profileComplete` / `targetMastery` / `masteryRate` / `knowledgeBase` 等）；Python 源码块（`api.py` 内部变量）可保留 snake（Python 惯例），但 **`api.py` 序列化须输出 camelCase（与 Java/前端一致）**。画像 `profile` 对象字段同样 camelCase，且含 **`course`** 字段（camelCase）——三跳一致透传（learning/resource → ai → 回传），ai 用于 **JavaSE 课程内章节定位**。
+
 ### 1.3.1 `POST /api/ai/chat`
 
 **请求**
 ```json
 {
-  "user_input": "什么是 Java 的多态？",
-  "student_id": "1001",
-  "session_id": "sess_abc",
-  "profile": { "course": "JavaSE", "topic": "面向对象", "weaknesses": [], "knowledge_base": "零基础" }
+  "userInput": "什么是 Java 的多态？",
+  "studentId": "1001",
+  "sessionId": "sess_abc",
+  "profile": { "course": "JavaSE", "topic": "面向对象", "weaknesses": [], "knowledgeBase": "零基础" }
 }
 ```
 
@@ -79,14 +81,14 @@
   "message": "ok",
   "data": {
     "intent": "explain",
-    "final_answer": "多态是指……（注入 RAG 上下文后的讲解）",
-    "profile": { "topic": "面向对象", "_onboarding_phase": "done" },
+    "finalAnswer": "多态是指……（注入 RAG 上下文后的讲解）",
+    "profile": { "topic": "面向对象", "course": "JavaSE", "_onboarding_phase": "done" },
     "resources": null,
-    "learning_path": null,
+    "learningPath": null,
     "safety_report": { "passed": true },
     "evaluation_report": { "mastery": 72 },
-    "resource_dir": null,
-    "profile_complete": true
+    "resourceDir": null,
+    "profileComplete": true
   }
 }
 ```
@@ -100,12 +102,16 @@
   "topic": "继承与多态",
   "resourceType": "mindmap",
   "level": "basic",
+  "mode": "resource",
   "prompt": "为薄弱学生生成思维导图"
 }
 ```
-> 说明：`resourceType` 取值沿用现有 `api.py` 的 `role_prompts` 键集合；新增的 `level` 映射到原 `difficulty`（`easy`→basic）。陈嘉成(resource-service)调用时传 `student_id/chapter/topic/resourceType/level`，由 ai-service 内部拼 prompt（保持与现有 `AiClient.buildResourcePrompt` 一致的角色 prompt）。
+> 说明：`resourceType` 取值沿用现有 `api.py` 的 `role_prompts` 键集合；新增的 `level` 映射到原 `difficulty`（`easy`→basic）。陈嘉成(resource-service)调用时传 `studentId/chapter/topic/resourceType/level`，由 ai-service 内部拼 prompt（保持与现有 `AiClient.buildResourcePrompt` 一致的角色 prompt）。
+> **`mode` 参数（见 C3）**：默认 `"resource"`，兼容现有 mindmap/quiz/reading/code/learning_path 生成；用于复用同一端点承载多类语义，`suggestion/judge/evaluation` 归 `mode` 轴而非 `resourceType` 取值（见 C19）。响应结构随 `mode` 不同而不同（见下）。
 
-**响应（200）**
+**响应（200）** —— 结构随 `mode` 不同而不同：
+
+- **`mode=resource`（默认）**：`{content, resourceType, chapter}`（现状不变）：
 ```json
 {
   "code": 0,
@@ -119,11 +125,28 @@
 ```
 > `content` 一律为**字符串**（可能是 JSON 文本或 Markdown），resource-service 落库 `resources.content` 后由前端按 `type` 解析。
 
+- **`mode=judge`**（测验判分 / 作业判分）：`{score(0|1), correct, comment, explanation?}`：
+```json
+{ "code": 0, "message": "ok", "data": { "score": 1, "correct": true, "comment": "答对要点……", "explanation": "解释……" } }
+```
+- **`mode=suggestion`**（画像/学习建议）：`{suggestions:[]}`：
+```json
+{ "code": 0, "message": "ok", "data": { "suggestions": ["建议巩固……", "可尝试……"] } }
+```
+- **`mode=quiz`**（教师出题草稿）：`{items:[...]}`：
+```json
+{ "code": 0, "message": "ok", "data": { "items": [ { "stem": "……", "options": ["A.…","B.…"], "answer": "A" } ] } }
+```
+- **`mode=evaluation`**（成绩解读）：`{analysis}`：
+```json
+{ "code": 0, "message": "ok", "data": { "analysis": "本次成绩解读……" } }
+```
+
 ### 1.3.3 `POST /api/ai/path/generate`
 
 **请求**
 ```json
-{ "student_id": "1001", "prompt": "根据画像规划 4 周学习路径", "profile": { "course": "JavaSE", "weaknesses": ["多线程"] } }
+{ "studentId": "1001", "prompt": "根据画像规划 4 周学习路径", "profile": { "course": "JavaSE", "weaknesses": ["多线程"] } }
 ```
 **响应（200）** —— 直接返回路径 JSON（保持现有行为，外层再包 `Result`）：
 ```json
@@ -136,10 +159,15 @@
     "masteryRate": 50,
     "stages": [
       { "name": "本周路径", "tasks": [ { "title": "语法与基础练习", "duration": 60, "status": 0, "progress": 0 } ] }
-    ]
+    ],
+    "suggestions": ["建议每天复习 30 分钟", "多线程建议结合案例练习"],
+    "applicationAdvice": "可结合小型项目实践巩固面向对象与多线程",
+    "examAdvice": "重点复习继承、多态与异常章节",
+    "recommendTime": "4 周"
   }
 }
 ```
+> **字段分工（见 C9）**：`suggestions` / `applicationAdvice` / `examAdvice` / `recommendTime` 由 **ai 负责**（基于画像+路径生成）。其余聚合字段 `totalTasks` / `completedTasks` / `learningRate` / `unmasteredRate` / `tasks[].id` 由 **learning-service 自算/落库时生成**，不在此 ai 响应中。
 
 ### 1.3.4 `POST /api/ai/code/analyze` ★仅供内网（code-service 经 Feign 调用）
 
@@ -147,10 +175,10 @@
 ```json
 {
   "language": "java",
-  "source_code": "public class Main { public static void main(String[] a){ System.out.println(\"hi\"); } }",
+  "sourceCode": "public class Main { public static void main(String[] a){ System.out.println(\"hi\"); } }",
   "context": {
     "assignment_item_id": 12,
-    "student_id": "1001",
+    "studentId": "1001",
     "compile_ok": 1,
     "checkstyle_errors": 0,
     "pmd_violations": 1,
@@ -178,12 +206,23 @@
 
 ### 1.3.5 `POST /api/ai/kb/rebuild` ★管理端治理触发
 
-**请求**：`{}` 或 `{ "collection": "java_notes", "force": true }`
+**请求**：`{}` 或 `{ "collection": "java_notes", "force": true }`（入参不变）
 **响应（202 异步 / 或 200 + 进度）**
 ```json
 { "code": 0, "message": "ok", "data": { "task_id": "rebuild_20260731", "status": "started", "docs_indexed": 0 } }
 ```
 > 重建为耗时操作，建议后台线程执行，接口立即返回 `task_id`；管理端轮询 `/api/ai/kb/status/{task_id}` 取进度。
+
+**语义（见 C6）**：`/kb/rebuild` 不再重建本地 `java_notes` md，改为「触发从 resource-service 拉取 `kb_corpus`(status=0) → embed → 写 Chroma(collection) → 回调 `mark-indexed`」：
+- **语料权威源 = `kb_corpus`**（resource-service 清洗流水线产出）；ai **不连、不写任何 MySQL 关系表**（含 `resource_db`），严守 DB-per-service 硬约束。
+- ai 经 resource-service 暴露的 `GET /api/resource/kb/corpus?status=0` 拉取待向量化语料（出站客户端见 §1.3.5.1）。
+- embed → 写 `Chroma(collection)` → 完成后**回调** `POST /api/resource/kb/mark-indexed`（body `{ids:[], collection}`），由 resource-service 把对应 `kb_corpus` 行 `status` 置 1。
+- **ai 不持有任何关系表，不写 `resource_db`**；本地 `java_notes` md 仅作开发期种子/兜底，不进生产向量化主链路。
+
+#### 1.3.5.1 resource 出站客户端（ai → resource-service，Feign/HTTP）
+ai 新增一个出站客户端（Java 侧 `FeignClient`，或 Python 侧经 `requests`/service 名 `resource-service` 互访），封装：
+- `GET /api/resource/kb/corpus?status=0`：拉取待向量化语料（`kb_corpus` 行，status=0）。
+- `POST /api/resource/kb/mark-indexed`：body `{ids:[], collection}`，通知 resource-service 将对应 `kb_corpus` 行 `status` 置 1。
 
 ### 1.3.6 `GET /api/ai/health`
 ```json
@@ -448,6 +487,7 @@ CREATE TABLE code_check_reports (
 ```json
 {
   "studentId": 1001,
+  "assignmentId": 5,
   "assignmentItemId": 12,
   "language": "java",
   "sourceCode": "public class Main{ public static void main(String[] a){System.out.println(\"hi\");} }",
@@ -460,6 +500,7 @@ CREATE TABLE code_check_reports (
 { "code": 0, "message": "ok", "data": { "submissionId": 1024, "status": 0 } }
 ```
 > 判分在后台线程/Worker 执行。前端轮询 `GET /api/code/result/{id}`。
+> **请求体最终形态（见 C1）**：`{studentId, assignmentId, assignmentItemId, language, sourceCode, expectedOutput, className}` —— code 接收 `assignmentId` 用于事件回填关联，以 `expectedOutput` 参与判分权重；`className` 用于编译/运行定位入口类。
 
 ### 2.3.2 `GET /api/code/result/{id}`
 ```json
@@ -468,21 +509,18 @@ CREATE TABLE code_check_reports (
   "data": {
     "submissionId": 1024,
     "status": 1,
-    "language": "java",
-    "stdout": "hi\n", "stderr": "",
+    "stdout": "hi\n",
     "runTimeMs": 42,
-    "report": {
-      "compileOk": 1, "compileMsg": "",
-      "checkstyle": { "errorCount": 0, "warningCount": 1,
-        "violations": [ { "file":"Main.java","line":1,"severity":"warning","message":"缺少 Javadoc","source":"JavadocMethod","rule":"JavadocMethod" } ] },
-      "pmd": { "violationCount": 0, "violations": [] },
-      "aiSuggestion": "整体良好，建议补充方法注释。",
-      "overallScore": 96,
-      "scoreDetail": { "compile":40, "checkstyle":-1, "pmd":0, "run":57 }
-    }
+    "compileOk": 1,
+    "checkstyle": { "errorCount": 0, "warningCount": 1,
+      "violations": [ { "file":"Main.java","line":1,"severity":"warning","message":"缺少 Javadoc","source":"JavadocMethod","rule":"JavadocMethod" } ] },
+    "pmd": { "violationCount": 0, "violations": [] },
+    "aiSuggestion": "整体良好，建议补充方法注释。",
+    "overallScore": 96
   }
 }
 ```
+> **响应字段与 `grades` 列一一对应（见 C1）**：`stdout`/`runTimeMs`/`compileOk` → `run_result`；`checkstyle`/`pmd` → `static_report`；`aiSuggestion` → `ai_report`；`overallScore` → `score`；`status` 为判分状态。内部 `scoreDetail` 权重明细不再外暴露（判分逻辑见 §2.4.6）。
 
 ### 2.3.3 `GET /api/code/submissions`
 Query：`?studentId=1001&assignmentItemId=12&page=1&pageSize=20`
@@ -648,11 +686,15 @@ teacher-service 发布代码作业(assignment_items.type=code)
        grades.ai_report=ai_suggestion, grades.score=overall_score
    → 教师在 teacher 端"批改/复核"页可微调 score（人工覆盖）
 ```
-> code-service **只写 code_db**；成绩归属 teacher_db.grades，由 teacher 消费事件写入（跨服务最终一致，避免分布式事务，见 §4.3）。`assignment.graded` 事件体：
+> code-service **只写 code_db**；成绩归属 teacher_db.grades，由 teacher 消费事件写入（跨服务最终一致，避免分布式事务，见 §4.3）。`assignment.graded` 事件体（**必须携带完整报告体，不只 overallScore/aiSuggestion，见 C1**）：
 ```json
 { "assignmentId":5, "assignmentItemId":12, "studentId":1001,
-  "submissionId":1024, "overallScore":96, "status":"graded",
-  "runPassed":true, "aiSuggestion":"整体良好" }
+  "submissionId":1024, "status":"graded",
+  "runPassed":true, "compileOk":1,
+  "stdout":"hi\n", "runTimeMs":42,
+  "checkstyle":{ "errorCount":0, "warningCount":1, "violations":[ { "file":"Main.java","line":1,"severity":"warning","message":"缺少 Javadoc","source":"JavadocMethod","rule":"JavadocMethod" } ] },
+  "pmd":{ "violationCount":0, "violations":[] },
+  "aiSuggestion":"整体良好", "overallScore":96 }
 ```
 
 ## 2.5 测试
@@ -757,7 +799,7 @@ sleep 30
 TOKEN=$(curl -s -XPOST localhost:8080/api/auth/login -H 'Content-Type: application/json' \
         -d '{"username":"teststudent","password":"student123"}' | jq -r .data.token)
 curl -s localhost:8080/api/ai/chat -H "Authorization: Bearer $TOKEN" \
-     -H 'Content-Type: application/json' -d '{"user_input":"什么是多态","student_id":"1001"}'
+     -H 'Content-Type: application/json' -d '{"userInput":"什么是多态","studentId":"1001"}'
 curl -s -XPOST localhost:8080/api/code/submit -H "Authorization: Bearer $TOKEN" \
      -H 'Content-Type: application/json' \
      -d '{"studentId":1001,"language":"java","sourceCode":"public class Main{public static void main(String[]a){System.out.println(\"hi\");}}","expectedOutput":"hi\n"}'
