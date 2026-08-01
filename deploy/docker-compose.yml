@@ -132,6 +132,7 @@ services:
       MQ_USER: ${MQ_USER:-edu_agent}
       MQ_PASSWORD: ${MQ_PASSWORD:-edu_agent}
       JWT_SECRET: ${JWT_SECRET:-please-change}
+      AUTH_BOOTSTRAP_ADMIN_PASSWORD: ${AUTH_BOOTSTRAP_ADMIN_PASSWORD:-please-change-admin}
       JAVA_TOOL_OPTIONS: ${JAVA_TOOL_OPTIONS:-}
     depends_on:
       - nacos

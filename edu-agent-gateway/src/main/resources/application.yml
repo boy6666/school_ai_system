@@ -60,7 +60,7 @@ spring:
 # 推送 edu-agent-gateway.yaml 后，Nacos 中的值会覆盖此处（见 deploy/nacos-config/）。
 gateway:
   auth:
-    whitelist: /api/edu-agent-auth/login,/api/edu-agent-auth/register,/actuator
+    whitelist: /api/edu-agent-auth/login,/api/edu-agent-auth/register,/api/edu-agent-auth/refresh,/actuator
 
 management:
   endpoints:
@@ -69,5 +69,5 @@ management:
         include: health,info
 
 # 网关鉴权白名单（免 JWT 前缀）已在 Nacos 配置中心：data-id=edu-agent-gateway.yaml, group=edu-agent
-#   gateway.auth.whitelist: /api/edu-agent-auth/login,/api/edu-agent-auth/register,/actuator
+#   gateway.auth.whitelist: /api/edu-agent-auth/login,/api/edu-agent-auth/register,/api/edu-agent-auth/refresh,/actuator
 # SkyWalking：运行时追加 -javaagent:/opt/skywalking/agent/skywalking-agent.jar -Dskywalking.agent.service_name=edu-agent-gateway
