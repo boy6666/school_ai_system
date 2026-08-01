@@ -4,30 +4,25 @@ server:
 spring:
   application:
     name: edu-agent-resource
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
   cloud:
     nacos:
+      username: ${NACOS_USERNAME:nacos}
+      password: ${NACOS_PASSWORD:nacos}
       discovery:
-        server-addr: 127.0.0.1:8848
-        namespace: edu-agent-dev
-        group: resource-group
+        server-addr: ${NACOS_ADDR:127.0.0.1:8848}
+        namespace: ${NACOS_NAMESPACE:edu-agent-dev}
+        group: ${NACOS_GROUP_RESOURCE:resource-group}
       config:
-        server-addr: 127.0.0.1:8848
-        namespace: edu-agent-dev
-        group: resource-group
+        server-addr: ${NACOS_ADDR:127.0.0.1:8848}
+        namespace: ${NACOS_NAMESPACE:edu-agent-dev}
+        group: ${NACOS_GROUP_RESOURCE:resource-group}
         file-extension: yaml
-  datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://127.0.0.1:3306/resource_db?useSSL=false&serverTimezone=Asia/Shanghai
-    username: ${DB_USER:root}
-    password: ${DB_PASSWORD:root}
-
-mybatis-plus:
-  mapper-locations: classpath*:/mapper/**/*.xml
-  global-config:
-    db-config:
-      logic-delete-field: deleted
-      logic-delete-value: 1
-      logic-not-delete-value: 0
+        refresh-enabled: true
+  config:
+    import:
+      - optional:nacos:${spring.application.name}.${spring.cloud.nacos.config.file-extension}
 
 management:
   endpoints:
@@ -35,4 +30,9 @@ management:
       exposure:
         include: health,info
 
+# ── 本服务的数据源 / RabbitMQ / MyBatis 配置统一放在 Nacos 配置中心 ──
+#   data-id   = edu-agent-resource.yaml
+#   namespace = edu-agent-dev（本地 Win） / edu-agent-formal（Linux 联调）
+#   group     = resource-group
+#   初始化推送：deploy/push-nacos-config.py（须先启动 Nacos）
 # SkyWalking：运行时追加 -javaagent:/opt/skywalking/agent/skywalking-agent.jar -Dskywalking.agent.service_name=edu-agent-resource

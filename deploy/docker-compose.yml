@@ -1,0 +1,330 @@
+# ============================================================
+# EduAgent 联调 / 生产环境编排（Linux）
+# 用法（在 deploy/ 目录）：
+#   cp .env.example .env
+#   docker compose up -d mysql nacos redis rabbitmq chroma   # 1) 起基础设施
+#   # 等 Nacos healthy 后，推送各服务配置到配置中心：
+#   NACOS_ADDR=127.0.0.1:8848 python3 push-nacos-config.py
+#   docker compose up -d                                     # 2) 起全部服务
+# 可选 profile：
+#   --profile skywalking   启用 APM（elasticsearch + oap + ui，端口 8088）
+#   --profile web          启用前端（zzy 8.15 后交付，端口 80）
+#
+# 设计要点：
+#   - DB-per-service：1 个 MySQL 容器 + 5 个逻辑库（auth/learning/resource/teacher/code_db），
+#     各服务独立 datasource，禁止跨库外键。库由 init-microservice.sql 创建，表由各自迁移脚本建。
+#   - Nacos 同时做服务发现 + 配置中心：namespace 区分环境（edu-agent-dev / edu-agent-formal）。
+#   - 容器间通信用内部服务名（nacos/mysql/rabbitmq/chroma/ai/gateway/web）。
+# ============================================================
+
+name: edu-agent
+
+networks:
+  edu-agent-net:
+    driver: bridge
+
+volumes:
+  mysql-data:
+  es-data:
+
+services:
+  # ───────────── 基础设施 ─────────────
+  mysql:
+    image: mysql:8.0
+    container_name: edu-agent-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-edu_agent_root}
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./database/init-microservice.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD","mysqladmin","ping","-h","localhost","-p${MYSQL_ROOT_PASSWORD:-edu_agent_root}"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    networks: [edu-agent-net]
+
+  nacos:
+    image: nacos/nacos-server:v2.3.2
+    container_name: edu-agent-nacos
+    environment:
+      MODE: standalone
+      NACOS_AUTH_ENABLE: "false"
+      JVM_XMS: 512m
+      JVM_XMX: 512m
+    ports:
+      - "8848:8848"
+    healthcheck:
+      test: ["CMD","curl","-f","http://localhost:8848/nacos/"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+    networks: [edu-agent-net]
+
+  redis:
+    image: redis:7
+    container_name: edu-agent-redis
+    ports:
+      - "6379:6379"
+    networks: [edu-agent-net]
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: edu-agent-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks: [edu-agent-net]
+
+  chroma:
+    image: ghcr.io/chroma-core/chroma:0.5.5
+    container_name: edu-agent-chroma
+    ports:
+      - "8000:8000"
+    networks: [edu-agent-net]
+
+  # ───────────── 网关 ─────────────
+  gateway:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+      args:
+        MODULE: edu-agent-gateway
+    container_name: edu-agent-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: formal
+      NACOS_ADDR: nacos:8848
+      NACOS_NAMESPACE: ${NACOS_NAMESPACE:-edu-agent-formal}
+      NACOS_GROUP: ${NACOS_GROUP:-edu-agent}
+      NACOS_USERNAME: ${NACOS_USERNAME:-nacos}
+      NACOS_PASSWORD: ${NACOS_PASSWORD:-nacos}
+      AI_HOST: ai
+    depends_on:
+      - nacos
+    restart: unless-stopped
+    networks: [edu-agent-net]
+
+  # ───────────── 微服务（6 个）─────────────
+  auth:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+      args:
+        MODULE: edu-agent-auth
+    container_name: edu-agent-auth
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_PROFILES_ACTIVE: formal
+      NACOS_ADDR: nacos:8848
+      NACOS_NAMESPACE: ${NACOS_NAMESPACE:-edu-agent-formal}
+      NACOS_GROUP: ${NACOS_GROUP:-edu-agent}
+      NACOS_USERNAME: ${NACOS_USERNAME:-nacos}
+      NACOS_PASSWORD: ${NACOS_PASSWORD:-nacos}
+      DB_HOST: mysql
+      DB_USER: ${DB_USER:-edu_agent}
+      DB_PASSWORD: ${DB_PASSWORD:-edu_agent}
+      MQ_HOST: rabbitmq
+      MQ_USER: ${MQ_USER:-edu_agent}
+      MQ_PASSWORD: ${MQ_PASSWORD:-edu_agent}
+      JWT_SECRET: ${JWT_SECRET:-please-change}
+      JAVA_TOOL_OPTIONS: ${JAVA_TOOL_OPTIONS:-}
+    depends_on:
+      - nacos
+      - mysql
+    restart: unless-stopped
+    networks: [edu-agent-net]
+
+  learning:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+      args:
+        MODULE: edu-agent-learning
+    container_name: edu-agent-learning
+    ports:
+      - "8082:8082"
+    environment:
+      SPRING_PROFILES_ACTIVE: formal
+      NACOS_ADDR: nacos:8848
+      NACOS_NAMESPACE: ${NACOS_NAMESPACE:-edu-agent-formal}
+      NACOS_GROUP: ${NACOS_GROUP:-edu-agent}
+      NACOS_USERNAME: ${NACOS_USERNAME:-nacos}
+      NACOS_PASSWORD: ${NACOS_PASSWORD:-nacos}
+      DB_HOST: mysql
+      DB_USER: ${DB_USER:-edu_agent}
+      DB_PASSWORD: ${DB_PASSWORD:-edu_agent}
+      MQ_HOST: rabbitmq
+      MQ_USER: ${MQ_USER:-edu_agent}
+      MQ_PASSWORD: ${MQ_PASSWORD:-edu_agent}
+      JAVA_TOOL_OPTIONS: ${JAVA_TOOL_OPTIONS:-}
+    depends_on:
+      - nacos
+      - mysql
+    restart: unless-stopped
+    networks: [edu-agent-net]
+
+  resource:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+      args:
+        MODULE: edu-agent-resource
+    container_name: edu-agent-resource
+    ports:
+      - "8083:8083"
+    environment:
+      SPRING_PROFILES_ACTIVE: formal
+      NACOS_ADDR: nacos:8848
+      NACOS_NAMESPACE: ${NACOS_NAMESPACE:-edu-agent-formal}
+      NACOS_GROUP: ${NACOS_GROUP_RESOURCE:-resource-group}
+      NACOS_USERNAME: ${NACOS_USERNAME:-nacos}
+      NACOS_PASSWORD: ${NACOS_PASSWORD:-nacos}
+      DB_HOST: mysql
+      DB_USER: ${DB_USER:-edu_agent}
+      DB_PASSWORD: ${DB_PASSWORD:-edu_agent}
+      MQ_HOST: rabbitmq
+      MQ_USER: ${MQ_USER:-edu_agent}
+      MQ_PASSWORD: ${MQ_PASSWORD:-edu_agent}
+      JAVA_TOOL_OPTIONS: ${JAVA_TOOL_OPTIONS:-}
+    depends_on:
+      - nacos
+      - mysql
+    restart: unless-stopped
+    networks: [edu-agent-net]
+
+  teacher:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+      args:
+        MODULE: edu-agent-teacher
+    container_name: edu-agent-teacher
+    ports:
+      - "8084:8084"
+    environment:
+      SPRING_PROFILES_ACTIVE: formal
+      NACOS_ADDR: nacos:8848
+      NACOS_NAMESPACE: ${NACOS_NAMESPACE:-edu-agent-formal}
+      NACOS_GROUP: ${NACOS_GROUP:-edu-agent}
+      NACOS_USERNAME: ${NACOS_USERNAME:-nacos}
+      NACOS_PASSWORD: ${NACOS_PASSWORD:-nacos}
+      DB_HOST: mysql
+      DB_USER: ${DB_USER:-edu_agent}
+      DB_PASSWORD: ${DB_PASSWORD:-edu_agent}
+      MQ_HOST: rabbitmq
+      MQ_USER: ${MQ_USER:-edu_agent}
+      MQ_PASSWORD: ${MQ_PASSWORD:-edu_agent}
+      JAVA_TOOL_OPTIONS: ${JAVA_TOOL_OPTIONS:-}
+    depends_on:
+      - nacos
+      - mysql
+    restart: unless-stopped
+    networks: [edu-agent-net]
+
+  code:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+      args:
+        MODULE: edu-agent-code
+    container_name: edu-agent-code
+    ports:
+      - "8085:8085"
+    environment:
+      SPRING_PROFILES_ACTIVE: formal
+      NACOS_ADDR: nacos:8848
+      NACOS_NAMESPACE: ${NACOS_NAMESPACE:-edu-agent-formal}
+      NACOS_GROUP: ${NACOS_GROUP:-edu-agent}
+      NACOS_USERNAME: ${NACOS_USERNAME:-nacos}
+      NACOS_PASSWORD: ${NACOS_PASSWORD:-nacos}
+      DB_HOST: mysql
+      DB_USER: ${DB_USER:-edu_agent}
+      DB_PASSWORD: ${DB_PASSWORD:-edu_agent}
+      MQ_HOST: rabbitmq
+      MQ_USER: ${MQ_USER:-edu_agent}
+      MQ_PASSWORD: ${MQ_PASSWORD:-edu_agent}
+      JAVA_TOOL_OPTIONS: ${JAVA_TOOL_OPTIONS:-}
+    depends_on:
+      - nacos
+      - mysql
+    restart: unless-stopped
+    networks: [edu-agent-net]
+
+  # ───────────── AI（Python/FastAPI）─────────────
+  ai:
+    build:
+      context: ../edu-agent-ai
+      dockerfile: Dockerfile
+    container_name: edu-agent-ai
+    ports:
+      - "8001:8001"
+    environment:
+      USE_MOCK_LLM: "1"
+      CHROMA_HOST: chroma
+      CHROMA_PORT: "8000"
+    depends_on:
+      - chroma
+    restart: unless-stopped
+    networks: [edu-agent-net]
+
+  # ───────────── 前端（profile: web，zzy 8.15 后）─────────────
+  web:
+    build:
+      context: ../edu-agent-web
+      dockerfile: Dockerfile
+    container_name: edu-agent-web
+    ports:
+      - "80:80"
+    depends_on:
+      - gateway
+      - ai
+    restart: unless-stopped
+    networks: [edu-agent-net]
+    profiles: ["web"]
+
+  # ───────────── APM：SkyWalking（profile: skywalking）─────────────
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.18
+    container_name: edu-agent-elasticsearch
+    environment:
+      discovery.type: single-node
+      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+      xpack.security.enabled: "false"
+    volumes:
+      - es-data:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    networks: [edu-agent-net]
+    profiles: ["skywalking"]
+
+  skywalking-oap:
+    image: apache/skywalking-oap-server:9.7.0
+    container_name: edu-agent-skywalking-oap
+    depends_on:
+      - elasticsearch
+    environment:
+      SW_STORAGE: elasticsearch
+      SW_STORAGE_ES_CLUSTER_NODES: ${SW_STORAGE_ES_CLUSTER_NODES:-http://elasticsearch:9200}
+    ports:
+      - "11800:11800"
+      - "12800:12800"
+    networks: [edu-agent-net]
+    profiles: ["skywalking"]
+
+  skywalking-ui:
+    image: apache/skywalking-ui:9.7.0
+    container_name: edu-agent-skywalking-ui
+    depends_on:
+      - skywalking-oap
+    environment:
+      SW_OAP_ADDRESS: http://skywalking-oap:12800
+    ports:
+      - "8088:8080"
+    networks: [edu-agent-net]
+    profiles: ["skywalking"]

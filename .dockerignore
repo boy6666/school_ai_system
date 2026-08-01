@@ -1,0 +1,20 @@
+# 构建上下文为仓库根；排除无关/大文件以加速镜像构建并减小上下文
+.git
+**/target
+**/node_modules
+**/.venv
+**/__pycache__
+**/.pytest_cache
+**/.idea
+**/.vscode
+**/.history
+**/.agents
+**/dist
+*.zip
+**/*.mp4
+**/~$*
+**/.env
+**/.env.example
+deploy
+tmp
+**/*.log
