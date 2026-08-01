@@ -4,6 +4,11 @@ spring:
     url: jdbc:mysql://${DB_HOST:127.0.0.1}:3306/code_db?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8&allowPublicKeyRetrieval=true
     username: ${DB_USER:root}
     password: ${DB_PASSWORD:root}
+  # 启动时按 schema.sql 自动建表（幂等，IF NOT EXISTS），免去手动初始化 code_db
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:schema.sql
   rabbitmq:
     host: ${MQ_HOST:127.0.0.1}
     port: 5672
