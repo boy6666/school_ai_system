@@ -59,7 +59,13 @@ public class AuthGlobalFilter implements GlobalFilter, Ordered {
             return unauthorized(exchange);
         }
 
+        // 安全要点（p0 §5.3/§6.3）：先剥离入站自带的 X-User-* 头，杜绝客户端伪造身份；
+        // 下游只信任网关解析 JWT 后在此重新注入的值。
         ServerHttpRequest mutated = exchange.getRequest().mutate()
+                .headers(headers -> {
+                    headers.remove(ServiceConstants.HEADER_USER_ID);
+                    headers.remove(ServiceConstants.HEADER_USER_ROLES);
+                })
                 .header(ServiceConstants.HEADER_USER_ID, userId)
                 .header(ServiceConstants.HEADER_USER_ROLES, roles)
                 .build();

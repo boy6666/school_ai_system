@@ -56,6 +56,12 @@ spring:
     import:
       - optional:nacos:${spring.application.name}.${spring.cloud.nacos.config.file-extension}
 
+# 网关鉴权白名单本地兜底：Nacos 未推送配置时也能放行登录/注册/健康检查。
+# 推送 edu-agent-gateway.yaml 后，Nacos 中的值会覆盖此处（见 deploy/nacos-config/）。
+gateway:
+  auth:
+    whitelist: /api/edu-agent-auth/login,/api/edu-agent-auth/register,/actuator
+
 management:
   endpoints:
     web:
