@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
@@ -21,6 +22,7 @@ import org.springframework.stereotype.Component;
  * 整个流程幂等（已存在即跳过），反复重启不会重复插数据，可安全用于生产启动。
  */
 @Component
+@DependsOn("flywayInitializer")
 @RequiredArgsConstructor
 public class DataInitializer implements ApplicationRunner {
 

@@ -1,4 +1,5 @@
--- code 服务表结构（幂等，可重复执行）。由 Spring sql.init 在启动时自动建表。
+-- code 服务建表（Flyway 版本化迁移，仅首次执行一次，之后由 flyway_schema_history 记录）
+-- IF NOT EXISTS 仅用于兼容本地已手动执行过 schema.sql 的旧库；生产全新库会正常建表。
 
 CREATE TABLE IF NOT EXISTS `code_exercises` (
     `id`          BIGINT       NOT NULL AUTO_INCREMENT PRIMARY KEY,

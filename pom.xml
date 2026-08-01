@@ -97,6 +97,21 @@
         </dependencies>
     </dependencyManagement>
 
+    <dependencies>
+        <!-- 数据库迁移：所有服务统一用 Flyway 管理表结构演进。
+             版本化迁移脚本放各服务 src/main/resources/db/migration/（V1__xxx.sql、V2__xxx.sql…），
+             启动自动按序执行且仅执行一次，改表=新增脚本，不动旧脚本。
+             版本由 spring-boot-dependencies(3.2.5 → Flyway 9.22.3) 统一管理，无需写版本号。 -->
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-mysql</artifactId>
+        </dependency>
+    </dependencies>
+
     <build>
         <pluginManagement>
             <plugins>
