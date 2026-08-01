@@ -4,6 +4,7 @@ spring:
     url: jdbc:mysql://${DB_HOST:127.0.0.1}:3306/resource_db?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8&allowPublicKeyRetrieval=true
     username: ${DB_USER:root}
     password: ${DB_PASSWORD:root}
+  # 表结构由 Flyway 版本化迁移自动管理（脚本见 edu-agent-resource/src/main/resources/db/migration/），无需手动建表
   rabbitmq:
     host: ${MQ_HOST:127.0.0.1}
     port: 5672
