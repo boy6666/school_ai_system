@@ -31,5 +31,13 @@
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
         </dependency>
+        <!-- 仅编译期需要 Servlet API：AuthContextFilter 是 servlet 过滤器。
+             用 provided 作用域，不向消费者（含 WebFlux 网关）传递；网关靠
+             @ConditionalOnWebApplication(SERVLET) 跳过该过滤器。 -->
+        <dependency>
+            <groupId>jakarta.servlet</groupId>
+            <artifactId>jakarta.servlet-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
     </dependencies>
 </project>
