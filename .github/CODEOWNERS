@@ -1,0 +1,18 @@
+# CODEOWNERS —— 模块责任人与自动派审
+# 作用：PR 改动到对应目录时，GitHub 自动请求下方负责人 review。
+# 分支保护建议在 GitHub 设置：feature/microservice 需 PR + 至少 1 审批 + CI 绿。
+
+# 共享契约层：架构（吴友诚 / boy6666）必审，任何人改动都需其 review
+/edu-agent-common/        @boy6666
+/edu-agent-gateway/       @boy6666
+
+# 后端服务按负责人
+/edu-agent-auth/          @boy6666
+/edu-agent-code/          @boy6666
+/edu-agent-ai/            @boy6666
+/edu-agent-resource/      @Reverie999
+/edu-agent-learning/      @baixiong157-creator
+/edu-agent-teacher/       @baixiong157-creator
+
+# 前端（Vue3 三端）
+/edu-agent-web/           @bianjiabobohu916-cloud
