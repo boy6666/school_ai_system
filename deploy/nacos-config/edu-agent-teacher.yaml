@@ -18,3 +18,17 @@ mybatis-plus:
       logic-delete-field: deleted
       logic-delete-value: 1
       logic-not-delete-value: 0
+
+# 健康检查暴露：/actuator/health 供存活/就绪探针（k8s liveness/readiness）与运维巡检。
+# probes.enabled=true 额外暴露 /actuator/health/liveness 与 /actuator/health/readiness。
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: when-authorized
+  health:
+    probes:
+      enabled: true
