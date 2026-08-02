@@ -6,6 +6,7 @@ import com.eduagent.common.result.Result;
 import com.eduagent.common.security.JwtUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpMethod;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
@@ -46,6 +47,10 @@ public class AuthGlobalFilter implements GlobalFilter, Ordered {
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         String path = exchange.getRequest().getURI().getPath();
         if (isWhitelisted(path)) {
+            return chain.filter(exchange);
+        }
+        // CORS 预检（OPTIONS）不带令牌，网关直接放行，由 globalcors 负责响应跨域头，避免被 JWT 校验拦截。
+        if (exchange.getRequest().getMethod() == HttpMethod.OPTIONS) {
             return chain.filter(exchange);
         }
 

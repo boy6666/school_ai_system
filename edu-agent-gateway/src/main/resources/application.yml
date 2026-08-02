@@ -52,6 +52,21 @@ spring:
             - Path=/api/edu-agent-ai/**
           filters:
             - StripPrefix=2
+      # 全局跨域：浏览器只与网关通信，故 CORS 在网关这一道边界统一处理（各微服务不单独配 CORS）。
+      # allowedOrigins 默认 *（仅内部联调；生产用 CORS_ALLOWED_ORIGINS 环境变量收紧为前端域名）。
+      # 鉴权用 Bearer JWT（请求头，非 Cookie），故 allowCredentials=false 即可。
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins: '${CORS_ALLOWED_ORIGINS:*}'
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+            allowedHeaders: '*'
+            allowCredentials: false
   config:
     import:
       - optional:nacos:${spring.application.name}.${spring.cloud.nacos.config.file-extension}
