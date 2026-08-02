@@ -7,7 +7,7 @@ import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.cloud.openfeign.EnableFeignClients;
 
 @EnableDiscoveryClient
-@EnableFeignClients
+@EnableFeignClients(basePackages = "com.eduagent")
 @MapperScan("com.eduagent.resource.mapper")
 @SpringBootApplication
 public class ResourceApplication {

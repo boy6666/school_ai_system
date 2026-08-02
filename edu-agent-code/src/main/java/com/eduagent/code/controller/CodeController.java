@@ -3,6 +3,8 @@ package com.eduagent.code.controller;
 import com.eduagent.code.dto.CodeExerciseRequest;
 import com.eduagent.code.service.CodeExerciseService;
 import com.eduagent.code.vo.CodeExerciseVO;
+import com.eduagent.common.feign.UserClient;
+import com.eduagent.common.feign.UserInfo;
 import com.eduagent.common.result.PageResult;
 import com.eduagent.common.result.Result;
 import com.eduagent.common.security.AuthContext;
@@ -28,6 +30,7 @@ import java.util.Map;
 public class CodeController {
 
     private final CodeExerciseService service;
+    private final UserClient userClient;
 
     @PostMapping("/exercises")
     public Result<CodeExerciseVO> create(@Valid @RequestBody CodeExerciseRequest request) {
@@ -50,5 +53,14 @@ public class CodeController {
         return Result.success(Map.of(
                 "userId", AuthContext.getUserId(),
                 "roles", AuthContext.getRoles()));
+    }
+
+    /**
+     * 跨服务 Feign 示范：经 {@link UserClient} 调用鉴权服务的 /me。
+     * 鉴权服务依据本服务透传的 X-User-Id 返回【当前调用方】身份，印证 AuthFeignInterceptor 的透传链。
+     */
+    @GetMapping("/demo/whoami")
+    public Result<UserInfo> whoami() {
+        return Result.success(userClient.me());
     }
 }
