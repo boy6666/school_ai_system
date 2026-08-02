@@ -1,4 +1,4 @@
-package com.eduagent.auth.config;
+package com.eduagent.common.mybatis.config;
 
 import com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor;
 import com.baomidou.mybatisplus.extension.plugins.inner.PaginationInnerInterceptor;
@@ -6,8 +6,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * MyBatis-Plus 插件：分页拦截器（selectPage 生效所必需的 Bean）。
- * 框架统一配置，各 mybatis 服务均含此 Bean，保证分页一致（见《如何基于框架开发》文档）。
+ * MyBatis-Plus 全局拦截器（分页）。由本 starter 自动装配，各 DB 服务无需再各自声明。
  */
 @Configuration
 public class MybatisPlusConfig {

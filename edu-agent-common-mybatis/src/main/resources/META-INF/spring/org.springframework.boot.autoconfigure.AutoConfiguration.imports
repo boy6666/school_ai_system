@@ -1,0 +1,2 @@
+com.eduagent.common.mybatis.config.MybatisPlusConfig
+com.eduagent.common.mybatis.config.AutoFillMetaObjectHandler

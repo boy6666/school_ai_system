@@ -1,18 +1,18 @@
 package com.eduagent.code.entity;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.eduagent.common.mybatis.entity.BaseEntity;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
-import java.time.LocalDateTime;
-
+/**
+ * 代码练习实体。继承 {@link BaseEntity} 后自动获得 id / createTime / updateTime / deleted
+ * （均由框架在插入、更新时填充/管理，业务层无需赋值）。
+ */
 @Data
+@EqualsAndHashCode(callSuper = true)
 @TableName("code_exercises")
-public class CodeExercise {
-
-    @TableId(type = IdType.AUTO)
-    private Long id;
+public class CodeExercise extends BaseEntity {
 
     private String title;
 
@@ -25,8 +25,4 @@ public class CodeExercise {
 
     /** 1=启用 0=禁用 */
     private Integer status;
-
-    private LocalDateTime createTime;
-
-    private LocalDateTime updateTime;
 }

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.eduagent</groupId>
+        <artifactId>edu-agent</artifactId>
+        <version>0.1.0</version>
+    </parent>
+
+    <artifactId>edu-agent-common-mybatis</artifactId>
+    <name>EduAgent Common MyBatis</name>
+    <description>跨服务共享的 MyBatis-Plus 基础设施：BaseEntity（id/createTime/updateTime/逻辑删除）+ 自动填充 + 分页拦截。
+        仅 DB 服务依赖；网关(WebFlux)不依赖本模块，避免误引 SqlSessionFactory 导致无数据源启动失败。</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-boot-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

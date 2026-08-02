@@ -25,6 +25,7 @@
 
     <modules>
         <module>edu-agent-common</module>
+        <module>edu-agent-common-mybatis</module>
         <module>edu-agent-gateway</module>
         <module>edu-agent-auth</module>
         <module>edu-agent-learning</module>
@@ -63,6 +64,11 @@
             <dependency>
                 <groupId>com.eduagent</groupId>
                 <artifactId>edu-agent-common</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.eduagent</groupId>
+                <artifactId>edu-agent-common-mybatis</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <!-- 第三方（不在上述 BOM 中） -->
