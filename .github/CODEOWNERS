@@ -9,10 +9,10 @@
 # 后端服务按负责人
 /edu-agent-auth/          @boy6666
 /edu-agent-code/          @boy6666
-/edu-agent-ai/            @boy6666
+/edu-agent-ai/            @baixiong157-creator
 /edu-agent-resource/      @Reverie999
 /edu-agent-learning/      @baixiong157-creator
-/edu-agent-teacher/       @baixiong157-creator
+/edu-agent-teacher/       @boy6666
 
 # 前端（Vue3 三端）
 /edu-agent-web/           @bianjiabobohu916-cloud

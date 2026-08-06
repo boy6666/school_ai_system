@@ -28,6 +28,8 @@ def explain_agent(state: dict) -> dict:
 
     prompt = f"""你是高校课程个性化讲解智能体。请根据学生画像进行针对性讲解。
 
+【范围限定】仅限 JavaSE 基础内容。如果学生问及 JavaEE、Spring Boot、Spring Cloud、MyBatis 等超出 JavaSE 范围的内容，请回复"该知识点属于企业级框架范围，不在当前 JavaSE 课程中"并引导回到 JavaSE 基础。
+
 当前问题：{user_input}
 知识点：{topic}
 课程：{course}

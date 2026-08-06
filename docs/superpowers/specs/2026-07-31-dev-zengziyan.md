@@ -4,7 +4,7 @@
 > 负责人：**曾姿妍（成员D，纯前端）** ｜ 状态：开发中 ｜ 关联主蓝图 §5、§9、§12.1
 > 本文把主蓝图 §5（前端架构）、§9（可观测）、§5.5（零 mock）展开为「页面/路由需求 → API 契约对齐 → 状态/类型模型 → 实现要点 → 联调/测试 → 验收」的可落地文档。
 >
-> ⚠️ 依赖前置：本文 §3–§5 的字段级契约以 **P0 网关路由（已锁定：`/api/<服务>/**`）** 为基线；**teacher-service / code-service / ai-service 的子 spec 尚未生成**（截至撰写时 `docs/superpowers/specs/` 仅有 design + p0 两份）。因此 §4 教师端、§5 治理页中**按主蓝图 DDL（classes/questions/assignments/grades、code_submissions/code_check_reports）与服务描述给出的端点为"建议契约"，待陈海洋（teacher）、吴友诚（code/ai）子 spec 定稿后，仅改 `api/*.ts` 的 path/类型，页面零改动**。前端 TS 类型最终由 OpenAPI（`/api/<服务>/v3/api-docs`）生成（见 §7.4）。
+> ⚠️ 依赖前置：本文 §3–§5 的字段级契约以 **P0 网关路由（已锁定：`/api/<服务>/**`）** 为基线；**teacher-service / code-service / ai-service 的子 spec 尚未生成**（截至撰写时 `docs/superpowers/specs/` 仅有 design + p0 两份）。因此 §4 教师端、§5 治理页中**按主蓝图 DDL（classes/questions/assignments/grades、code_submissions/code_check_reports）与服务描述给出的端点为"建议契约"，待吴友诚（teacher/code）、陈海洋（ai）子 spec 定稿后，仅改 `api/*.ts` 的 path/类型，页面零改动**。前端 TS 类型最终由 OpenAPI（`/api/<服务>/v3/api-docs`）生成（见 §7.4）。
 
 ---
 
@@ -215,7 +215,7 @@ export const logout = () => request.post('/api/auth/logout')
 | resource | `/resources/chapter/:id` `/resources/chapter/:id/:type` `/resources/:id` `/resources/generate` `/resources/:id/regenerate` `/resources/:id/feedback` | **`/api/resource/...`**（注意**单数 resource**！网关路由为 `/api/resource/**`） | resource | 关键：复数→单数 |
 | tutor | `/tutor/chat` | **`/api/ai/chat`** | ai | 对话走 ai-service |
 | tutor | `/tutor/history` `/tutor/sessions` | `/api/learning/conversations` `/api/learning/conversations/sessions` | learning | 会话存 learning_db |
-| tutor | `/tutor/explain` | `/api/ai/explain`（或 `/api/learning/explain`，待吴友诚契约） | ai/learning | 讲解由 AI 出 |
+| tutor | `/tutor/explain` | `/api/ai/explain`（或 `/api/learning/explain`，待陈海洋契约） | ai/learning | 讲解由 AI 出 |
 | tutor | `/quiz/answered` `/quiz/wrong-questions` `/quiz/wrong-questions/:id` | `/api/learning/quiz/answered` `/api/learning/quiz/wrong-questions` `/:id` | learning | quiz_records 在 learning_db |
 | course | `/courses` `/courses/:id` `/courses/:id/chapters/:cid/progress` `/courses/:id/chapters/:cid/note` | `/api/learning/courses` `/:id` `/:id/chapters/:cid/progress` `/:id/chapters/:cid/note` | learning（待陈海洋契约；若 P3 课程归 teacher-service 则仅改 path） | 见 §4 |
 | task | `/student/tasks` `/student/tasks/:id/status` | `/api/learning/tasks` `/:id/status` | learning | |
@@ -284,7 +284,7 @@ export const getCodeSubmission = (id: number) => request.get<CodeCheckReport>(`/
 
 ## 4. 教师端前端（P3）
 
-> ⚠️ **契约状态：teacher-service / code-service 子 spec 尚未生成**。以下端点依据主蓝图 §3.3（teacher_db DDL：classes/class_students/questions/assignments/assignment_items/grades）、§7（code 判分回写 grades）、§12（陈海洋负责）整理为**建议契约**。定稿后仅改 `api/teacher.ts`/`api/code.ts` 的 path 与类型，页面零改。
+> ⚠️ **契约状态：teacher-service / code-service 子 spec 尚未生成**。以下端点依据主蓝图 §3.3（teacher_db DDL：classes/class_students/questions/assignments/assignment_items/grades）、§7（code 判分回写 grades）、§12（吴友诚负责）整理为**建议契约**。定稿后仅改 `api/teacher.ts`/`api/code.ts` 的 path 与类型，页面零改。
 
 ### 4.1 新增 TeacherLayout + /teacher/* 路由与守卫
 - 新增 `layouts/TeacherLayout.vue`（菜单：教学管理/班级、题库、作业、批改、学情看板、AI 助教、资源发布），风格沿用 `StudentLayout`。
@@ -434,10 +434,10 @@ npm i -D openapi-typescript
 - [ ] `request.ts` 统一解包 `Result`、401 跳登录；`roles:string[]` 分流三角色，守卫隔离生效。
 - [ ] 学生端全部页面 path 对齐 §3.2 映射表；`Dashboard.vue` 硬编码路径已抽离；`profile.ts` rogue `aiClient` 已删除。
 - [ ] ECharts 经 `BaseChart` 复用；Monaco 封装 `CodeEditor` 接入代码作业提交（`/api/code/submit`）。
-- [ ] 教师端 `TeacherLayout` + `/teacher/*` 全页面跑通，端点对齐 §4.2（待陈海洋契约定稿后 path 一致）。
+- [ ] 教师端 `TeacherLayout` + `/teacher/*` 全页面跑通，端点对齐 §4.2（待吴友诚契约定稿后 path 一致）。
 - [ ] 管理端治理/监控/审计页拉**真实指标**，监控页无占位数字；网关 `/api/monitor/**` `/api/audit/**` 路由已加。
 - [ ] `npm run build`（含 `vue-tsc`）通过；`npm test`（Vitest）通过；陈旧重复目录 `edu-agent-web/src/edu-agent-web/` 已删。
 
 ---
 
-*前端子 spec 结束（成员D 曾姿妍）。教师端/治理页字段级契约待陈海洋（teacher）、吴友诚（code/ai）子 spec 定稿后回填 `api/*.ts`，页面与组件无需改动。*
+*前端子 spec 结束（成员D 曾姿妍）。教师端/治理页字段级契约待吴友诚（teacher/code）、陈海洋（ai）子 spec 定稿后回填 `api/*.ts`，页面与组件无需改动。*

@@ -4,7 +4,7 @@
 > 依赖前置：**P0 已完成**（Nacos / Gateway / auth / common / JWT 透传 / Redis / RabbitMQ 就绪）
 > 本文把主蓝图 §3.3「resource-service」+ §8「RabbitMQ 异步」+ P0 §3「common」展开为**可直接开发**的子 spec。
 > 粒度遵循 P0：**需求 → 接口契约 → 数据模型 → 关键实现 → 测试 → 验收**。
-> 契约依赖：**吴友诚的 ai-service（端口 8001）**、**陈海洋的 learning-service（端口 8082）**。吴友诚的 ai-service 子 spec 尚未生成，本文以主蓝图 + 现有 `edu-agent-ai/api.py` 为基准推导契约，并在 §5 列出对齐清单与漂移风险。
+> 契约依赖：**陈海洋的 ai-service（端口 8001）**、**陈海洋的 learning-service（端口 8082）**。陈海洋的 ai-service 子 spec 尚未生成，本文以主蓝图 + 现有 `edu-agent-ai/api.py` 为基准推导契约，并在 §5 列出对齐清单与漂移风险。
 
 ---
 
@@ -34,10 +34,10 @@
 ### 1.2 不归我（边界，避免后期扯皮）
 | 能力 | 归属服务 | 说明 |
 |------|----------|------|
-| **真正的 LLM 生成 / RAG 检索** | ai-service（吴友诚） | 我只 Feign 调，不持有 Chroma / LLM。 |
+| **真正的 LLM 生成 / RAG 检索** | ai-service（陈海洋） | 我只 Feign 调，不持有 Chroma / LLM。 |
 | **学生画像 / 学习路径 / 任务 / 学习日志** | learning-service（陈海洋） | 我仅**消费**画像（只读 Feign），不写。 |
 | **代码沙箱 / 静态检查 / 代码作业判分** | code-service（吴友诚·P2） | 我生成的 `code` 类资源只是「教学级案例文本」，不是沙箱运行。沙箱是 code-service 的事。 |
-| **教师题库 / 班级 / 作业 / 成绩** | teacher-service（陈海洋·P3） | 我不维护题库与班级。 |
+| **教师题库 / 班级 / 作业 / 成绩** | teacher-service（吴友诚·P3） | 我不维护题库与班级。 |
 | **管理端审计 / 统计治理页** | teacher-service / admin（P3） | 本期我只暴露 `status=failed` 供治理页查询，不自建治理。 |
 | **对话 / 讲解 / 判分** | ai-service + learning-service | `/api/ai/chat` 由前端/网关直连 ai-service，不经我中转（见 §2 注）。 |
 
@@ -210,7 +210,7 @@ CREATE TABLE resource_feedback (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='资源反馈表';
 ```
 
-> 说明：`exercise_records` 与 `admin_stats_cache` 在主蓝图 §4.2 被列为 `resource_db`，但二者语义更贴近 learning/report 域。本期本服务**只建上面三张表**；`exercise_records`/`admin_stats_cache` 是否落户 `resource_db` 待 P3 与陈海洋/治理页确认（不阻塞 P1）。如确认归我，复用单体 `init.sql` 同名 DDL 迁入即可。
+> 说明：`exercise_records` 与 `admin_stats_cache` 在主蓝图 §4.2 被列为 `resource_db`，但二者语义更贴近 learning/report 域。本期本服务**只建上面三张表**；`exercise_records`/`admin_stats_cache` 是否落户 `resource_db` 待 P3 与吴友诚/治理页确认（不阻塞 P1）。如确认归我，复用单体 `init.sql` 同名 DDL 迁入即可。
 
 ### 3.2 从现有单体表迁移
 | 单体表 | 动作 | 映射要点 |
@@ -568,20 +568,20 @@ spring:
 
 ---
 
-## 5. 与吴友诚 ai-service 的对齐清单（防联调漂移）
+## 5. 与陈海洋 ai-service 的对齐清单（防联调漂移）
 
-> 吴友诚的 ai-service 子 spec 待出。以下契约以**主蓝图 §6.4** + **现有 `edu-agent-ai/api.py`** 推导，resource-service 严格依赖这些端点/字段。任何一项变动必须同步通知陈嘉成。
+> 陈海洋的 ai-service 子 spec 待出。以下契约以**主蓝图 §6.4** + **现有 `edu-agent-ai/api.py`** 推导，resource-service 严格依赖这些端点/字段。任何一项变动必须同步通知陈嘉成。
 
 ### 5.1 我要调的 ai-service 端点（Feign 目标 `ai-service:8001`）
 | 我的用途 | ai-service 端点 | 方法 | 现状（api.py） | 行动 |
 |----------|----------------|------|----------------|------|
-| 生成思维导图/题库/阅读/代码/路径 | `/api/ai/resource/generate` | POST | api.py 现是 `/resource/generate`，返回 `{content, resourceType, chapter}` | **吴友诚需把路由挂到 `/api/ai` 前缀下**（与蓝图 §6.4 一致）；响应字段 `content` 必须保留。 |
+| 生成思维导图/题库/阅读/代码/路径 | `/api/ai/resource/generate` | POST | api.py 现是 `/resource/generate`，返回 `{content, resourceType, chapter}` | **陈海洋需把路由挂到 `/api/ai` 前缀下**（与蓝图 §6.4 一致）；响应字段 `content` 必须保留。 |
 | 学习路径生成 | `/api/ai/path/generate` | POST | api.py 现是 `/path/generate`，返回 learning_path JSON | 同上，加 `/api/ai` 前缀。 |
 
 > ⚠️ **漂移风险点（必须对齐）**：api.py 当前路径是 `/resource/generate`、`/path/generate`、`/chat`，**没有 `/api/ai` 前缀**。主蓝图 §6.4 与网关路由 §5.2 要求对外是 `/api/ai/**`。两种落地方案，二选一，但**必须全员一致**：
 > - 方案 A（推荐，贴蓝图）：ai-service 在 FastAPI 上挂 `app.include_router(..., prefix="/api/ai")`，Feign 直连 `ai-service:8001/api/ai/resource/generate`。
 > - 方案 B：ai-service 保持原路径，由 Gateway 把 `/api/ai/**` strip 前缀后转发到 `/**`。但 Feign 是**服务间直连**（不经网关），所以 Feign 仍要调真实路径 → 那 resource-service 的 `@FeignClient(path="/api/ai")` 就会打错。
-> **结论**：采用方案 A。吴友诚在 ai-service 加 `/api/ai` 前缀；我的 Feign `path="/api/ai"` 不变。**此条写进双方联调 check list。**
+> **结论**：采用方案 A。陈海洋在 ai-service 加 `/api/ai` 前缀；我的 Feign `path="/api/ai"` 不变。**此条写进双方联调 check list。**
 
 ### 5.2 请求字段逐条对齐（→ `AiResourceGenReq`）
 | 字段 | 类型 | 来源 | api.py 对应 | 备注 |
@@ -589,10 +589,10 @@ spring:
 | `student_id` | string | `AuthContext.getUserId()` | `ResourceGenRequest.student_id` | 透传，ai 用于画像/日志。 |
 | `chapter` | string | `req.chapterName` | `chapter` | 章节名。 |
 | `topic` | string | `req.topic` | `topic` | 知识点。 |
-| `resourceType` | string | `req.type` | `resourceType` | 枚举（生成产物类型，与吴友诚 §1.3.2 一致）：**mindmap/quiz/reading/code/learning_path**。`suggestion/judge/evaluation/review/summary/explain` 属 ai-service 的 `mode` 轴（见《契约对齐决议》C3），非本字段取值。 |
-| `level` | string | `req.difficulty` | `level` | 取值与 ai 一致：`basic`（吴友诚 §1.3.2 `easy→basic`）；我侧 easy/medium/hard → basic/intermediate/advanced 映射后透传。 |
+| `resourceType` | string | `req.type` | `resourceType` | 枚举（生成产物类型，与陈海洋 §1.3.2 一致）：**mindmap/quiz/reading/code/learning_path**。`suggestion/judge/evaluation/review/summary/explain` 属 ai-service 的 `mode` 轴（见《契约对齐决议》C3），非本字段取值。 |
+| `level` | string | `req.difficulty` | `level` | 取值与 ai 一致：`basic`（陈海洋 §1.3.2 `easy→basic`）；我侧 easy/medium/hard → basic/intermediate/advanced 映射后透传。 |
 | `prompt` | string | 我本地 `buildPrompt()` 拼装 | `prompt`（api.py 直接用） | 沿用单体 `AiClient.buildResourcePrompt` 的 JavaSE 限定 + 画像拼接逻辑。 |
-| `profile` | object | learning-service 画像 | api.py 未用此字段，但单体 `AiClient.generateResource` 有传 | **新增协商字段**：建议 ai-service 接收后注入 prompt，使生成个性化；若吴友诚暂不支持，我侧把 profile 拼进 `prompt` 即可，不阻塞。 |
+| `profile` | object | learning-service 画像 | api.py 未用此字段，但单体 `AiClient.generateResource` 有传 | **新增协商字段**：建议 ai-service 接收后注入 prompt，使生成个性化；若陈海洋暂不支持，我侧把 profile 拼进 `prompt` 即可，不阻塞。 |
 
 ### 5.3 响应字段逐条对齐（← `AiResourceGenResp`）
 | 字段 | 类型 | 必返回 | api.py 对应 | 我的处理 |
@@ -631,7 +631,7 @@ spring:
 - 可选真实 ai-service：P1 联调期用 `Testcontainers` 起 `ai-service`（或 `USE_MOCK_LLM=1` 容器）做端到端冒烟。
 
 ### 6.3 契约测试（防与 ai 漂移，蓝图 §11.3）
-- **Spring Cloud Contract（推荐，Java 侧）**：在 resource-service 写契约 `resource_generation.yml`，定义 `POST /api/ai/resource/generate` 的 request/response 形态 → 生成 stub 供我侧集成测试；同时把契约发布给 ai-service 侧做 `verifier`（吴友诚实现 ai-service 时用此契约验证，保证不漂移）。
+- **Spring Cloud Contract（推荐，Java 侧）**：在 resource-service 写契约 `resource_generation.yml`，定义 `POST /api/ai/resource/generate` 的 request/response 形态 → 生成 stub 供我侧集成测试；同时把契约发布给 ai-service 侧做 `verifier`（陈海洋实现 ai-service 时用此契约验证，保证不漂移）。
 - 备选 **Pact**：我侧作为 consumer 发 Pact 文件，ai-service 作 provider 验证。
 - 前端（曾姿妍）按我的 OpenAPI（`/v3/api-docs`）生成契约，三方对齐。
 
@@ -650,7 +650,7 @@ spring:
 - [ ] `POST /generate` 异步 202：建 generating 行 → 发 `resource.generate` MQ → worker 调 ai-service → 回填 `published`；前端轮询可见状态流转。
 - [ ] Redis 缓存热门章节资源生效，详情命中缓存；删除/更新清缓存。
 - [ ] ai-service 不可用时降级：资源行 `failed` + 友好错误，前端可重试，**不雪崩**（Sentinel/Feign fallback 生效）。
-- [ ] 与吴友诚的 ai-service 联调通过（§5.4 checklist 全勾），`/api/ai` 前缀一致。
+- [ ] 与陈海洋的 ai-service 联调通过（§5.4 checklist 全勾），`/api/ai` 前缀一致。
 - [ ] 与 learning-service 画像 Feign 打通（或安全降级为空画像不阻断）。
 - [ ] 单测 + 集成（Testcontainers）绿；契约（Spring Cloud Contract）基线建立。
 
@@ -666,7 +666,7 @@ spring:
 
 ## 8. 知识库基础语料采集与清洗流水线（RAG 语料 · 陈嘉成端到端负责）
 
-> 背景：RAG 检索质量的上限由语料决定（data-centric AI）。吴友诚的 ai-service **只负责 embed + Chroma 检索**，不碰原始语料。**基础语料的寻找、采集、清洗、去重、分块、落库由本服务（resource-service / 陈嘉成）端到端负责**，清洗后的干净语料再交付 ai-service 的 `/api/ai/kb/rebuild` 做向量化。归属见主蓝图 §6.2。
+> 背景：RAG 检索质量的上限由语料决定（data-centric AI）。陈海洋的 ai-service **只负责 embed + Chroma 检索**，不碰原始语料。**基础语料的寻找、采集、清洗、去重、分块、落库由本服务（resource-service / 陈嘉成）端到端负责**，清洗后的干净语料再交付 ai-service 的 `/api/ai/kb/rebuild` 做向量化。归属见主蓝图 §6.2。
 
 ### 8.1 数据源
 - 教材/课件：JavaSE 基础（语法 / 面向对象 / 集合 / IO / 多线程 / 反射 / 异常等）的 PDF / MD / Word。
@@ -717,12 +717,12 @@ CREATE TABLE kb_corpus (
 > 与 ai-service 的边界：本表只存清洗后文本 + 元数据；向量（Chroma）由 ai-service 写入。本服务**不连 Chroma**。
 
 ### 8.7 与 ai-service 的对接契约（依《契约对齐决议》C6 定稿）
-- 触发：管理端 / 教师触发 `POST /api/ai/kb/rebuild`（吴友诚实现，入参 `{}` 或 `{collection, force}` 不变）；语义改为「从 resource-service 拉取 `kb_corpus`(status=0) → embed → 写 Chroma(collection) → 回调 `mark-indexed`」。
-- 语料权威源 = `kb_corpus`（本服务清洗流水线产出）；吴友诚的 `java_notes` 本地 md 仅作开发期种子/兜底，不进生产向量化主链路。
+- 触发：管理端 / 教师触发 `POST /api/ai/kb/rebuild`（陈海洋实现，入参 `{}` 或 `{collection, force}` 不变）；语义改为「从 resource-service 拉取 `kb_corpus`(status=0) → embed → 写 Chroma(collection) → 回调 `mark-indexed`」。
+- 语料权威源 = `kb_corpus`（本服务清洗流水线产出）；陈海洋的 `java_notes` 本地 md 仅作开发期种子/兜底，不进生产向量化主链路。
 - 交付方式（**已定稿，采用方式 B，避免 ai 直连库**）：
   - ai-service 经 `GET /api/resource/kb/corpus?status=0` 拉取待向量化语料（本服务提供，ai 不直连库）；
   - ai-service 嵌入写 Chroma 后，**回调** `POST /api/resource/kb/mark-indexed`（body `{ids:[Long], collection}`，见 §8.7.1）通知本服务把对应行 `status` 置 `1`；
-  - **明确硬约束**：ai-service **不连、不写任何 MySQL 关系表（含 `resource_db`）**——呼应吴友诚 §1.4.1 的 DB-per-service 硬约束。`kb_corpus.status` 由本服务（resource-service）维护，ai 不在自己侧维护任何关系表。
+  - **明确硬约束**：ai-service **不连、不写任何 MySQL 关系表（含 `resource_db`）**——呼应陈海洋 §1.4.1 的 DB-per-service 硬约束。`kb_corpus.status` 由本服务（resource-service）维护，ai 不在自己侧维护任何关系表。
 - 由此避免重复嵌入：本服务在收到 `mark-indexed` 回调后，把对应行 `status` 回写为 `1`。
 
 #### 8.7.1 回调端点：`POST /api/resource/kb/mark-indexed`（供 ai-service 向量化完成后回调）
@@ -789,4 +789,4 @@ cloud:
 
 ---
 
-*resource-service 子 spec 结束。契约以 §5 与吴友诚 ai-service / 陈海洋 learning-service 对齐为准，P1 评审后定稿落 git。*
+*resource-service 子 spec 结束。契约以 §5 与陈海洋 ai-service / 陈海洋 learning-service 对齐为准，P1 评审后定稿落 git。*

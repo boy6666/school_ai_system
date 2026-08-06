@@ -1,4 +1,3 @@
-# syntax=docker/dockerfile:1
 # ── 通用多阶段构建：通过 MODULE 参数构建并打包任一微服务模块 ──
 # 在 deploy/ 目录执行（build context 为仓库根）：
 #   docker compose build gateway     # MODULE=edu-agent-gateway
@@ -13,7 +12,8 @@ WORKDIR /workspace
 COPY . .
 ARG MODULE=edu-agent-auth
 # -am 同时构建其依赖（如 edu-agent-common）；-DskipTests 仅打 jar
-RUN mvn -B -ntp clean package -DskipTests -pl ${MODULE} -am
+# --mount=type=cache,target=/root/.m2 让 Maven 本地仓库跨构建复用（6 个服务只全量下载一次公共依赖，断网/慢网下可断点续传）
+RUN --mount=type=cache,target=/root/.m2 mvn -B -ntp clean package -DskipTests -pl ${MODULE} -am
 # 取出可执行 jar（跳过 *.jar.original）
 RUN sh -c 'for f in /workspace/${MODULE}/target/*.jar; do case "$f" in *.original) ;; *) mv "$f" /workspace/app.jar ;; esac; done'
 

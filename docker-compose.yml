@@ -1,0 +1,71 @@
+version: '3.8'
+
+services:
+  # MySQL 数据库
+  mysql:
+    image: mysql:8.0
+    container_name: edu-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root123456
+      MYSQL_DATABASE: edu_agent
+      MYSQL_USER: eduagent
+      MYSQL_PASSWORD: eduagent123
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./edu_agent.sql:/docker-entrypoint-initdb.d/init.sql
+    command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Java 后端服务
+  edu-server:
+    build:
+      context: .
+      dockerfile: Dockerfile.server
+    container_name: edu-server
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/edu_agent?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root123456
+      SPRING_APPLICATION_JSON: '{"ai":{"base-url":"http://edu-ai:8000"}}'
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  # Python AI 服务
+  edu-ai:
+    build:
+      context: .
+      dockerfile: Dockerfile.ai
+    container_name: edu-ai
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      # 如果需要配置API密钥等，在此添加
+      TZ: Asia/Shanghai
+
+  # Vue 前端
+  edu-web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    container_name: edu-web
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - edu-server
+      - edu-ai
+
+volumes:
+  mysql_data:

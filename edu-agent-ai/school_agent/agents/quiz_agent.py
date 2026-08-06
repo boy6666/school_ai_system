@@ -19,6 +19,8 @@ def quiz_agent(state: dict) -> dict:
 
     prompt = f"""你是高校课程出题专家。根据学生画像生成3-5道个性化练习题。
 
+【范围限定】仅限 JavaSE 基础内容出题（语法、面向对象、集合、IO、多线程、反射等），禁止出现 JavaEE、Spring Boot、Spring Cloud、MyBatis 相关题目。
+
 课程：{course}
 知识点：{topic}
 学生基础：{knowledge_base}

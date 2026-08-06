@@ -1,0 +1,261 @@
+# ============================================================
+# EduAgent 全容器「部署 / 团队联调」编排（Windows 或 Linux 均可）
+# ------------------------------------------------------------
+# 目标：一台共享机器（团队联调机）常开，整栈全部容器化，任何成员的
+#   Windows / Linux 机器迁移都只需「装 Docker + 这份 compose」，一键起。
+# 与 deploy/docker-compose.yml（开发用：基建容器 + MySQL/Java 裸跑）互不影响。
+#
+# 首次启动（顺序关键，见 deploy/README.deploy.md）：
+#   ① 起基建 + 库：docker compose -f docker-compose.deploy.yml up -d mysql nacos redis rabbitmq chroma ai
+#   ② 等 nacos healthy 后推配置：python deploy/push-nacos-config.py   （需能访问本机 nacos:8848）
+#   ③ 起全部 Java 服务：docker compose -f docker-compose.deploy.yml up -d
+#
+# 端口（宿主访问入口）：
+#   8080 网关（团队就是访问这个）| 8848 Nacos 控制台 | 3306 MySQL | 8001 AI | 8000 Chroma | 15672 RabbitMQ 控制台
+# 其余 Java 服务（auth 8081 / learning 8082 / resource 8083 / teacher 8084 / code 8085）
+#   默认只在容器内网可访问，团队统一走网关 8080；需要直连某服务时放开对应注释行即可。
+#
+# 密钥：所有 Java 服务（含网关）共享同一个 ${JWT_SECRET}，务必通过 deploy/.env 或
+#   环境变量注入统一值，避免网关与 auth 验签不一致（历史踩坑，见 docs/ISSUES_LOG.md 问题4）。
+# 凭据：根口令 ${MYSQL_ROOT_PASSWORD}（生产必改）默认在 .env；业务账号 edu_agent/edu_agent。
+# ============================================================
+
+name: edu-agent-deploy
+
+networks:
+  edu-agent-deploy-net:
+    driver: bridge
+
+volumes:
+  mysql-data:
+  nacos-data:
+  redis-data:
+  chroma-data:
+  rabbitmq-data:
+
+services:
+  # ───────────── MySQL（5 逻辑库 + edu_agent 账号，由 init 脚本首次初始化）─────────────
+  mysql:
+    image: mysql:8.0
+    container_name: edu-agent-deploy-mysql
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_general_ci
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-edu_agent_root}
+    # 默认不映射宿主端口！部署 MySQL 只需在容器内网（mysql:3306）被 Java 服务访问；
+    # 若宿主已有 MySQL 或端口被占，映射 3306 会冲突。需要直连 DB 调试时再放开：
+    # ports: ["3306:3306"]
+    volumes:
+      - mysql-data:/var/lib/mysql
+      # 首次启动（数据卷为空）时自动执行：建 5 库 + 建 edu_agent 账号并授权
+      - ../database/init-microservice.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+    networks: [edu-agent-deploy-net]
+
+  # ───────────── Nacos（服务发现 + 配置中心，standalone）─────────────
+  nacos:
+    image: nacos/nacos-server:v2.3.2
+    container_name: edu-agent-deploy-nacos
+    environment:
+      MODE: standalone
+      NACOS_AUTH_ENABLE: "false"
+      JVM_XMS: 512m
+      JVM_XMX: 512m
+    ports:
+      - "8848:8848"   # HTTP 控制台/API
+      - "9848:9848"   # gRPC 客户端端口（Nacos 2.x 必需，=8848+1000）
+      - "9849:9849"   # gRPC 服务端端口（可选）
+    volumes:
+      - nacos-data:/home/nacos/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8848/nacos/"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+    networks: [edu-agent-deploy-net]
+
+  # ───────────── Redis ─────────────
+  redis:
+    image: redis:7
+    container_name: edu-agent-deploy-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks: [edu-agent-deploy-net]
+
+  # ───────────── RabbitMQ ─────────────
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: edu-agent-deploy-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    networks: [edu-agent-deploy-net]
+
+  # ───────────── Chroma（向量库，供 AI/RAG）─────────────
+  chroma:
+    image: ghcr.io/chroma-core/chroma:0.5.5
+    container_name: edu-agent-deploy-chroma
+    ports:
+      - "8000:8000"
+    volumes:
+      - chroma-data:/chroma/chroma
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/heartbeat', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+    networks: [edu-agent-deploy-net]
+
+  # ───────────── AI（Python/FastAPI）─────────────
+  ai:
+    build:
+      context: ../edu-agent-ai
+      dockerfile: Dockerfile
+    container_name: edu-agent-deploy-ai
+    ports:
+      - "8001:8001"
+    environment:
+      USE_MOCK_LLM: "1"
+      CHROMA_HOST: chroma
+      CHROMA_PORT: "8000"
+    depends_on:
+      chroma:
+        condition: service_healthy
+    restart: unless-stopped
+    networks: [edu-agent-deploy-net]
+
+  # ───────────── Java 服务（统一由根 Dockerfile 按 MODULE 构建）─────────────
+  # 通用环境：Nacos/DB/MQ 都指向容器内网服务名而非 127.0.0.1。
+  # JWT_SECRET 全栈共享同一份；DB_HOST=mysql 使 Nacos 配置里的 ${DB_HOST:...} 解析为 mysql。
+  gateway:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+      args:
+        MODULE: edu-agent-gateway
+    image: edu-agent-gateway:0.1.0
+    container_name: edu-agent-deploy-gateway
+    ports:
+      - "8080:8080"                      # 团队统一入口
+    environment: &jwt_common_gateway
+      NACOS_ADDR: nacos:8848
+      NACOS_NAMESPACE: edu-agent-local
+      NACOS_GROUP: edu-agent
+      JWT_SECRET: ${JWT_SECRET:-edu-agent-deploy-secret-please-change}
+    depends_on:
+      nacos:
+        condition: service_healthy
+    restart: unless-stopped
+    networks: [edu-agent-deploy-net]
+
+  auth:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+      args:
+        MODULE: edu-agent-auth
+    image: edu-agent-auth:0.1.0
+    container_name: edu-agent-deploy-auth
+    # ports: ["8081:8081"]              # 需要直连时放开
+    environment: &jwt_db_common
+      NACOS_ADDR: nacos:8848
+      NACOS_NAMESPACE: edu-agent-local
+      NACOS_GROUP: edu-agent
+      DB_HOST: mysql
+      DB_USER: edu_agent
+      DB_PASSWORD: edu_agent
+      MQ_HOST: rabbitmq
+      JWT_SECRET: ${JWT_SECRET:-edu-agent-deploy-secret-please-change}
+    depends_on:
+      mysql:
+        condition: service_healthy
+      nacos:
+        condition: service_healthy
+    restart: unless-stopped
+    networks: [edu-agent-deploy-net]
+
+  learning:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+      args:
+        MODULE: edu-agent-learning
+    image: edu-agent-learning:0.1.0
+    container_name: edu-agent-deploy-learning
+    # ports: ["8082:8082"]
+    environment:
+      <<: *jwt_db_common
+    depends_on:
+      mysql:
+        condition: service_healthy
+      nacos:
+        condition: service_healthy
+    restart: unless-stopped
+    networks: [edu-agent-deploy-net]
+
+  resource:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+      args:
+        MODULE: edu-agent-resource
+    image: edu-agent-resource:0.1.0
+    container_name: edu-agent-deploy-resource
+    # ports: ["8083:8083"]
+    environment:
+      <<: *jwt_db_common
+      NACOS_GROUP_RESOURCE: resource-group   # resource 的 Nacos 分组是 resource-group
+    depends_on:
+      mysql:
+        condition: service_healthy
+      nacos:
+        condition: service_healthy
+    restart: unless-stopped
+    networks: [edu-agent-deploy-net]
+
+  teacher:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+      args:
+        MODULE: edu-agent-teacher
+    image: edu-agent-teacher:0.1.0
+    container_name: edu-agent-deploy-teacher
+    # ports: ["8084:8084"]
+    environment:
+      <<: *jwt_db_common
+    depends_on:
+      mysql:
+        condition: service_healthy
+      nacos:
+        condition: service_healthy
+    restart: unless-stopped
+    networks: [edu-agent-deploy-net]
+
+  code:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+      args:
+        MODULE: edu-agent-code
+    image: edu-agent-code:0.1.0
+    container_name: edu-agent-deploy-code
+    # ports: ["8085:8085"]
+    environment:
+      <<: *jwt_db_common
+    depends_on:
+      mysql:
+        condition: service_healthy
+      nacos:
+        condition: service_healthy
+    restart: unless-stopped
+    networks: [edu-agent-deploy-net]

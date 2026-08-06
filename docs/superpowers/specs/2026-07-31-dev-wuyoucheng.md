@@ -1,4 +1,4 @@
-# 吴友诚 开发文档（子 spec）：ai-service · code-service · P4 加固 · 拆分指导
+# 吴友诚 开发文档（子 spec）：teacher-service · code-service · P4 加固 · 拆分指导
 
 > 阶段：P0（已交付，见 `2026-07-31-p0-infra-gateway.md`）→ P2（ai/code）→ P4（加固）
 > 负责人：**吴友诚（架构/地基）** ｜ 日期：2026-07-31 ｜ 状态：开发文档（可直接落地）
@@ -10,13 +10,13 @@
 
 ## 0. 吴友诚职责总览
 
-主蓝图 §12.1 已确认：吴友诚拥有**地基（P0，已建）+ code-service（最难）+ ai-service（AI 最丰富）** 两块皇冠模块，并负责 P4 全栈加固与「单体→微服务」拆分指导。
+主蓝图 §12.1 已确认：吴友诚拥有**地基（P0，已建）+ code-service（最难）+ teacher-service** 两块皇冠模块，并负责 P4 全栈加固与「单体→微服务」拆分指导。
 
 | 板块 | 本文章节 | 端口/库 | 对接人 |
 |------|---------|--------|--------|
 | 微服务地基、common、auth、Gateway、JWT 透传 | ——（引用 P0） | 见 P0 | 全员基线 |
-| **ai-service**（Python FastAPI + LangGraph + Chroma RAG） | §1 | `8001`，无关系表 | 陈嘉成(resource) / 陈海洋(learning/teacher) |
-| **code-service**（Java：编译+静态检查+Docker 沙箱+AI 判分） | §2 | `8085`，`code_db` | 陈海洋(teacher 作业批改) |
+| **teacher-service**（Java：班级/题库/作业布置/批改/学情看板） | §B | `8084`，`teacher_db` | 吴友诚（原陈海洋，已对调） |
+| **code-service**（Java：编译+静态检查+Docker 沙箱+AI 判分） | §2 | `8085`，`code_db` | 吴友诚(teacher 作业批改) |
 | **P4 加固**（Sentinel / SkyWalking / 压测 / CI 质量门 / 文档演示） | §3 | 全服务 | 全员 |
 | **单体→微服务拆分指导** | §4 | `edu-agent-server` 现有类→各服务 | 陈嘉成 / 陈海洋 |
 
@@ -28,397 +28,396 @@
 
 ---
 
-# §1. ai-service 开发文档（Python · 端口 8001 · RAG 引擎）
+# §B. teacher-service（P3，教师端后端）
 
-## 1.1 需求
+## B.1 需求与职责边界
 
-把现有 `edu-agent-ai/`（FastAPI + LangGraph 多智能体）改造为**独立微服务**，挂在网关 `/api/ai/**` 下，提供：
+### B.1.1 四大功能映射
+1. **教学管理**：班级（classes）、班级学生（class_students）的 CRUD 与成员管理。
+2. **学情看板**：聚合 learning-service 的逐生学情 → 班级维度可视化数据接口（ECharts 直接消费）。
+3. **批改与发布**：题库（questions）、作业（assignments + assignment_items）、提交批改（grades）；代码题提交**对接 code-service 判分**。
+4. **AI 助教**：Feign 调 ai-service 做答疑 / 题目生成 / 学情解读。
 
-1. 多智能体对话 `POST /api/ai/chat`（接入 RAG）。
-2. 资源生成 `POST /api/ai/resource/generate`（mindmap/quiz/reading/code/…）。
-3. 学习路径生成 `POST /api/ai/path/generate`。
-4. **代码质量分析 `POST /api/ai/code/analyze`**（供 code-service 经 Feign 调用，★内网专用，不暴露给前端）。
-5. **知识库重建 `POST /api/ai/kb/rebuild`**（供管理端治理页触发，重建 Chroma 索引）。
-6. RAG 检索增强：java_notes → 切分 → Embedding → Chroma（持久化容器）→ 检索 top-k → 注入 Agent prompt。
+### B.1.2 边界
+- 不持有学情画像/路径/日志原始数据（在 learning-service）；teacher-service **逐生 Feign 拉取**聚合。
+- 不持有代码判分细节（编译/沙箱/静态检查在 code-service）；只消费 `code-service` 的判分结果写入 `grades`。
+- 不持有资源素材（resource-service）。
 
-**非目标**：不做微调（主蓝图 §0.2 已排除）；不引入 Dify/Spring AI；AI 仍是单 Python 进程（主蓝图 §6.1 明确不拆 ai-chat/ai-code 两个服务，共享一份 Chroma）。
+### B.1.3 跨服务依赖
+| 调谁 | 端点（内部路径） | 用途 |
+|------|------|------|
+| learning-service | `GET /analytics/student/{id}`、`GET /analytics/student/{id}/progress`、`GET /profile/{studentId}` | 看板聚合、学生画像读取 |
+| code-service | `POST /submissions`（见 B.4.2） | 代码作业判分 |
+| ai-service | `POST /chat`、`POST /resource/generate` | AI 助教答疑、AI 出题 |
 
-## 1.2 现状对齐（现有代码可复用部分）
+---
 
-| 现有文件 | 复用方式 |
-|---------|---------|
-| `edu-agent-ai/api.py` | FastAPI 入口；改为带 `/api/ai` 前缀的 router，新增 `/code/analyze`、`/kb/rebuild` |
-| `edu-agent-ai/school_agent/graph.py` | `SimpleGraph` / LangGraph `StateGraph` 原样复用为 `/chat` 编排 |
-| `edu-agent-ai/school_agent/agents/*.py` | 11 个 Agent 节点原样复用 |
-| `edu-agent-ai/school_agent/services/llm_client.py` | `call_llm` / `call_llm_json` 复用；补 embedding 客户端 |
-| `edu-agent-ai/school_agent/utils/code_fixer.py` | 中文关键字修复器，被 `/code/analyze` 复用 |
-| `edu-agent-ai/school_agent/config.py` | 扩展：加 `CHROMA_HOST/PORT/COLLECTION`、`EMBEDDING_MODEL` |
+## B.2 接口契约（`/api/teacher/**`，端口 8084）
 
-> 现有 `retrieval_agent.py` 的 `retrieve_knowledge` 是**空壳**（只置 `retrieved_context=""`）。本 spec 要求把它落地为真实 Chroma 检索（§1.4）。
+> 角色：`T`=ROLE_TEACHER，`S`=ROLE_STUDENT（学生提交作业），`A`=ROLE_ADMIN。
 
-## 1.3 接口契约（请求/响应 JSON 形状——陈嘉成/陈海洋据此对齐）
+### B.2.1 班级管理 Class
+| 方法 | 路径 | 角色 | 入参 | 出参 |
+|------|------|------|------|------|
+| POST | `/api/teacher/classes` | T | body：`{name, course, semester}` | `Result<ClassVO>`（teacher_id 取 AuthContext） |
+| GET | `/api/teacher/classes` | T | — | `Result<List<ClassVO>>`（仅本人班级） |
+| GET | `/api/teacher/classes/{id}` | T | path `id` | `Result<ClassVO>` |
+| PUT | `/api/teacher/classes/{id}` | T | body：`{name?, course?, semester?}` | `Result<ClassVO>` |
+| DELETE | `/api/teacher/classes/{id}` | T | path `id` | `Result<Void>` |
+| POST | `/api/teacher/classes/{id}/students` | T | body：`{studentId}` | `Result<Void>`（写 class_students + 回写 `learning_db.student_profiles.class_id`） |
+| DELETE | `/api/teacher/classes/{id}/students/{studentId}` | T | path | `Result<Void>` |
+| GET | `/api/teacher/classes/{id}/students` | T | path `id` | `Result<List<ClassStudentVO>>`（`{studentId, studentName?, joinedAt}`） |
 
-所有端点统一包 `common.Result` 风格。**网关鉴权已在前置完成**，ai-service 收到的请求里已带网关注入的 `X-User-Id`/`X-User-Roles`（仅用于审计/限流，不用于业务鉴权，因为 AI 不持有用户库）。
+> `studentId` 合法性由 auth-service 保证（teacher-service 不校验密码，仅逻辑引用）。回写 `student_profiles.class_id` 通过 Feign→learning-service `POST /profile/{studentId}/class` 完成（该端点 T 角色可写，见 A.2.1 扩展）。
 
-> **契约字段命名（C4 / C20）**：本文契约（**wire JSON 与 Java DTO**）字段统一为 **camelCase**（如 `userInput` / `studentId` / `sessionId` / `sourceCode` / `finalAnswer` / `learningPath` / `resourceDir` / `profileComplete` / `targetMastery` / `masteryRate` / `knowledgeBase` 等）；Python 源码块（`api.py` 内部变量）可保留 snake（Python 惯例），但 **`api.py` 序列化须输出 camelCase（与 Java/前端一致）**。画像 `profile` 对象字段同样 camelCase，且含 **`course`** 字段（camelCase）——三跳一致透传（learning/resource → ai → 回传），ai 用于 **JavaSE 课程内章节定位**。
+### B.2.2 题库 Question
+| 方法 | 路径 | 角色 | 入参 | 出参 |
+|------|------|------|------|------|
+| POST | `/api/teacher/questions` | T | body：`{type, chapter, topic, content, options?, answer, explanation?, difficulty}` | `Result<QuestionVO>` |
+| GET | `/api/teacher/questions` | T | query `chapter?,topic?,type?,difficulty?` | `Result<List<QuestionVO>>` |
+| GET | `/api/teacher/questions/{id}` | T | path `id` | `Result<QuestionVO>` |
+| PUT | `/api/teacher/questions/{id}` | T | body：同创建 | `Result<QuestionVO>` |
+| DELETE | `/api/teacher/questions/{id}` | T | path `id` | `Result<Void>` |
+| POST | `/api/teacher/questions/generate` | T | body：`{chapter, topic, type, difficulty, count?}` | `Result<List<QuestionDraftVO>>`（Feign→ai `/resource/generate` mode=quiz → 返回草稿，教师确认后落库） |
 
-### 1.3.1 `POST /api/ai/chat`
+`QuestionVO`：`{id, type, chapter, topic, content, options:JSON, answer, explanation, difficulty, creatorId, createdAt}`。`type`∈`choice/code/blank`。
 
-**请求**
+### B.2.3 作业 Assignment
+| 方法 | 路径 | 角色 | 入参 | 出参 |
+|------|------|------|------|------|
+| POST | `/api/teacher/assignments` | T | body：`{classId, title, type, deadline, description?, items:[{questionId, score}]}` | `Result<AssignmentVO>`（写 assignments + assignment_items；建完发 `assignment.published` 事件） |
+| GET | `/api/teacher/assignments` | T | query `classId?` | `Result<List<AssignmentVO>>` |
+| GET | `/api/teacher/assignments/{id}` | T | path `id` | `Result<AssignmentDetailVO>`（含 items+每题 QuestionVO+提交情况） |
+| PUT | `/api/teacher/assignments/{id}` | T | body：`{title?, deadline?, status?}` | `Result<AssignmentVO>` |
+| DELETE | `/api/teacher/assignments/{id}` | T | path `id` | `Result<Void>` |
+| POST | `/api/teacher/assignments/{id}/items` | T | body：`{questionId, score}` | `Result<AssignmentVO>` |
+| POST | `/api/teacher/assignments/{id}/publish` | T | — | `Result<Void>`（重发 `assignment.published` 事件，状态置已发布） |
+
+`type`∈`homework/code`。`AssignmentDetailVO`：`{id, classId, title, type, deadline, status, items:[{itemId, questionId, score, question:QuestionVO, submittedCount, gradedCount}]}`。
+
+### B.2.4 提交与批改 Grade（核心跨服务）
+| 方法 | 路径 | 角色 | 入参 | 出参 |
+|------|------|------|------|------|
+| POST | `/api/teacher/assignments/{id}/submit` | S | body：`{items:[{itemId, submission, language?}]}`（studentId 取 AuthContext） | `Result<List<GradeVO>>`（逐 item：choice/blank 本地判分；code 调 code-service） |
+| GET | `/api/teacher/assignments/{id}/grades` | T | query `studentId?` | `Result<List<GradeVO>>` |
+| GET | `/api/teacher/grades/{gradeId}` | T,S | path `gradeId` | `Result<GradeDetailVO>` |
+| PUT | `/api/teacher/grades/{gradeId}` | T | body：`{score?, comment?, aiReportOverride?}` | `Result<GradeVO>`（教师复核微调） |
+| GET | `/api/teacher/students/{studentId}/assignments` | S,T | path `studentId` | `Result<List<AssignmentVO（含我的成绩）>>` |
+
+`GradeVO`：`{id, assignmentId, studentId, itemId, type, submission, score, status, gradedAt, hasAiReport}`。
+`GradeDetailVO`：`{...GradeVO, runResult:JSON, staticReport:JSON, aiReport:JSON, comment}`。
+
+### B.2.5 学情看板 Analytics
+| 方法 | 路径 | 角色 | 入参 | 出参 |
+|------|------|------|------|------|
+| GET | `/api/teacher/classes/{id}/analytics` | T | path `id` | `Result<ClassAnalyticsVO>`（逐生 Feign→learning，聚合成班级） |
+| GET | `/api/teacher/classes/{id}/overview` | T | path `id` | `Result<ClassOverviewVO>`（轻量：均分、完成率、活跃度，供首页卡片） |
+
+`ClassAnalyticsVO`（ECharts 直接消费）：
 ```json
-{
-  "userInput": "什么是 Java 的多态？",
-  "studentId": "1001",
-  "sessionId": "sess_abc",
-  "profile": { "course": "JavaSE", "topic": "面向对象", "weaknesses": [], "knowledgeBase": "零基础" }
-}
+{ "classId":3, "className":"JavaSE-1班", "studentCount":30,
+  "avgMastery":66.5, "avgPathProgress":42, "avgStudySec":5400,
+  "masteryDist":[{"level":"level_1","count":5},{"level":"level_2","count":20},{"level":"level_3","count":5}],
+  "dimensionAvg":{"knowledge_mastery":68,"learning_goal_clarity":60,...},
+  "taskCompletion":[{"studentId":12,"name?":"","progress":40,"lastScore":72}],
+  "weakTopics":[{"topic":"多线程","count":12}],
+  "trend":[{"day":"2026-07-28","activeStudents":18},...] }
+```
+> 实现：读班级学生列表 → 并发 Feign→learning `/analytics/student/{id}/progress` → 聚合。注意分页/限流，班级人数多时用 `List<CompletableFuture>` + `Semimiter` 保护（见 B.4.3）。
+
+### B.2.6 AI 助教 AiTutor
+| 方法 | 路径 | 角色 | 入参 | 出参 |
+|------|------|------|------|------|
+| POST | `/api/teacher/ai/ask` | T | body：`{message, classId?, context?}` | `Result<{answer, intent, references?}>`（Feign→ai `/chat`，以教师身份 + 班级学情上下文） |
+| POST | `/api/teacher/ai/explain-grade` | T | body：`{studentId, assignmentId}` | `Result<{analysis}>`（拉学情+成绩→ai 解读，Feign→ai `/resource/generate` mode=evaluation） |
+
+---
+
+## B.3 数据模型（`teacher_db`，DDL）
+
+```sql
+CREATE DATABASE IF NOT EXISTS teacher_db DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE teacher_db;
+
+-- 1. 班级（teacher_id 逻辑引用 auth_db.users，无 FK）
+CREATE TABLE classes (
+  id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(64) NOT NULL,
+  teacher_id BIGINT NOT NULL,
+  course VARCHAR(64) DEFAULT NULL,
+  semester VARCHAR(32) DEFAULT NULL,
+  status TINYINT DEFAULT 1 COMMENT '1启用 0归档',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_teacher (teacher_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='班级表';
+
+-- 2. 班级学生（无 FK，纯逻辑引用）
+CREATE TABLE class_students (
+  class_id BIGINT NOT NULL,
+  student_id BIGINT NOT NULL,
+  joined_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (class_id, student_id),
+  INDEX idx_student (student_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='班级学生关系表';
+
+-- 3. 题库
+CREATE TABLE questions (
+  id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  type VARCHAR(16) NOT NULL COMMENT 'choice/code/blank',
+  chapter VARCHAR(64) DEFAULT NULL,
+  topic VARCHAR(64) DEFAULT NULL,
+  content TEXT,
+  options JSON COMMENT '选择题选项',
+  answer TEXT,
+  explanation TEXT,
+  difficulty VARCHAR(8) DEFAULT 'medium' COMMENT 'easy/medium/hard',
+  creator_id BIGINT NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_chapter (chapter),
+  INDEX idx_topic (topic),
+  INDEX idx_type (type),
+  INDEX idx_creator (creator_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='题库表';
+
+-- 4. 作业
+CREATE TABLE assignments (
+  id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  class_id BIGINT NOT NULL,
+  title VARCHAR(128) NOT NULL,
+  type VARCHAR(16) NOT NULL COMMENT 'homework/code',
+  description TEXT,
+  deadline DATETIME DEFAULT NULL,
+  status TINYINT DEFAULT 0 COMMENT '0草稿 1已发布',
+  creator_id BIGINT NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_class (class_id),
+  INDEX idx_creator (creator_id),
+  INDEX idx_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='作业表';
+
+-- 5. 作业题目项
+CREATE TABLE assignment_items (
+  id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  assignment_id BIGINT NOT NULL,
+  question_id BIGINT NOT NULL,
+  item_type VARCHAR(16) DEFAULT 'choice' COMMENT 'choice/code/blank',
+  score INT DEFAULT 10,
+  order_num INT DEFAULT 0,
+  INDEX idx_assignment (assignment_id),
+  INDEX idx_question (question_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='作业题目项表';
+
+-- 6. 成绩/批改
+CREATE TABLE grades (
+  id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  assignment_id BIGINT NOT NULL,
+  student_id BIGINT NOT NULL,
+  item_id BIGINT NOT NULL,
+  item_type VARCHAR(16) DEFAULT 'choice',
+  language VARCHAR(16) DEFAULT NULL COMMENT 'code 题语言，如 java',
+  submission TEXT COMMENT '学生提交内容/代码',
+  run_result JSON COMMENT '运行结果（来自 code-service）',
+  static_report JSON COMMENT '静态检查报告（来自 code-service）',
+  ai_report JSON COMMENT 'AI 建议（来自 code-service / ai）',
+  score INT DEFAULT 0,
+  status TINYINT DEFAULT 0 COMMENT '0待批 1已批',
+  comment TEXT COMMENT '教师评语/复核',
+  graded_at DATETIME DEFAULT NULL,
+  create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uk_stu_item (assignment_id, student_id, item_id),
+  INDEX idx_assignment (assignment_id),
+  INDEX idx_student (student_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='成绩表';
+```
+> 关系：classes 1—N class_students N—1 users(逻辑)；classes 1—N assignments；assignments 1—N assignment_items N—1 questions；assignments 1—N grades；grades N—1 users(逻辑,student)。**全部无跨库 FK**。
+
+---
+
+## B.4 关键实现
+
+### B.4.1 分层结构
+```
+teacher-service/
+├── TeacherServiceApplication.java
+├── controller/  ClassController, QuestionController, AssignmentController,
+│                GradeController, AnalyticsController, AiTutorController
+├── service/     ClassService, QuestionService, AssignmentService,
+│                GradeService, AnalyticsService, AiTutorService
+├── service/impl/ *ServiceImpl
+├── mapper/       ClassesMapper, ClassStudentMapper, QuestionMapper,
+│                AssignmentMapper, AssignmentItemMapper, GradeMapper
+├── entity/       Classes, ClassStudent, Question, Assignment, AssignmentItem, Grade
+├── vo/           ClassVO, QuestionVO, AssignmentVO, AssignmentDetailVO,
+│                GradeVO, GradeDetailVO, ClassAnalyticsVO, ClassOverviewVO
+├── dto/          CreateClassRequest, CreateQuestionRequest, CreateAssignmentRequest,
+│                SubmitAssignmentRequest, AiAskRequest
+├── feign/        LearningServiceClient, CodeServiceClient, AiServiceClient
+├── mq/           AssignmentPublishedEvent, AssignmentPublishedPublisher,
+│                StudyProgressConsumer, AssignmentGradedConsumer
+├── config/       FeignConfig, RabbitConfig, MybatisPlusConfig, AsyncConfig
+└── resources/    application.yml, mapper/*.xml
 ```
 
-**响应（200）**
-```json
-{
-  "code": 0,
-  "message": "ok",
-  "data": {
-    "intent": "explain",
-    "finalAnswer": "多态是指……（注入 RAG 上下文后的讲解）",
-    "profile": { "topic": "面向对象", "course": "JavaSE", "_onboarding_phase": "done" },
-    "resources": null,
-    "learningPath": null,
-    "safety_report": { "passed": true },
-    "evaluation_report": { "mastery": 72 },
-    "resourceDir": null,
-    "profileComplete": true
-  }
-}
-```
+### B.4.2 与 code-service 的作业-判分对接契约（异步两段式，见《契约对齐决议》C1）
+teacher-service 提交代码题时调 `code-service`，采用**异步两段式**（提交仅拿受理号，判分结果经事件/结果端点回填）。**约定契约如下（吴友诚在 code-service 实现，路径前缀 `/api/code/**`，网关已路由）**：
 
-### 1.3.2 `POST /api/ai/resource/generate`
-
-**请求**
+**请求** `POST /api/code/submit`（HTTP 202 Accepted）
 ```json
-{
-  "chapter": "第三章",
-  "topic": "继承与多态",
-  "resourceType": "mindmap",
-  "level": "basic",
-  "mode": "resource",
-  "prompt": "为薄弱学生生成思维导图"
-}
-```
-> 说明：`resourceType` 取值沿用现有 `api.py` 的 `role_prompts` 键集合；新增的 `level` 映射到原 `difficulty`（`easy`→basic）。陈嘉成(resource-service)调用时传 `studentId/chapter/topic/resourceType/level`，由 ai-service 内部拼 prompt（保持与现有 `AiClient.buildResourcePrompt` 一致的角色 prompt）。
-> **`mode` 参数（见 C3）**：默认 `"resource"`，兼容现有 mindmap/quiz/reading/code/learning_path 生成；用于复用同一端点承载多类语义，`suggestion/judge/evaluation` 归 `mode` 轴而非 `resourceType` 取值（见 C19）。响应结构随 `mode` 不同而不同（见下）。
-
-**响应（200）** —— 结构随 `mode` 不同而不同：
-
-- **`mode=resource`（默认）**：`{content, resourceType, chapter}`（现状不变）：
-```json
-{
-  "code": 0,
-  "message": "ok",
-  "data": {
-    "content": "{\"id\":\"root\",\"topic\":\"继承与多态\",\"children\":[...]}",
-    "resourceType": "mindmap",
-    "chapter": "第三章"
-  }
-}
-```
-> `content` 一律为**字符串**（可能是 JSON 文本或 Markdown），resource-service 落库 `resources.content` 后由前端按 `type` 解析。
-
-- **`mode=judge`**（测验判分 / 作业判分）：`{score(0|1), correct, comment, explanation?}`：
-```json
-{ "code": 0, "message": "ok", "data": { "score": 1, "correct": true, "comment": "答对要点……", "explanation": "解释……" } }
-```
-- **`mode=suggestion`**（画像/学习建议）：`{suggestions:[]}`：
-```json
-{ "code": 0, "message": "ok", "data": { "suggestions": ["建议巩固……", "可尝试……"] } }
-```
-- **`mode=quiz`**（教师出题草稿）：`{items:[...]}`：
-```json
-{ "code": 0, "message": "ok", "data": { "items": [ { "stem": "……", "options": ["A.…","B.…"], "answer": "A" } ] } }
-```
-- **`mode=evaluation`**（成绩解读）：`{analysis}`：
-```json
-{ "code": 0, "message": "ok", "data": { "analysis": "本次成绩解读……" } }
-```
-
-### 1.3.3 `POST /api/ai/path/generate`
-
-**请求**
-```json
-{ "studentId": "1001", "prompt": "根据画像规划 4 周学习路径", "profile": { "course": "JavaSE", "weaknesses": ["多线程"] } }
-```
-**响应（200）** —— 直接返回路径 JSON（保持现有行为，外层再包 `Result`）：
-```json
-{
-  "code": 0, "message": "ok",
-  "data": {
-    "goal": "掌握课程核心知识并完成实践项目",
-    "targetMastery": "≥85%",
-    "totalHours": 24,
-    "masteryRate": 50,
-    "stages": [
-      { "name": "本周路径", "tasks": [ { "title": "语法与基础练习", "duration": 60, "status": 0, "progress": 0 } ] }
-    ],
-    "suggestions": ["建议每天复习 30 分钟", "多线程建议结合案例练习"],
-    "applicationAdvice": "可结合小型项目实践巩固面向对象与多线程",
-    "examAdvice": "重点复习继承、多态与异常章节",
-    "recommendTime": "4 周"
-  }
-}
-```
-> **字段分工（见 C9）**：`suggestions` / `applicationAdvice` / `examAdvice` / `recommendTime` 由 **ai 负责**（基于画像+路径生成）。其余聚合字段 `totalTasks` / `completedTasks` / `learningRate` / `unmasteredRate` / `tasks[].id` 由 **learning-service 自算/落库时生成**，不在此 ai 响应中。
-
-### 1.3.4 `POST /api/ai/code/analyze` ★仅供内网（code-service 经 Feign 调用）
-
-**请求**
-```json
-{
+{ "studentId": 12,
+  "assignmentId": 7,
+  "assignmentItemId": 45,
   "language": "java",
-  "sourceCode": "public class Main { public static void main(String[] a){ System.out.println(\"hi\"); } }",
-  "context": {
-    "assignment_item_id": 12,
-    "studentId": "1001",
-    "compile_ok": 1,
-    "checkstyle_errors": 0,
-    "pmd_violations": 1,
-    "run_passed": 1,
-    "run_stdout": "hi\n",
-    "expected_output": "hi\n"
+  "sourceCode": "public class Main{...}",
+  "expectedOutput": "...",
+  "className": "Main" }
+```
+**响应**（仅受理回执，**非**全量 VO，HTTP 202）
+```json
+{ "submissionId": 901, "status": "pending" }   // status: pending/running/done/failed
+```
+> submit 仅返回 `{submissionId, status}` 受理回执，**不**在此同步返回 stdout/compileOk/checkstyle/pmd/aiSuggestion/overallScore 等全量报告（原"submit 同步返回 `CodeSubmissionVO` 直接落 `grades`"的错误假设已作废）。teacher-service 提交后**不读取 submit 响应落库**。
+> **采用方案 A（事件驱动，见《契约对齐决议》C1）**：判分结果由 `AssignmentGradedConsumer` 消费 `assignment.graded` 完整事件体回填 `grades`（见 B.4.5），teacher-service **不轮询**。退路 B：在 `CodeServiceClient` 新增 `GET /api/code/result/{id}`，submit 后轮询至 `status=done` 再落库（code-service 该端点返回 `{submissionId, status, stdout, runTimeMs, compileOk, checkstyle, pmd, aiSuggestion, overallScore}`）。
+> 选择题/填空题（choice/blank）：不调 code-service，本地比对 `questions.answer` 判分（或小题调 ai `/resource/generate` mode=judge）。仅 `code` 类型走 code-service。
+> 该契约是**双向约定**：吴友诚的 code-service 必须提供 `POST /api/code/submit`（202 + 上述受理回执），并按 `expectedOutput/className/assignmentId` 参与判分权重与事件回填关联；陈海洋侧 `CodeServiceClient` 按此签名实现。AI 分析底层复用 ai-service `/code/analyze`（由 code-service 内部调用，teacher-service 不直接调）。
+
+### B.4.3 跨服务 Feign 客户端
+```java
+// feign/LearningServiceClient.java  → 学习学情（本服务拥有的另一个服务；路径带 /api/learning 前缀，与网关一致）
+@FeignClient(name = "learning-service", url = "${learning.base-url:}", path = "/api/learning")
+public interface LearningServiceClient {
+    @GetMapping("/analytics/student/{studentId}")
+    Result<StudentAnalyticsVO> getAnalytics(@PathVariable("studentId") Long studentId);
+    @GetMapping("/analytics/student/{studentId}/progress")
+    Result<StudentProgressVO> getProgress(@PathVariable("studentId") Long studentId);
+    @GetMapping("/profile/{studentId}")
+    Result<ProfileVO> getProfile(@PathVariable("studentId") Long studentId);
+    @PostMapping("/profile/{studentId}/class")   // T 角色可写，回写 class_id
+    Result<Void> bindClass(@PathVariable("studentId") Long studentId, @RequestBody Map<String,Object> body);
+}
+
+// feign/CodeServiceClient.java  → 代码判分（路径带 /api/code 前缀，与网关一致）
+// 异步两段式（见《契约对齐决议》C1）：submit 仅返回受理回执 {submissionId, status}（HTTP 202），
+// 判分结果经 AssignmentGradedConsumer 消费 assignment.graded 事件体落库（方案 A，不轮询）。
+// 退路 B 可增 GET /api/code/result/{id} 轮询至 status=done（见 B.4.2）。
+@FeignClient(name = "code-service", url = "${code.base-url:}", path = "/api/code")
+public interface CodeServiceClient {
+    @PostMapping("/submit")
+    Result<CodeSubmitReceiptVO> submit(@RequestBody CodeSubmissionRequest req);
+}
+
+// feign/AiServiceClient.java  → AI 助教（路径带 /api/ai 前缀，与网关一致）
+@FeignClient(name = "ai-service", url = "${ai.base-url:}", path = "/api/ai")
+public interface AiServiceClient {
+    @PostMapping("/chat") Result<AiChatResult> chat(@RequestBody AiChatRequest req);
+    @PostMapping("/resource/generate") Result<Map<String,Object>> generate(@RequestBody AiResourceRequest req);
+}
+// generate 的 AiResourceRequest 必须带 mode 字段（见《契约对齐决议》C3），按 mode 解析：
+//   mode=quiz        → 解析 {items:[...]}        （questions/generate B.2.2，出题草稿）
+//   mode=evaluation  → 解析 {analysis}          （ai/explain-grade B.2.6，成绩解读）
+//   mode=resource   → 解析 {content, resourceType, chapter}（默认）
+```
+> 三个 Feign 客户端均自动套用 `common` 的 `AuthFeignInterceptor`，把当前 `AuthContext`（教师/学生身份）透传下游；下游（learning/code/ai）均从 `X-User-*` 头读取。
+
+### B.4.4 学情看板聚合（并发 + 限流）
+```java
+// AnalyticsServiceImpl.getClassAnalytics(Long classId)
+List<Long> studentIds = classStudentMapper.selectStudentIds(classId);
+Semaphore sem = new Semaphore(8); // 保护 learning-service
+List<CompletableFuture<StudentProgressVO>> futures = studentIds.stream()
+    .map(sid -> CompletableFuture.supplyAsync(() -> {
+        sem.acquire(); try { return learningClient.getProgress(sid).getData(); }
+        finally { sem.release(); }
+    }, executor))
+    .toList();
+// 等待全部 → 聚合 avgMastery / masteryDist / dimensionAvg / taskCompletion / weakTopics
+```
+> 班级人数大时避免瞬时打爆 learning-service；配合 Sentinel（P4）对 `/api/teacher/classes/{id}/analytics` 限流。
+
+### B.4.5 RabbitMQ 异步
+**发布**（teacher-service → 学生通知/资源）：
+- `assignment.published` / routing `assignment.published`：作业发布后发事件 `{assignmentId, classId, title, type, deadline}`，供前端轮询/通知（当前无独立通知服务，先落事件，前端可轮询 assignments 列表）。exchange 名 = 事件名（与 study.progress / resource.generate 风格统一，见《契约对齐决议》C12）。
+**消费**（teacher-service 作为订阅方，对齐主蓝图 §8）：
+- `study.progress`（来自 learning-service）：`StudyProgressConsumer` 接收后**更新内存/Redis 班级看板缓存**（`teacher:class:{classId}:dashboard`），使教师看板近实时，避免每次重算聚合。
+- `assignment.graded`（来自 code-service）：`AssignmentGradedConsumer` **事件驱动**消费（方案 A，见《契约对齐决议》C1）。code-service 判分完成后发该事件，**payload 必须携带完整报告体**（不只 overallScore/aiSuggestion）：
+  `{ assignmentId, assignmentItemId, studentId, submissionId, status, runPassed, compileOk, stdout, runTimeMs, checkstyle, pmd, aiSuggestion, overallScore }`。
+  据此回写 `grades` 的 `run_result`/`static_report`/`ai_report`/`score` 列（status→1 已批），并触发教师端"待复核"提醒计数：
+  ```java
+  @RabbitListener(queues = "teacher.assignment.graded.queue")
+  public void onAssignmentGraded(AssignmentGradedEvent e) {
+      Grade grade = gradeMapper.selectByStuItem(e.getAssignmentId(), e.getStudentId(), e.getAssignmentItemId());
+      if (grade == null) return;
+      grade.setRunResult(Map.of("stdout", e.getStdout(), "runTimeMs", e.getRunTimeMs(),
+                                "status", e.getStatus(), "runPassed", e.getRunPassed()));
+      grade.setStaticReport(Map.of("compileOk", e.getCompileOk(), "checkstyle", e.getCheckstyle(), "pmd", e.getPmd()));
+      grade.setAiReport(Map.of("aiSuggestion", e.getAiSuggestion()));
+      grade.setScore(e.getOverallScore());
+      grade.setStatus(1);
+      grade.setGradedAt(LocalDateTime.now());
+      gradeMapper.updateById(grade);
+      // 触发教师端"待复核"提醒计数
   }
+  ```
+```java
+@RabbitListener(queues = "teacher.study.progress.queue")
+public void onStudyProgress(StudyProgressEvent e) {
+    redisTemplate.opsForHash().put("teacher:class:"+e.getClassId()+":dashboard",
+        "student:"+e.getStudentId(), e);  // 轻量缓存，看板读取时合并
 }
 ```
-**响应（200）**
-```json
-{
-  "code": 0, "message": "ok",
-  "data": {
-    "suggestions": [
-      { "severity": "warning", "location": "Main.java:3", "title": "建议增加空指针判断", "detail": "……", "example": "if (a != null) {...}" }
-    ],
-    "summary": "代码可运行，存在 1 处 PMD 潜在空指针隐患，建议补充防御性判断。",
-    "overall_comment": "整体良好，规范性待提升。",
-    "score_hint": 88
-  }
-}
-```
-> `score_hint` 仅作参考，**最终分由 code-service 判分逻辑决定**（§2.6），ai 不强制。
 
-### 1.3.5 `POST /api/ai/kb/rebuild` ★管理端治理触发
-
-**请求**：`{}` 或 `{ "collection": "java_notes", "force": true }`（入参不变）
-**响应（202 异步 / 或 200 + 进度）**
-```json
-{ "code": 0, "message": "ok", "data": { "task_id": "rebuild_20260731", "status": "started", "docs_indexed": 0 } }
-```
-> 重建为耗时操作，建议后台线程执行，接口立即返回 `task_id`；管理端轮询 `/api/ai/kb/status/{task_id}` 取进度。
-
-**语义（见 C6）**：`/kb/rebuild` 不再重建本地 `java_notes` md，改为「触发从 resource-service 拉取 `kb_corpus`(status=0) → embed → 写 Chroma(collection) → 回调 `mark-indexed`」：
-- **语料权威源 = `kb_corpus`**（resource-service 清洗流水线产出）；ai **不连、不写任何 MySQL 关系表**（含 `resource_db`），严守 DB-per-service 硬约束。
-- ai 经 resource-service 暴露的 `GET /api/resource/kb/corpus?status=0` 拉取待向量化语料（出站客户端见 §1.3.5.1）。
-- embed → 写 `Chroma(collection)` → 完成后**回调** `POST /api/resource/kb/mark-indexed`（body `{ids:[], collection}`），由 resource-service 把对应 `kb_corpus` 行 `status` 置 1。
-- **ai 不持有任何关系表，不写 `resource_db`**；本地 `java_notes` md 仅作开发期种子/兜底，不进生产向量化主链路。
-
-#### 1.3.5.1 resource 出站客户端（ai → resource-service，Feign/HTTP）
-ai 新增一个出站客户端（Java 侧 `FeignClient`，或 Python 侧经 `requests`/service 名 `resource-service` 互访），封装：
-- `GET /api/resource/kb/corpus?status=0`：拉取待向量化语料（`kb_corpus` 行，status=0）。
-- `POST /api/resource/kb/mark-indexed`：body `{ids:[], collection}`，通知 resource-service 将对应 `kb_corpus` 行 `status` 置 1。
-
-### 1.3.6 `GET /api/ai/health`
-```json
-{ "status": "ok", "chroma": "connected", "llm": "ok" }
-```
-
-## 1.4 数据模型 / RAG 架构
-
-```
-java_notes(知识源) ──导出──▶ kb/docs/*.md
-                              │ loader 切分(chunk≈500字, overlap=50)
-                              ▼
-                       Embedding(OpenAI兼容 embed) ──▶ Chroma(collection=java_notes, 持久化卷)
-                                                                    ▲ 检索
-                                                                    │ top-k=5, score>0.3
-                                                       Agent 调 call_llm 前注入 prompt
-```
-
-### 1.4.1 知识源迁移（java_notes → 文件）
-原 `java_notes` 表 24 篇笔记内容（见 `edu_agent.sql`）**导出为 Markdown 文件**，置于 `edu-agent-ai/school_agent/kb/docs/<category>/<title>.md`。提供一次性导出脚本 `scripts/export_notes.py`（用 `pymysql` 读 `java_notes` → 写 md），跑一次即可，之后 AI 不再依赖 MySQL（满足"ai 无关系表"约束）。管理端编辑知识库时走"编辑→`/kb/rebuild`"流程。
-
-### 1.4.2 Chroma 容器连接（关键配置）
-```python
-# school_agent/config.py 新增
-import os
-CHROMA_HOST   = os.getenv("CHROMA_HOST", "chroma")
-CHROMA_PORT   = int(os.getenv("CHROMA_PORT", "8000"))
-CHROMA_COLLECTION = os.getenv("CHROMA_COLLECTION", "java_notes")
-CHROMA_PERSIST = os.getenv("CHROMA_PERSIST", "/chroma-data")
-EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "text-embedding-3-small")
-```
-
-```python
-# school_agent/kb/chroma_client.py
-from chromadb import Client
-from chromadb.config import Settings
-from school_agent.config import CHROMA_HOST, CHROMA_PORT, CHROMA_COLLECTION
-
-def get_client():
-    return Client(Settings(
-        chroma_server_host=CHROMA_HOST,
-        chroma_server_http_port=CHROMA_PORT,
-        persist_directory=None,
-    ))
-
-def get_collection():
-    return get_client().get_or_create_collection(
-        name=CHROMA_COLLECTION,
-        metadata={"hnsw:space": "cosine"},
-    )
-```
-
-### 1.4.3 检索节点落地（替换现有空壳 `retrieve_knowledge`）
-```python
-# school_agent/kb/retriever.py
-def retrieve_knowledge(state: dict, top_k: int = 5) -> dict:
-    user_input = state.get("user_input", "")
-    profile = state.get("profile", {})
-    topic = profile.get("topic", "")
-    query = f"{topic} {user_input}".strip()
-    try:
-        col = get_collection()
-        res = col.query(query_texts=[query], n_results=top_k)
-        docs = (res.get("documents") or [[]])[0]
-        ctx = "\n\n".join(docs)
-    except Exception as e:
-        ctx = ""
-        print(f"[RAG] 检索失败: {e}")
-    state["retrieved_context"] = ctx
-    return state
-```
-`graph.py` 的 `retrieve_knowledge` 节点改为调用上述 `retriever.retrieve_knowledge`；各 Agent 在 `call_llm` 前把 `state["retrieved_context"]` 拼进 system prompt 的「知识库参考」段。
-
-### 1.4.4 Embedding / 索引流水线
-```python
-# school_agent/kb/pipeline.py
-from school_agent.kb.chroma_client import get_collection
-from school_agent.services.embed_client import embed
-
-def index_documents(docs: list[dict]):
-    """docs: [{"id":..., "text":..., "metadata":{...}}]"""
-    col = get_collection()
-    col.upsert(
-        ids=[d["id"] for d in docs],
-        documents=[d["text"] for d in docs],
-        metadatas=[d.get("metadata", {}) for d in docs],
-        embeddings=[embed(d["text"]) for d in docs],
-    )
-```
-> 首次部署跑一次 `pipeline.index_all()`；管理端 `/kb/rebuild` 调同一函数（带 `force` 先 `col.delete` 再重建）。
-
-## 1.5 关键实现
-
-### 1.5.1 入口与路由前缀
-`app.py` 改为：
-```python
-from fastapi import FastAPI
-from school_agent.routers import chat, resource, path, code_analyze, kb
-app = FastAPI(title="EduAgent AI Service", version="1.0.0")
-app.include_router(chat.router,    prefix="/api/ai", tags=["chat"])
-app.include_router(resource.router,prefix="/api/ai", tags=["resource"])
-app.include_router(path.router,    prefix="/api/ai", tags=["path"])
-app.include_router(code_analyze.router, prefix="/api/ai", tags=["code"])
-app.include_router(kb.router,      prefix="/api/ai", tags=["kb"])
-@app.get("/api/ai/health")
-def health(): ...
-```
-> 网关 `/api/ai/**` 路由**不 StripPrefix**（full path 直达 ai-service）。`/code/analyze` 由网关**排除在外**（见 §1.7 安全）。
-
-### 1.5.2 `/code/analyze` 内部逻辑
-1. 调 `code_fixer.fix_code` 清洗中文关键字（沿用现有 `utils/code_fixer.py`）。
-2. 拼 prompt：你是 Java 代码评审专家（固定 system prompt 见附录 A）。
-3. `call_llm_json` → 结构化建议；失败回退模板（保证不阻塞判分）。
-4. 返回 §1.3.4 形状。
-
-### 1.5.3 Nacos 注册（让 Java 经 `lb://ai-service` 发现）
-Python 进程在启动时向 Nacos OpenAPI 注册自身：
-```python
-# scripts/nacos_register.py（进程启动时执行一次 + 心跳）
-import os, requests
-NACOS = os.getenv("NACOS_ADDR", "http://nacos:8848")
-SERVICE = "ai-service"; IP = os.getenv("POD_IP", "ai-service"); PORT = 8001
-
-def register():
-    requests.post(f"{NACOS}/nacos/v2/ns/instance", params={
-        "serviceName": SERVICE, "ip": IP, "port": PORT,
-        "namespaceId": os.getenv("NACOS_NAMESPACE", "edu-dev"),
-        "healthy": True, "ephemeral": True,
-    }, timeout=5)
-```
-> 备选（更简单稳健，竞赛推荐先用）：Java 侧 Feign client 直接配 `url: http://ai-service:8001`（docker 网络内 service 名解析），不依赖 Nacos 注册 Python。两种都写进 §1.6 compose，二选一即可，**默认推荐 Feign 直连 service 名**（少一个故障点）。
-
-### 1.5.4 降级
-保留 `USE_MOCK_LLM=1`：LLM 不可用时 `call_llm` 回退本地模板输出（沿用现有降级思路），保证 P0/P1 联调不受外部 API 限流影响。
-
-## 1.6 部署：Dockerfile + compose 片段
-
-**`edu-agent-ai/Dockerfile`**（多阶段）
-```dockerfile
-FROM python:3.11-slim AS builder
-WORKDIR /app
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
-FROM python:3.11-slim
-WORKDIR /app
-ENV PYTHONUNBUFFERED=1 CHROMA_HOST=chroma CHROMA_PORT=8000
-COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
-COPY . .
-EXPOSE 8001
-CMD ["sh", "-c", "python scripts/nacos_register.py & uvicorn app:app --host 0.0.0.0 --port 8001"]
-```
-`requirements.txt` 追加：`chromadb`、`sentence-transformers`（可选本地 embed）、`pymysql`（一次性导出用）、`requests`（Nacos 注册）。
-
-**compose 片段（在 P0 的 `docker-compose.yml` 追加）**
+### B.4.6 配置骨架
 ```yaml
-  ai-service:
-    build: ./edu-agent-ai
-    container_name: edu-ai
-    networks: [edu-net]
-    environment:
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - OPENAI_BASE_URL=${OPENAI_BASE_URL}
-      - LLM_MODEL=${LLM_MODEL:-gpt-4o-mini}
-      - CHROMA_HOST=chroma
-      - CHROMA_PORT=8000
-      - CHROMA_COLLECTION=java_notes
-      - USE_MOCK_LLM=${USE_MOCK_LLM:-0}
-    depends_on: [chroma, nacos]
-    ports: ["8001:8001"]
-    healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8001/api/ai/health').status==200 else 1)"]
-      interval: 30s
+server:
+  port: 8084
+spring:
+  application:
+    name: teacher-service
+  cloud:
+    nacos:
+      discovery: { server-addr: nacos:8848 }
+      config: { server-addr: nacos:8848, namespace: edu-dev, group: teacher-group }
+  datasource:
+    url: jdbc:mysql://mysql:3306/teacher_db?useSSL=false&serverTimezone=Asia/Shanghai
+    username: ${DB_USER}; password: ${DB_PWD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+mybatis-plus:
+  mapper-locations: classpath*:mapper/*.xml
+rabbitmq: { host: rabbitmq, port: 5672 }
+learning: { base-url: http://learning-service:8082 }
+code:     { base-url: http://code-service:8085 }
+ai:       { base-url: http://ai-service:8001 }
 ```
+> 入口：`@SpringBootApplication` + `@EnableDiscoveryClient` + `@EnableFeignClients` + `@MapperScan` + `@EnableAsync`（聚合并发线程池）。
 
-## 1.7 安全（内网隔离）
+---
 
-- `/api/ai/**` 由网关鉴权后转发；ai-service **不持有用户库**，仅信任网关注入的 `X-User-*` 头做审计。
-- **`/api/ai/code/analyze` 不进网关路由表**（仅 code-service 内网调用）。网关路由只挂：`/api/ai/chat`、`/api/ai/resource/generate`、`/api/ai/path/generate`、`/api/ai/kb/rebuild`、`/api/ai/health`。
-- 生产环境 `ai-service.ports` 不映射到宿主，仅靠 `edu-net` 内 `ai-service:8001` 互访。
-- 网关对 `/api/ai/**` 限流（QPS 较低，LLM 为稀缺资源），规则见 P4 §3.1。
+## B.5 测试
 
-## 1.8 测试
+### B.5.1 单测（JUnit5 + Mockito）
+- `GradeService.submit`：mock `CodeServiceClient`，断言 code 题提交后 `grades` 的 `run_result/static_report/ai_report/score` 映射正确；choice 题本地比对正确。
+- `ClassService`：增删学生后 `class_students` 与 `LearningServiceClient.bindClass` 被调用（mock 验证）。
+- `AnalyticsService`：mock `LearningServiceClient.getProgress` 返回多组 → 断言 `avgMastery`/`masteryDist` 聚合正确。
+- `AssignmentService`：发布后 `AssignmentPublishedPublisher` 发出 `assignment.published` 事件（mock `RabbitTemplate` 验证）。
 
-- 单测：`retriever` 在 Chroma 起不来时返回空上下文不抛异常；`index_documents` 幂等（upsert）。
-- 集成：Testcontainers 起 Chroma → 灌 3 条 doc → query 命中 top-1 → 断言 `retrieved_context` 非空。
-- 契约：`/api/ai/resource/generate` 与 `/api/ai/chat` 的 OpenAPI 作为 resource(陈嘉成)/learning(陈海洋) 的 Feign 契约基线（Spring Cloud Contract 在 P4 接入）。
+### B.5.2 集成（Testcontainers）
+- MySQL(teacher_db) + RabbitMQ 容器 → 启 teacher-service → WebTestClient：
+  - 建班级→加学生→建作业(含 code 题)→学生提交（mock code-service 返回 overallScore）→断言 `grades` 落库、事件 `assignment.graded` 进入测试队列。
+  - 看板：`GET /api/teacher/classes/{id}/analytics` 在 mock learning-service（返回固定 progress）下返回正确聚合。
+- Feign 透传：用 MockMvc 注入 `X-User-Roles: ROLE_TEACHER` 验证 `AuthFeignInterceptor` 把头带去下游（断言下游收到）。
 
-## 1.9 验收
+### B.5.3 契约
+- 导出 teacher-service OpenAPI 契约；重点冻结 `CodeServiceClient` 的 `/api/code/submit` 请求/响应字段（与吴友诚 code-service 子 spec 互为契约）。
 
-- [ ] `docker-compose up` 后 `ai-service` healthy，`/api/ai/health` 返回 `chroma:connected`。
-- [ ] 首次 `/kb/rebuild` 完成，Chroma `java_notes` collection 有数据。
-- [ ] `/chat` 未检索时也能答，检索开启后回答贴 JavaSE 知识库（RAG 生效，对比实验可见差异）。
-- [ ] resource-service 调 `/resource/generate` 拿到 `content` 字符串并落库。
-- [ ] code-service 调 `/code/analyze` 拿回 `suggestions` JSON。
-- [ ] `/code/analyze` 经网关 404（内网专用验证）。
+---
+
+## B.6 验收（DoD）
+- [ ] `teacher_db` 建库建表完成（6 张表，无跨库 FK）；种子数据（1 教师、1 班级、若干学生、题库、1 作业）可灌入。
+- [ ] 班级管理 / 题库 / 作业 CRUD 全部按契约跑通，错误角色→403。
+- [ ] 学生提交作业：choice/blank 本地判分；code 题经 `CodeServiceClient`→code-service 判分并正确落 `grades`（run_result/static_report/ai_report/score）。
+- [ ] 学情看板 `GET /api/teacher/classes/{id}/analytics` 并发聚合 learning-service 数据正确，且消费 `study.progress` 近实时更新缓存。
+- [ ] AI 助教 `/api/teacher/ai/ask`、`/questions/generate` 经 `AiServiceClient` 调通，身份透传。
+- [ ] RabbitMQ：`assignment.published` 发布、`study.progress`/`assignment.graded` 消费均验证。
+- [ ] 单测 + Testcontainers 集成绿；与 code-service 的判分契约冻结并 mutual-review 通过（吴友诚确认）。
 
 ---
 
@@ -435,7 +434,7 @@ CMD ["sh", "-c", "python scripts/nacos_register.py & uvicorn app:app --host 0.0.
 4. **Docker 沙箱**一次性容器运行（`--memory=256m --cpus=1 --network=none --read-only`，5s 超时强杀）。
 5. Feign 调 `ai-service /api/ai/code/analyze` 取得 AI 纠错讲解。
 6. 综合判分（编译/检查/运行结果 → `overall_score`），写 `code_check_reports`。
-7. 结果经 MQ 事件 `assignment.graded` 通知 teacher-service（陈海洋作业批改）。
+7. 结果经 MQ 事件 `assignment.graded` 通知 teacher-service（吴友诚作业批改）。
 
 **非目标**：不自己训练模型；不支持 Java 以外语言的沙箱运行（本期仅 JavaSE，`language=java`）。
 
@@ -663,7 +662,7 @@ public interface AiServiceClient {
     Result<CodeAnalyzeData> analyze(@RequestBody CodeAnalyzeRequest req);
 }
 ```
-`CodeAnalyzeRequest` 字段见 §1.3.4。**容错**：AI 调用必须设短超时 + fallback（返回空建议），绝不能因 AI 抖动导致判分失败（Sentinel/超时在 P4 §3.1 固化）。
+`CodeAnalyzeRequest` 字段见 ai-service §1.3.4。**容错**：AI 调用必须设短超时 + fallback（返回空建议），绝不能因 AI 抖动导致判分失败（Sentinel/超时在 P4 §3.1 固化）。
 
 ### 2.4.6 判分逻辑（§2.6）
 综合三项，封顶 100、底 0：
@@ -676,7 +675,7 @@ AI(参考)     : 不加减分，仅写入 ai_suggestion 供教师/学生查看
 ```
 > 例：编译过(40) + 检查 1warning(-1) + 运行通过且输出正确(60) = **99**；有 1 error(-3) → 96。权重在 `ScoreService` 常量集中，便于调参。
 
-### 2.4.7 与 teacher-service 对接（陈海洋 assignment 调 code）
+### 2.4.7 与 teacher-service 对接（吴友诚 assignment 调 code）
 ```
 teacher-service 发布代码作业(assignment_items.type=code)
    → 学生前端调用 code-service /api/code/submit(assignmentItemId=?)
@@ -825,7 +824,7 @@ curl -s -XPOST localhost:8080/api/ai/kb/rebuild -H "Authorization: Bearer $ADMIN
 # §4. 单体 → 微服务拆分指导
 
 > 对象：`edu-agent-server/src/main/java/com/eduagent/**` 现有单体。目标：按主蓝图 §3.3 拆成 6 个 Spring Boot 应用（单仓多 Maven module）+ 1 个 Python ai-service。
-> 本节能直接指导陈嘉成(resource)、陈海洋(learning/teacher)动手；吴友诚的 code 已独立成 §2。
+> 本节能直接指导陈嘉成(resource)、陈海洋(learning)/吴友诚(teacher)动手；吴友诚的 code 已独立成 §2。
 
 ## 4.1 现有类归属总表（逐文件）
 
@@ -853,14 +852,14 @@ curl -s -XPOST localhost:8080/api/ai/kb/rebuild -H "Authorization: Bearer $ADMIN
 | 现有类 | 动作 |
 |--------|------|
 | `controller/ResourceController` | 迁 resource-service（路径改 `/api/resource/**`，对齐网关） |
-| `service/ResourceService(+impl)、ContentReviewService(+impl)` | 迁 resource-service（impl 里 `aiClient.generateResource` 改为 Feign 调 `/api/ai/resource/generate`，契约见 §1.3.2） |
+| `service/ResourceService(+impl)、ContentReviewService(+impl)` | 迁 resource-service（impl 里 `aiClient.generateResource` 改为 Feign 调 `/api/ai/resource/generate`，契约见 ai-service §1.3.2） |
 | `entity/Resource` | 迁 resource_db（`resources` 表，列基本复用现有 `resources` DDL） |
 | `mapper/ResourceMapper` | 迁 resource-service |
 | `exercise_records`、`admin_stats_cache` 表 | 迁 resource_db（对应 `service/impl/ResourceServiceImpl` 写库逻辑保留） |
 
-> 对齐：陈嘉成调用 AI 时，`generateResource` 的请求字段 `studentId/chapterName/topic/type/level` → ai `/resource/generate`（§1.3.2）；返回 `content` 字符串直接落 `resources.content`。
+> 对齐：陈嘉成调用 AI 时，`generateResource` 的请求字段 `studentId/chapterName/topic/type/level` → ai `/resource/generate`（ai-service §1.3.2）；返回 `content` 字符串直接落 `resources.content`。
 
-### 4.1.4 → teacher-service（陈海洋，原 report-service 8084）
+### 4.1.4 → teacher-service（吴友诚，原 report-service 8084）
 | 现有类 | 动作 |
 |--------|------|
 | `controller/AdminController、ReportController` | 迁 teacher-service |
@@ -868,13 +867,13 @@ curl -s -XPOST localhost:8080/api/ai/kb/rebuild -H "Authorization: Bearer $ADMIN
 | `entity/Report` | 迁 teacher_db |
 | `mapper/ReportMapper` | 迁 teacher-service |
 | **新增**（陈海洋 P3 建）：`classes、class_students、questions、assignments、assignment_items、grades` | 见主蓝图 §4.3 DDL |
-| 作业批改消费 `assignment.graded` 事件（§2.4.7） | 陈海洋在 teacher-service 加 MQ 消费者 |
+| 作业批改消费 `assignment.graded` 事件（§2.4.7） | 吴友诚在 teacher-service 加 MQ 消费者 |
 
 ### 4.1.5 → code-service（吴友诚，见 §2）
 - 单体里**没有**代码相关类，全新增。前端的"代码题"由 teacher 的 `questions.type=code` + code-service 判分协作完成。
 
-### 4.1.6 → ai-service（吴友诚，见 §1）— 非 Java
-- `controller/JavaNotesController` + `service/JavaNotesService` + `entity/JavaNotes`：知识源**导出为 Markdown**（§1.4.1），不再作为 Java 服务表；管理端"知识库"走 ai-service `/kb/rebuild`。
+### 4.1.6 → ai-service（陈海洋，见 ai-service §1）— 非 Java
+- `controller/JavaNotesController` + `service/JavaNotesService` + `entity/JavaNotes`：知识源**导出为 Markdown**（ai-service §1.4.1），不再作为 Java 服务表；管理端"知识库"走 ai-service `/kb/rebuild`。
 - `entity/AgentConfig` + `service/AgentConfigService`：prompts 配置迁 ai-service（或 Nacos 动态配置，管理端可热更）。
 - `entity/SystemSetting` + `service/SystemSettingService`：系统设置类配置迁 **Nacos 配置中心**（不再落业务库）。
 
@@ -885,7 +884,7 @@ curl -s -XPOST localhost:8080/api/ai/kb/rebuild -H "Authorization: Bearer $ADMIN
 3. **依赖 common**：每个 module `pom.xml` 加 `com.eduagent:common`（P0 已发），移除单体里重复的 `Result/PageResult/GlobalExceptionHandler/JwtTokenProvider` 等（改引 common）。
 4. **换鉴权**：删单体 `security/*` 的 `JwtAuthenticationFilter`（Gateway 已做）；加 common 的 `AuthContextFilter` + `AuthFeignInterceptor`（P0 §6.2），控制器用 `AuthContext.getUserId()` 取身份（替换 `SecurityContextHolder` 取 principal 的写法，见 `ResourceController.getCurrentUserId`）。
 5. **换数据源**：每个服务配自己库（`auth_db/learning_db/resource_db/code_db/teacher_db`），删跨库 `@TableName` 引用。
-6. **换 AI 调用**：`agent/AiClient`（RestTemplate 直连）改为 Feign `AiServiceClient`（§1.5.3 / §2.4.5）。
+6. **换 AI 调用**：`agent/AiClient`（RestTemplate 直连）改为 Feign `AiServiceClient`（ai-service §1.5.3 / §2.4.5）。
 7. **跨服务调用**：本地 `service` 互调 → Feign/MQ（§4.3）。
 8. **Flyway/Liquibase**：每服务独立 `db/migration/V1__init.sql`，从现有 `init.sql`/`edu_agent.sql` 按归属裁剪，**禁止共用单体 init.sql**。
 9. **种子数据**：真实测试数据写进 `V2__seed.sql`（配合前端零 mock 策略，主蓝图 §5.5）。
@@ -897,7 +896,7 @@ curl -s -XPOST localhost:8080/api/ai/kb/rebuild -H "Authorization: Bearer $ADMIN
 - **分布式事务取舍**：**本期不引入 Seata/2PC**（主蓝图非目标）。采用「本地事务 + 发事件 + 最终一致 + 消费者幂等」。例：作业发布(teacher) 与 代码判分(code) 不保证原子，靠 `assignment.graded` 事件最终补齐 grades；若 code 判分失败，grades 留空，教师端可见"待判分"状态。
 - **跨服务查询禁直连库**：learning 不能 `SELECT` resource 的表；要数据走 Feign（如 teacher 聚合班级学情 → Feign 调 learning + code 拿数据后自己拼）。
 - **身份透传**：Feign 调下游必须走 `AuthFeignInterceptor`（P0 已固化为 common 默认配置），**不要**在 Feign 请求里手填 `X-User-*` 头（会被网关视为伪造，且破坏透传一致性）。
-- **AI 路径前缀**：所有 Java 侧调用 ai 的路径都带 `/api/ai` 前缀（网关不 StripPrefix），与 §1.5.1 一致；否则 404。
+- **AI 路径前缀**：所有 Java 侧调用 ai 的路径都带 `/api/ai` 前缀（网关不 StripPrefix），与 ai-service §1.5.1 一致；否则 404。
 - **Chroma 连接**：ai-service 用 service 名 `chroma`（edu-net）而非 `localhost`；本地裸跑 ai 时设 `CHROMA_HOST=host.docker.internal`。
 - **端口冲突**：单体 `EduAgentApplication` 跑在某一端口；拆后各服务 8081–8085 + ai 8001，单体入口在拆分完成、各服务验证通过后**整体下线**，避免双实例抢 Nacos 服务名。
 - **移除硬编码**：删除单体 `EduAgentApplication` 启动强制重置 admin 密码逻辑（P0 §4.4），改初始化脚本。
@@ -929,15 +928,15 @@ curl -s -XPOST localhost:8080/api/ai/kb/rebuild -H "Authorization: Bearer $ADMIN
 
 ## 附录 B：与外部契约方对齐清单
 
-| 契约 | 提供方(吴友诚) | 消费方 | 对齐章节 |
+| 契约 | 提供方 | 消费方 | 对齐章节 |
 |------|--------------|--------|---------|
-| `/api/ai/chat` | ai-service | learning(陈海洋)/前端 | §1.3.1 |
-| `/api/ai/resource/generate` | ai-service | resource(陈嘉成) | §1.3.2 |
-| `/api/ai/path/generate` | ai-service | learning(陈海洋) | §1.3.3 |
-| `/api/ai/code/analyze`（内网） | ai-service | code(吴友诚) | §1.3.4 / §2.4.5 |
-| `/api/ai/kb/rebuild` | ai-service | admin/teacher(陈海洋) | §1.3.5 |
-| `/api/code/submit` `/result/{id}` | code-service | teacher(陈海洋)/前端 | §2.3 |
-| `assignment.graded`(MQ) | code-service | teacher(陈海洋) | §2.4.7 |
+| `/api/ai/chat` | ai-service | learning(陈海洋)/前端 | ai-service §1.3.1 |
+| `/api/ai/resource/generate` | ai-service | resource(陈嘉成) | ai-service §1.3.2 |
+| `/api/ai/path/generate` | ai-service | learning(陈海洋) | ai-service §1.3.3 |
+| `/api/ai/code/analyze`（内网） | ai-service | code(吴友诚) | ai-service §1.3.4 / §2.4.5 |
+| `/api/ai/kb/rebuild` | ai-service | admin/teacher(吴友诚) | ai-service §1.3.5 |
+| `/api/code/submit` `/result/{id}` | code-service | teacher(吴友诚)/前端 | §2.3 |
+| `assignment.graded`(MQ) | code-service | teacher(吴友诚) | §2.4.7 |
 
 ---
 

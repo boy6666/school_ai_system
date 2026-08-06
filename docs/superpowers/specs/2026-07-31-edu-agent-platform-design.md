@@ -301,7 +301,7 @@ FastAPI
 
 ### 6.2 嵌入/索引流水线
 - 数据源：`java_notes` 等课程知识库（复用现有 `kb/`）。
-- **数据归属（重要）**：RAG 所需的**基础语料（寻找/采集/清洗/去重/分块/落库）由陈嘉成（resource-service）端到端负责**，清洗后的干净语料再交付给 ai-service 做嵌入；吴友诚的 ai-service 只负责 embed + Chroma 检索，不做语料清洗（职责边界见 §12.1）。这是 data-centric AI 的关键环节——检索质量上限由清洗语料决定。
+- **数据归属（重要）**：RAG 所需的**基础语料（寻找/采集/清洗/去重/分块/落库）由陈嘉成（resource-service）端到端负责**，清洗后的干净语料再交付给 ai-service 做嵌入；陈海洋的 ai-service 只负责 embed + Chroma 检索，不做语料清洗（职责边界见 §12.1）。这是 data-centric AI 的关键环节——检索质量上限由清洗语料决定。
 - 流程：`loader` 加载（陈嘉成清洗后的语料）→ 按语义/固定窗口切分(chunk) → Embedding（OpenAI 兼容 embed 接口或本地模型）→ 写入 Chroma collection（按课程/知识库隔离）。
 - 触发：管理端"知识库管理"页调用 `POST /kb/rebuild` 重建索引；首次部署跑一次初始化嵌入任务。
 
@@ -439,12 +439,12 @@ Monaco 提交源码 → code-service
 | 成员 | 职责 | 主导阶段 |
 |------|------|------|
 | **吴友诚（架构/地基）** | 基础设施 + common + auth + Gateway + JWT 透传 + **微服务拆分**（铺地基、定契约） | P0 |
-| **吴友诚 → code-service + ai-service** | 地基交付后专注：**code-service**（最难，沙箱/检查/判分） + **ai-service**（AI 最丰富，RAG） | P2 |
-| **陈嘉成（成员B）** | **resource-service**：①资源生成（调 ai，与吴友诚契约对齐）；②**RAG 知识库基础语料的采集与清洗**（java_notes 等基础数据的寻找→清洗→去重→分块→落库，交付吴友诚 ai-service 向量化；最轻，可支援 ai/code） | P1–P2 |
-| **陈海洋（成员C）** | **learning-service + teacher-service**（学情核心 + 教师端后端） | P1 / P3 |
+| **吴友诚 → code-service + teacher-service** | 地基交付后专注：**code-service**（最难，沙箱/检查/判分）  + **teacher-service**（学情核心 + 教师端后端 | P2 |
+| **陈嘉成（成员B）** | **resource-service**：①资源生成（调 ai，与吴友诚契约对齐）；②**RAG 知识库基础语料的采集与清洗**（java_notes 等基础数据的寻找→清洗→去重→分块→落库，交付陈海洋 ai-service 向量化；最轻，可支援 ai/code） | P1–P2 |
+| **陈海洋（成员C）** | **learning-service ）+****ai-service**（AI 最丰富，RAG） | P1 / P2 |
 | **曾姿妍（成员D，前端）** | **全部前端**：现有学生端调整 → 教师端 → 管理端治理/监控/审计页 | 全程 |
 
-> 耦合说明：吴友诚拥有 `code + ai` 两个皇冠模块（最难 + AI 最丰富），广度/深度最大化；陈嘉成的 resource 依赖 ai（吴友诚），契约对齐即可，且最轻可当副手；陈海洋的 teacher 调 learning(自己)/code(吴友诚)/ai(吴友诚)，聚合层天然跨人；曾姿妍纯前端，按契约接各服务。后端模块均**契约优先、领先前端开发**，不阻塞。
+> 耦合说明：吴友诚拥有 `code + teacher` 两个模块（最难 + 教师端），广度/深度最大化；陈嘉成的 resource 依赖 ai（陈海洋），契约对齐即可，且最轻可当副手；陈海洋的 ai 调 learning(自己)/code(吴友诚)/teacher(吴友诚)，聚合层天然跨人；曾姿妍纯前端，按契约接各服务。后端模块均**契约优先、领先前端开发**，不阻塞。
 
 ### 12.2 阶段任务 / 前置 / 产出 / 验收
 | 阶段 | 任务 | 前置 | 关键产出 | 验收标准 |
@@ -465,9 +465,9 @@ Monaco 提交源码 → code-service
 - [ ] P4：Sentinel/SkyWalking/压测/CI 质量门/文档
 
 **按分工的开发文档（每人一份，覆盖其名下全部模块 / 阶段）**
-- [x] `specs/2026-07-31-dev-wuyoucheng.md` — **吴友诚**：地基(见P0) + ai-service(RAG) + code-service(最难) + P4 加固 + 单体→微服务拆分指导【已完成】
+- [x] `specs/2026-07-31-dev-wuyoucheng.md` — **吴友诚**：地基(见P0) + teacher-service(教师端) + code-service(最难) + P4 加固 + 单体→微服务拆分指导【已完成】
 - [x] `specs/2026-07-31-dev-chenjiacheng.md` — **陈嘉成**：resource-service（资源生成调 ai） + **RAG 知识库基础语料采集与清洗**（寻找→清洗→去重→分块→落库，交付 ai 向量化）【已完成】
-- [x] `specs/2026-07-31-dev-chenhaiyang.md` — **陈海洋**：learning-service(学情核心) + teacher-service(教师端后端)【已完成】
+- [x] `specs/2026-07-31-dev-chenhaiyang.md` — **陈海洋**：learning-service(学情核心) + ai-service(AI最丰富，RAG)【已完成】
 - [x] `specs/2026-07-31-dev-zengziyan.md` — **曾姿妍**：全部前端（学生端调整 / 教师端 / 管理端治理·监控·审计；零 mock 策略）【已完成】
 - [x] `specs/2026-07-31-contract-resolution.md` — **《契约对齐决议》**：跨文档契约冲突裁定（C1/C3/C4/C6 及卫星项；9 项纯一致性已落地，决策项已按推荐方案确认）【已生效】
 

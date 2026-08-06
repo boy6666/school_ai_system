@@ -2,3 +2,8 @@
 gateway:
   auth:
     whitelist: /api/edu-agent-auth/login,/api/edu-agent-auth/register,/api/edu-agent-auth/refresh,/actuator
+
+# JWT 验签密钥：必须与 auth 签发端完全一致，否则网关验签失败返回 401「未认证或令牌无效」
+edu-agent:
+  jwt:
+    secret: ${JWT_SECRET:edu-agent-local-secret-please-change}

@@ -14,7 +14,7 @@
 | C8 | resource-service 画像字段注释由 snake 改为 camelCase，与 `LearningProfileVO` 一致 | dev-chenjiacheng §4.5 |
 | C10 | 前端 dashboard 的 AI 类端点由 `/api/ai/dashboard/*` 改回 `/api/learning/dashboard/*`（归属 learning-service） | dev-zengziyan §3.2 |
 | C11 | Nacos group `RESOURCE_GROUP` → `resource-group`（与 learning-group/teacher-group 统一 kebab） | dev-chenjiacheng 附录A |
-| C12 | MQ exchange 名去 `.exchange` 后缀，统一为「exchange 名 = 事件名」（study.progress / assignment.published 对齐 resource.generate） | dev-chenhaiyang A.4.4/B.4.5 |
+| C12 | MQ exchange 名去 `.exchange` 后缀，统一为「exchange 名 = 事件名」（study.progress / assignment.published 对齐 resource.generate） | dev-chenhaiyang A.4.4 / dev-wuyoucheng B.4.5 |
 | C16 | resource-service 拉画像端点 `/api/learning/profile/me` → `/api/learning/profile`（learning 真实暴露的自我端点） | dev-chenjiacheng §4.5 |
 | C17 | skywalking-ui 宿主端口 8081 → 18081（避免与 auth 文档端口 8081 同数字误导） | p0-infra-gateway §2.1 |
 | C18 | `POST /profile/save` body 移除不存在的 `dimensions{}`（六维由 AI 合并进 `profile_data`） | dev-chenhaiyang A.2.1 |

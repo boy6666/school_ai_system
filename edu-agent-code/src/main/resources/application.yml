@@ -5,18 +5,18 @@ spring:
   application:
     name: edu-agent-code
   profiles:
-    active: ${SPRING_PROFILES_ACTIVE:dev}
+    active: ${SPRING_PROFILES_ACTIVE:local}
   cloud:
     nacos:
       username: ${NACOS_USERNAME:nacos}
       password: ${NACOS_PASSWORD:nacos}
       discovery:
         server-addr: ${NACOS_ADDR:127.0.0.1:8848}
-        namespace: ${NACOS_NAMESPACE:edu-agent-dev}
+        namespace: ${NACOS_NAMESPACE:edu-agent-local}
         group: ${NACOS_GROUP:edu-agent}
       config:
         server-addr: ${NACOS_ADDR:127.0.0.1:8848}
-        namespace: ${NACOS_NAMESPACE:edu-agent-dev}
+        namespace: ${NACOS_NAMESPACE:edu-agent-local}
         group: ${NACOS_GROUP:edu-agent}
         file-extension: yaml
         refresh-enabled: true
@@ -32,7 +32,7 @@ management:
 
 # ── 本服务的数据源 / RabbitMQ / MyBatis 配置统一放在 Nacos 配置中心 ──
 #   data-id   = edu-agent-code.yaml
-#   namespace = edu-agent-dev（本地 Win） / edu-agent-formal（Linux 联调）
+#   namespace = edu-agent-local（本机单环境联调）
 #   group     = edu-agent
 #   初始化推送：deploy/push-nacos-config.py（须先启动 Nacos）
 # SkyWalking：运行时追加 -javaagent:/opt/skywalking/agent/skywalking-agent.jar -Dskywalking.agent.service_name=edu-agent-code

@@ -20,6 +20,8 @@ def resource_agent(state: dict) -> dict:
 
     prompt = f"""你是高校课程学习资源生成专家。根据学生画像生成个性化学习资源包。
 
+【范围限定】仅限 JavaSE 基础内容（语法、面向对象、集合、IO、多线程、反射等），严禁涉及 JavaEE、Spring Boot、Spring Cloud、MyBatis 等企业级框架。
+
 课程：{course}
 知识点：{topic}
 学生基础：{knowledge_base}

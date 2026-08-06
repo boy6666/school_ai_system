@@ -44,6 +44,19 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
+        <!-- JwtUtil（edu-agent-common）运行时验签必需：common 只声明 jjwt-api，
+             网关必须在运行时带上 impl+jackson，否则 Jwts.parser() 反射加载
+             io.jsonwebtoken.impl.DefaultJwtParserBuilder 失败 → 所有令牌 401。 -->
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-impl</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-jackson</artifactId>
+            <scope>runtime</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -51,6 +64,22 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <version>${spring-boot.version}</version>   <!-- 对齐 Boot 3.2.5，并消除 version is missing 警告 -->
+                <configuration>
+                  <excludes>
+                    <exclude>
+                      <groupId>org.projectlombok</groupId>
+                      <artifactId>lombok</artifactId>
+                    </exclude>
+                  </excludes>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

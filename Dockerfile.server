@@ -1,0 +1,24 @@
+FROM maven:3.9-eclipse-temurin-17 AS builder
+
+WORKDIR /app
+
+# 复制并编译
+COPY edu-agent-server/pom.xml .
+COPY edu-agent-server/src ./src
+RUN mvn clean package -DskipTests
+
+# 运行阶段
+FROM eclipse-temurin:17-jre
+
+WORKDIR /app
+
+# 复制jar包
+COPY --from=builder /app/target/*.jar app.jar
+
+# 复制配置文件
+COPY edu-agent-server/src/main/resources/application.yml .
+
+# 暴露端口
+EXPOSE 8080
+
+ENTRYPOINT ["java", "-jar", "app.jar"]

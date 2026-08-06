@@ -126,6 +126,10 @@ public class AiClient {
             sb.append("\n");
         }
 
+        sb.append("注意：本课程仅学习 JavaSE 基础内容，请**只生成 JavaSE 范围内的知识点**，");
+        sb.append("严禁涉及 JavaEE（如 Servlet、JSP、EJB）、Spring Boot、Spring Cloud、MyBatis 等企业级框架内容。");
+        sb.append("如果用户请求的内容超出 JavaSE 范围，请忽略并生成基础的 JavaSE 相关内容。\n\n");
+
         sb.append("请为「").append(chapter).append("」的「").append(topic).append("」知识点");
 
         switch (resourceType) {

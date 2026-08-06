@@ -4,10 +4,10 @@
 把 deploy/nacos-config/*.yaml 推送到 Nacos 配置中心。
 
 职责：
-  1. 创建两个 namespace（已存在则忽略）：edu-agent-dev、edu-agent-formal
+  1. 创建本地单环境 namespace（已存在则忽略）：edu-agent-local
      —— 用 customNamespaceId 固定 ID，使各服务 yml 里的
-        spring.cloud.nacos.*.namespace=edu-agent-dev|edu-agent-formal 能直接命中。
-  2. 把每个 data-id 推送到上面两个 namespace。
+        spring.cloud.nacos.*.namespace=edu-agent-local 能直接命中。
+  2. 把每个 data-id 推到该 namespace。
      —— group 规则：edu-agent-resource.yaml -> resource-group，其余 -> edu-agent
 
 前置：Nacos 已启动（默认 8848），且【关闭鉴权】NACOS_AUTH_ENABLE=false（standalone 默认即关闭）。
@@ -31,7 +31,7 @@ NACOS_ADDR = os.environ.get("NACOS_ADDR", "127.0.0.1:8848")
 NACOS_USERNAME = os.environ.get("NACOS_USERNAME", "nacos")
 NACOS_PASSWORD = os.environ.get("NACOS_PASSWORD", "nacos")
 
-NAMESPACES = ["edu-agent-dev", "edu-agent-formal"]
+NAMESPACES = ["edu-agent-local"]
 # 普通服务组 & 资源服务组
 GROUP_DEFAULT = "edu-agent"
 GROUP_RESOURCE = "resource-group"
