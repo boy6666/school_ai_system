@@ -1,8 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(Get-ChildItem -Path \"D:\\\\AAA_Projects\\\\edu-agent\\\\edu-agent\" -Depth 1)",
-      "Bash(Select-Object Name, PSIsContainer)"
-    ]
-  }
-}
