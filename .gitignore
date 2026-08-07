@@ -50,3 +50,10 @@ Java工程师常见面试题.pdf
 # 工具态目录
 .reasonix/
 .deepseek/
+
+# 清理：不再跟踪/上传
+_archive/
+.vite/
+.reasonix/
+.deepseek/
+*.pptx
