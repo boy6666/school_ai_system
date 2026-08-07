@@ -32,3 +32,10 @@ uploads/
 Thumbs.db
 
 other/
+
+# 清理：不再跟踪/上传
+_archive/
+.vite/
+.reasonix/
+.deepseek/
+*.pptx
