@@ -1,5 +1,0 @@
-在学习「未知」这一主题时，进阶概念可聚焦于以下三个方向。第一，开集识别（Open Set Recognition），它突破了传统分类模型仅能识别已知类别的局限，要求模型在测试时能够拒绝不属于任何训练类别的样本。第二，分布外检测（Out-of-Distribution Detection），关注模型如何识别与训练数据分布显著不同的输入，常用于发现数据漂移或异常实例。第三，不确定性量化（Uncertainty Quantification），通过贝叶斯方法或集成学习估计模型预测的置信度，区分偶然不确定性和认知不确定性，从而在未知场景下做出更可靠的决策。
-
-实际项目应用场景十分广泛。在自动驾驶中，车辆需要识别从未见过的障碍物（如掉落的货物或动物），开集识别和分布外检测可即时触发安全制停。在医疗影像诊断中，模型可能遇到罕见病变类型，不确定性量化能提示医生该病例超出训练范围，需人工复核。在金融风控领域，欺诈模式不断演变，未知的欺诈手法可通过分布外检测被标记为可疑交易，同时开集识别思路可动态扩展已知欺诈库。
-
-进一步学习资源方向如下：建议阅读经典论文，如Bendale与Boult的《Towards Open Set Deep Networks》以及Hendrycks等人关于ODIN的《A Baseline for Detecting Misclassified and Out-of-Distribution Examples》。教材可参考《Deep Learning》中关于无监督和生成模型章节，以及Krishnan等人的《Uncertainty in Deep Learning》综述。实践资源方面，可关注GitHub开源项目如PyTorch-OOD（针对分布外检测的工具库），以及Coursera上斯坦福大学CS231n课程中关于信任度校准的讲座。此外，Kaggle竞赛中的“异常检测”和“开放集识别”挑战赛是极佳的动手平台，能够将理论应用于真实数据。
