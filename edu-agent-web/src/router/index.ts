@@ -1,449 +1,283 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import type { RouteRecordRaw } from 'vue-router'
-
+import type {
+  RouteLocationNormalized,
+  RouteRecordRaw
+} from 'vue-router'
+import { ROLE, ROLE_HOME, type Role } from '@/utils/constants'
 
 const routes: RouteRecordRaw[] = [
-
-  // 学生端登录/注册
+  // 学生端登录、注册
   {
     path: '/login',
     name: 'Login',
     component: () => import('@/views/Login.vue')
   },
-
   {
     path: '/register',
     name: 'Register',
     component: () => import('@/views/Register.vue')
   },
 
-
-  // 管理员登录页
+  // 管理员登录
   {
     path: '/admin/login',
     name: 'AdminLogin',
     component: () => import('@/views/admin/AdminLogin.vue')
   },
 
-
-  // =====================
   // 学生端
-  // =====================
-
   {
     path: '/student',
     name: 'StudentLayout',
-
-    component: () =>
-      import('@/layouts/StudentLayout.vue'),
-
+    component: () => import('@/layouts/StudentLayout.vue'),
     redirect: '/student/dashboard',
-
     children: [
-
       {
         path: 'dashboard',
-        component: () =>
-          import('@/views/student/Dashboard.vue')
+        component: () => import('@/views/student/Dashboard.vue')
       },
-
       {
         path: 'profile/settings',
-        component: () =>
-          import('@/views/student/Profile.vue')
+        component: () => import('@/views/student/Profile.vue')
       },
-
       {
         path: 'profile/overview',
-        component: () =>
-          import('@/views/student/ProfileOverview.vue')
+        component: () => import('@/views/student/ProfileOverview.vue')
       },
-
-
       {
         path: 'courses',
-        component: () =>
-          import('@/views/student/CourseCenter.vue')
+        component: () => import('@/views/student/CourseCenter.vue')
       },
-
-
       {
         path: 'courses/:id',
-        component: () =>
-          import('@/views/student/CourseDetail.vue')
+        component: () => import('@/views/student/CourseDetail.vue')
       },
-
-
       {
         path: 'resources',
-        component: () =>
-          import('@/views/student/ResourceCenter.vue')
+        component: () => import('@/views/student/ResourceCenter.vue')
       },
-
-
       {
         path: 'resources/generate',
-        component: () =>
-          import('@/views/student/ResourceGenerate.vue')
+        component: () => import('@/views/student/ResourceGenerate.vue')
       },
-
-
       {
         path: 'resources/generate/:type',
-        component: () =>
-          import('@/views/student/ResourceGenerate.vue')
+        component: () => import('@/views/student/ResourceGenerate.vue')
       },
-
-
       {
         path: 'resources/:id',
-        component: () =>
-          import('@/views/student/ResourceDetail.vue')
+        component: () => import('@/views/student/ResourceDetail.vue')
       },
-
-
       {
         path: 'path',
-        component: () =>
-          import('@/views/student/LearningPath.vue')
+        component: () => import('@/views/student/LearningPath.vue')
       },
-
-
       {
         path: 'wrong-questions',
-        component: () =>
-          import('@/views/student/WrongQuestionList.vue')
+        component: () => import('@/views/student/WrongQuestionList.vue')
       },
-
-
       {
         path: 'wrong-questions/:id',
-        component: () =>
-          import('@/views/student/WrongQuestionDetail.vue')
+        component: () => import('@/views/student/WrongQuestionDetail.vue')
       },
-
-
       {
         path: 'tutor',
-        component: () =>
-          import('@/views/student/TutorChat.vue')
+        component: () => import('@/views/student/TutorChat.vue')
       },
-
-
       {
         path: 'report',
-        component: () =>
-          import('@/views/student/Report.vue')
+        component: () => import('@/views/student/Report.vue')
       },
-
-
       {
         path: 'tasks',
-        component: () =>
-          import('@/views/student/LearningTask.vue')
+        component: () => import('@/views/student/LearningTask.vue')
       },
-
-
       {
         path: 'practice',
-        component: () =>
-          import('@/views/student/Practice.vue')
+        component: () => import('@/views/student/Practice.vue')
       },
-
-
       {
         path: 'projects',
-        component: () =>
-          import('@/views/student/Projects.vue')
+        component: () => import('@/views/student/Projects.vue')
       },
-
-
       {
         path: 'messages',
-        component: () =>
-          import('@/views/student/Messages.vue')
+        component: () => import('@/views/student/Messages.vue')
       },
-
-
       {
         path: 'settings',
-        component: () =>
-          import('@/views/student/Settings.vue')
+        component: () => import('@/views/student/Settings.vue')
       },
-
-
       {
         path: 'profile',
-        component: () =>
-          import('@/views/student/ProfileOverview.vue')
+        component: () => import('@/views/student/ProfileOverview.vue')
       }
-
     ]
-
   },
 
-
-
-  // =====================
   // 管理端
-  // =====================
-
   {
     path: '/admin',
-
     name: 'AdminLayout',
-
-    component: () =>
-      import('@/layouts/AdminLayout.vue'),
-
-
+    component: () => import('@/layouts/AdminLayout.vue'),
     redirect: '/admin/dashboard',
-
-
     children: [
-
       {
         path: 'dashboard',
-        component: () =>
-          import('@/views/admin/Dashboard.vue')
+        component: () => import('@/views/admin/Dashboard.vue')
       },
-
-
       {
         path: 'users',
-        component: () =>
-          import('@/views/admin/UserManage.vue')
+        component: () => import('@/views/admin/UserManage.vue')
       },
-
-
       {
         path: 'resources',
-        component: () =>
-          import('@/views/admin/ResourceManage.vue')
+        component: () => import('@/views/admin/ResourceManage.vue')
       },
-
-
       {
         path: 'reviews',
-        component: () =>
-          import('@/views/admin/ContentReview.vue')
+        component: () => import('@/views/admin/ContentReview.vue')
       },
-
-
       {
         path: 'statistics',
-        component: () =>
-          import('@/views/admin/Statistics.vue')
+        component: () => import('@/views/admin/Statistics.vue')
       },
-
-
       {
         path: 'settings',
-        component: () =>
-          import('@/views/admin/Settings.vue')
+        component: () => import('@/views/admin/Settings.vue')
       }
-
     ]
-
   },
 
-
   // 默认入口
-
   {
     path: '/',
     redirect: '/student/dashboard'
   }
-
 ]
 
-
-
 const router = createRouter({
-
   history: createWebHistory(),
-
   routes
-
 })
 
+const PUBLIC_PATHS = new Set([
+  '/login',
+  '/register',
+  '/admin/login'
+])
 
-
-
-// ===============================
-// 路由守卫
-// roles权限控制
-// ===============================
-
-
-function getRoles(): string[] {
-
+function readRoles(): Role[] {
   try {
-
-    return JSON.parse(
+    const value: unknown = JSON.parse(
       localStorage.getItem('roles') || '[]'
     )
 
+    if (!Array.isArray(value)) {
+      return []
+    }
+
+    const validRoles = Object.values(ROLE) as Role[]
+
+    return value.filter(
+      (role): role is Role =>
+        typeof role === 'string' &&
+        validRoles.includes(role as Role)
+    )
   } catch {
-
     return []
-
   }
-
 }
 
+function resolveHome(roles: Role[]): string | null {
+  if (roles.includes(ROLE.ADMIN)) {
+    return ROLE_HOME[ROLE.ADMIN]
+  }
 
+  if (roles.includes(ROLE.TEACHER)) {
+    return ROLE_HOME[ROLE.TEACHER]
+  }
 
-router.beforeEach((to) => {
+  if (roles.includes(ROLE.STUDENT)) {
+    return ROLE_HOME[ROLE.STUDENT]
+  }
 
+  return null
+}
 
-  const token =
-    localStorage.getItem('token')
+function clearInvalidLoginState() {
+  localStorage.removeItem('token')
+  localStorage.removeItem('roles')
+  localStorage.removeItem('role')
+  localStorage.removeItem('userInfo')
+}
 
-
-  const roles =
-    getRoles()
-
-
-
-  // 白名单
-
-  if (
-
-    to.path === '/login'
-
-    ||
-
-    to.path === '/register'
-
-    ||
-
-    to.path === '/admin/login'
-
-  ) {
-
+export function authGuard(to: RouteLocationNormalized) {
+  // 登录和注册页面无需Token
+  if (PUBLIC_PATHS.has(to.path)) {
     return true
-
   }
 
+  const token = localStorage.getItem('token')
 
-
-  // 未登录
-
+  // 未登录访问管理端时进入管理员登录页
   if (!token) {
-
-
-    if (
-      to.path.startsWith('/admin')
-    ) {
-
-      return '/admin/login'
-
-    }
-
-
-    return '/login'
-
+    return to.path.startsWith('/admin')
+      ? '/admin/login'
+      : '/login'
   }
 
+  const roles = readRoles()
+  const home = resolveHome(roles)
 
+  // Token存在但没有合法角色，视为无效登录状态
+  if (!home) {
+    clearInvalidLoginState()
 
+    return to.path.startsWith('/admin')
+      ? '/admin/login'
+      : '/login'
+  }
 
-  // 管理端权限
-
+  // 管理端只允许管理员访问
   if (
-    to.path.startsWith('/admin')
+    to.path.startsWith('/admin') &&
+    !roles.includes(ROLE.ADMIN)
   ) {
-
-
-    if (
-      !roles.includes('ROLE_ADMIN')
-    ) {
-
-
-      if (
-        roles.includes('ROLE_TEACHER')
-      ) {
-
-        return '/teacher/dashboard'
-
-      }
-
-
-      return '/student/dashboard'
-
-    }
-
+    return home
   }
 
-
-
-
-  // 学生端权限
-
+  // 教师端只允许教师访问
   if (
-    to.path.startsWith('/student')
+    to.path.startsWith('/teacher') &&
+    !roles.includes(ROLE.TEACHER)
   ) {
-
-
-    if (
-      roles.includes('ROLE_ADMIN')
-      ||
-      roles.includes('ROLE_TEACHER')
-    ) {
-
-      if (
-        roles.includes('ROLE_ADMIN')
-      ) {
-
-        return '/admin/dashboard'
-
-      }
-
-
-      return '/teacher/dashboard'
-
-    }
-
+    return home
   }
 
-
-
-
-  // 教师端预留
-
+  // 管理员和教师不能进入学生端
   if (
-    to.path.startsWith('/teacher')
+    to.path.startsWith('/student') &&
+    (
+      roles.includes(ROLE.ADMIN) ||
+      roles.includes(ROLE.TEACHER)
+    )
   ) {
-
-
-    if (
-      !roles.includes('ROLE_TEACHER')
-    ) {
-
-
-      if (
-        roles.includes('ROLE_ADMIN')
-      ) {
-
-        return '/admin/dashboard'
-
-      }
-
-
-      return '/student/dashboard'
-
-    }
-
+    return home
   }
 
+  // 已登录用户访问未知地址时返回对应首页
+  if (to.matched.length === 0) {
+    // 教师端页面将在P3新增，避免当前预留地址反复重定向
+    if (to.path === home) {
+      return true
+    }
 
-
+    return home
+  }
   return true
+}
 
-
-})
-
-
+router.beforeEach(authGuard)
 
 export default router
