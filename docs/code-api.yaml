@@ -1,0 +1,298 @@
+openapi: 3.0.3
+info:
+  title: EduAgent Code 服务接口（判分受理口）
+  description: |
+    独立微服务 edu-agent-code（端口 8085，code_db）。提供代码判分受理口：
+    编译 → 静态检查 → Docker 沙箱运行 → AI 纠错 → 判分全链路。
+    判分为异步两段式（契约 C1）：POST /submit 返回 202 受理回执，结果经 GET /result/{id} 查询。
+    经网关完整路径前缀：/api/edu-agent-code。
+  version: 1.0.0
+
+servers:
+  - url: http://<网关>:8080/api/edu-agent-code
+    description: 经网关访问
+  - url: http://localhost:8085/api/edu-agent-code
+    description: 服务直连（本机）
+
+tags:
+  - name: 判分受理
+    description: 代码判分提交与结果查询（C1 异步两段式）
+  - name: 练习
+    description: 代码练习基础骨架
+  - name: 调试
+    description: 身份透传演示
+
+paths:
+  /submit:
+    post:
+      tags: [判分受理]
+      summary: 提交代码判分（202 异步）
+      operationId: submit
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CodeSubmitRequest'
+      responses:
+        '202':
+          description: 已受理（异步判分进行中）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultCodeSubmitReceipt'
+        '400':
+          description: 参数错误（缺 language/className/源码）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultVoid'
+
+  /result/{id}:
+    get:
+      tags: [判分受理]
+      summary: 查询判分结果
+      operationId: getResult
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+            example: 1024
+          description: submissionId
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultCodeSubmitResult'
+        '404':
+          description: submissionId 不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultVoid'
+
+  /exercises:
+    post:
+      tags: [练习]
+      summary: 创建代码练习
+      operationId: createExercise
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CodeExerciseRequest'
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultCodeExercise'
+    get:
+      tags: [练习]
+      summary: 分页查询练习
+      operationId: listExercises
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: size
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultPageCodeExercise'
+
+  /me:
+    get:
+      tags: [调试]
+      summary: 返回当前身份（AuthContext 演示）
+      operationId: me
+      responses:
+        '200':
+          description: 成功
+
+components:
+  schemas:
+    Result:
+      type: object
+      properties:
+        code:
+          type: integer
+          description: 0=成功
+        message:
+          type: string
+        data:
+          nullable: true
+    ResultVoid:
+      allOf:
+        - $ref: '#/components/schemas/Result'
+    ResultCodeSubmitReceipt:
+      allOf:
+        - $ref: '#/components/schemas/Result'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/CodeSubmitReceipt'
+    ResultCodeSubmitResult:
+      allOf:
+        - $ref: '#/components/schemas/Result'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/CodeSubmitResult'
+    ResultCodeExercise:
+      allOf:
+        - $ref: '#/components/schemas/Result'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/CodeExercise'
+    ResultPageCodeExercise:
+      allOf:
+        - $ref: '#/components/schemas/Result'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                total:
+                  type: integer
+                records:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/CodeExercise'
+
+    CodeFile:
+      type: object
+      required: [name, sourceCode]
+      properties:
+        name:
+          type: string
+          description: 文件名，如 Dog.java / com/shop/Main.java
+          example: Main.java
+        sourceCode:
+          type: string
+
+    CodeSubmitRequest:
+      type: object
+      required: [className, language]
+      properties:
+        studentId:
+          type: integer
+          format: int64
+          description: 缺省时回退 AuthContext
+        assignmentId:
+          type: integer
+          format: int64
+        assignmentItemId:
+          type: integer
+          format: int64
+        language:
+          type: string
+          default: java
+        files:
+          type: array
+          items:
+            $ref: '#/components/schemas/CodeFile'
+          description: 多文件源码（优先）；为空时回退 sourceCode
+        className:
+          type: string
+          description: 入口类名，可简单类名
+        sourceCode:
+          type: string
+          description: 兼容 C1 单文件形态
+        expectedOutput:
+          type: string
+          description: 判题类型 (a) 比对目标
+        mode:
+          type: string
+          enum: [IO, HARNESS]
+          default: IO
+          description: 判题类型（HARNESS 预留）
+
+    CodeSubmitReceipt:
+      type: object
+      properties:
+        submissionId:
+          type: integer
+          format: int64
+        status:
+          type: integer
+          description: 0=待处理
+
+    CodeSubmitResult:
+      type: object
+      properties:
+        submissionId:
+          type: integer
+          format: int64
+        status:
+          type: integer
+          description: 0=待处理 1=运行中 2=完成 3=超时 4=编译失败 5=判分失败
+        stdout:
+          type: string
+        runTimeMs:
+          type: integer
+          format: int64
+        compileOk:
+          type: integer
+          description: 0=未过 1=通过
+        checkstyle:
+          type: string
+          description: JSON 字符串
+        pmd:
+          type: string
+          description: JSON 字符串
+        aiSuggestion:
+          type: string
+        overallScore:
+          type: integer
+
+    CodeExerciseRequest:
+      type: object
+      required: [title]
+      properties:
+        title:
+          type: string
+          maxLength: 128
+        description:
+          type: string
+        difficulty:
+          type: string
+          default: EASY
+        language:
+          type: string
+          default: java
+
+    CodeExercise:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        title:
+          type: string
+        difficulty:
+          type: string
+        language:
+          type: string
+        status:
+          type: integer
+        createTime:
+          type: string
+          format: date-time
