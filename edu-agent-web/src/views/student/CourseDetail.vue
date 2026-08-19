@@ -231,8 +231,6 @@ import type {
   CourseDetail
 } from '@/api/course'
 
-import { adjustDifficulty } from '@/api/resource'
-import { useUserStore } from '@/stores/user'
 
 const route = useRoute()
 const router = useRouter()
@@ -557,7 +555,6 @@ const mockResources: Record<string, Omit<LearningResource, 'diffAdjust' | 'isLoa
   }
 }
 
-const userStore = useUserStore()
 const resLoading = ref(false)
 const learningResources = ref<LearningResource[]>(
   Object.values(mockResources).map(r => ({
@@ -567,73 +564,14 @@ const learningResources = ref<LearningResource[]>(
   }))
 )
 
-/** 查看完整资源 → 跳转到 ResourceGenerate 页 */
-const viewFullResource = (type: string) => {
-  router.push(`/student/resources/generate/${type}`)
+/** 查看已有资源；资源生成接口尚未提供。 */
+const viewFullResource = (_type: string) => {
+  router.push('/student/resources')
 }
 
-/** 调整资源难度：调后端 API → AI 生成 → 存 DB → 读 DB → 返回 */
-const adjustResDifficulty = async (type: string, direction: 'up' | 'down') => {
-  console.log(`>>> DEBUG 按钮被点击 type=${type} direction=${direction}`)
-  const res = learningResources.value.find(r => r.type === type)
-  if (!res || res.isLoadingAdj) return
-  console.log(`[前端 Debug] type=${type}, direction=${direction}, currentDifficulty=${res.difficulty}`)
-
-  res.isLoadingAdj = true
-  res.diffAdjust = direction
-
-  const studentId = Number(userStore.userInfo?.id) || 9
-  const chapterTitle = currentChapter.value?.title || '通用'
-
-  console.log(`[前端 Debug] 请求参数: studentId=${studentId}, chapterTitle=${chapterTitle}`)
-
-  try {
-    const result = await adjustDifficulty({
-      studentId,
-      type,
-      chapterName: chapterTitle,
-      title: chapterTitle,
-      direction,
-      currentDifficulty: res.difficulty
-    })
-
-    console.log(`[前端 Debug] 后端返回:`, result)
-    console.log(`[前端 Debug] 返回 difficulty=${result.difficulty}, exists=${result.exists}, content长度=${result.content?.length || 0}`)
-
-    // 更新显示
-    if (result.content) {
-      res.difficulty = result.difficulty
-      // 更新 diffClass
-      if (result.difficulty === '简单') res.diffClass = 'easy'
-      else if (result.difficulty === '困难') res.diffClass = 'hard'
-      else res.diffClass = 'medium'
-      // 更新摘要（用内容前 30 字）
-      const clean = result.content.replace(/[#*`\n]/g, ' ').trim()
-      res.summary = clean.length > 40 ? clean.slice(0, 40) + '...' : clean
-      console.log(`[前端 Debug] ✅ 更新成功: difficulty=${res.difficulty}, summary=${res.summary}`)
-    } else {
-      console.warn(`[前端 Debug] ⚠️ 后端返回 content 为空`)
-    }
-  } catch (error: any) {
-    console.warn(`[前端 Debug] ❌ 后端 API 调用失败，回退到本地假数据`, error)
-    // 假数据阶段：本地循环切换难度
-    const levels = ['简单', '适合', '困难']
-    const idx = levels.indexOf(res.difficulty)
-    let newIdx: number
-    if (direction === 'up') {
-      newIdx = Math.min(idx + 1, levels.length - 1)
-    } else {
-      newIdx = Math.max(idx - 1, 0)
-    }
-    res.difficulty = levels[newIdx]
-    if (res.difficulty === '简单') res.diffClass = 'easy'
-    else if (res.difficulty === '困难') res.diffClass = 'hard'
-    else res.diffClass = 'medium'
-    console.log(`[前端 Debug] ⚠️ 本地假数据切换: ${levels[idx]} → ${res.difficulty}`)
-  } finally {
-    res.isLoadingAdj = false
-    console.log(`[前端 Debug] ===== 难度调整结束 =====\n`)
-  }
+/** 正式难度调整接口尚未提供，不使用本地假数据伪装成功。 */
+const adjustResDifficulty = (_type: string, _direction: 'up' | 'down') => {
+  alert('资源难度调整接口暂未开放')
 }
 
 const getTaskStatusText = (status: string) => {

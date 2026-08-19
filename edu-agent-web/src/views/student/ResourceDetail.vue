@@ -1,90 +1,254 @@
 <template>
-  <div class="resource-page">
-    <main class="main-area">
-      <div class="top-bar">
-        <span class="back-link" @click="$router.push('/student/resources')">← 返回章节列表</span>
-        <h2>{{ currentChapter?.label }} · {{ currentChapter?.title }}</h2>
-      </div>
-      <p class="chapter-desc">{{ currentChapter?.desc }}</p>
-      
-      <div class="content-box">
-        <p class="hint">👈 点击右侧资源卡片开始学习</p>
-      </div>
-    </main>
+  <div class="resource-detail-page">
+    <div class="top-bar">
+      <button type="button" class="back-button" @click="goBack">
+        ← 返回资源中心
+      </button>
+    </div>
 
-    <aside class="side-cards">
-      <div class="side-title">本章资源</div>
-      <div v-for="card in resourceCards" :key="card.key" class="mini-card" @click="goResource(card.key)">
-        <div class="mini-icon">{{ card.icon }}</div>
-        <div class="mini-label">{{ card.label }}</div>
+    <div v-if="loading" class="state-box">
+      正在加载资源……
+    </div>
+
+    <div v-else-if="errorMessage" class="state-box error">
+      <p>{{ errorMessage }}</p>
+      <button type="button" @click="loadResource">
+        重新加载
+      </button>
+    </div>
+
+    <article v-else-if="resource" class="content-box">
+      <header class="resource-header">
+        <h1>{{ resource.title }}</h1>
+
+        <div class="meta">
+          <span>{{ getTypeLabel(resource.type) }}</span>
+          <span>{{ getDifficultyLabel(resource.difficulty) }}</span>
+          <span v-if="resource.chapter">{{ resource.chapter }}</span>
+          <span v-if="resource.views !== undefined">
+            浏览 {{ resource.views }}
+          </span>
+        </div>
+      </header>
+
+      <div
+        v-if="resource.content"
+        class="markdown-body"
+        v-html="resourceHtml"
+      ></div>
+
+      <div v-else class="empty-content">
+        暂无资源内容
       </div>
-    </aside>
+    </article>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { marked } from 'marked'
+import { markedHighlight } from 'marked-highlight'
+import hljs from 'highlight.js'
+import 'highlight.js/styles/atom-one-dark.css'
+
+import {
+  getResource,
+  type ResourceVO
+} from '@/api/resource'
+
+marked.use(markedHighlight({
+  langPrefix: 'hljs language-',
+  highlight(code: string, lang: string) {
+    if (lang && hljs.getLanguage(lang)) {
+      return hljs.highlight(code, {
+        language: lang
+      }).value
+    }
+
+    return hljs.highlightAuto(code).value
+  }
+}))
+
+marked.setOptions({
+  breaks: true,
+  gfm: true
+})
 
 const route = useRoute()
 const router = useRouter()
 
-const chapters = [
-  { id: 1, label: '第1章', title: 'Java 基础语法', desc: '变量、数据类型、运算符、流程控制、数组与方法' },
-  { id: 2, label: '第2章', title: '面向对象', desc: '类与对象、封装、继承、多态、抽象类与接口' },
-  { id: 3, label: '第3章', title: '集合框架', desc: 'List、Map、Set 接口及其常用实现类详解' },
-]
+const resource = ref<ResourceVO | null>(null)
+const loading = ref(false)
+const errorMessage = ref('')
 
-const resourceCards = [
-  { key: 'mindmap', label: '思维导图', icon: '🧠' },
-  { key: 'quiz', label: '练习题目', icon: '📝' },
-  { key: 'reading', label: '拓展阅读', icon: '📖' },
-  { key: 'code', label: '代码案例', icon: '💻' },
-]
+const resourceId = computed(() => {
+  const id = Number(route.params.id)
+  return Number.isInteger(id) && id > 0 ? id : null
+})
 
-const chapterId = computed(() => Number(route.params.chapterId) || 1)
-const currentChapter = computed(() => chapters.find(c => c.id === chapterId.value))
+const resourceHtml = computed(() => {
+  return resource.value?.content
+    ? marked.parse(resource.value.content)
+    : ''
+})
 
-const goResource = (type: string) => router.push(`/student/resources/${chapterId.value}/${type}`)
+function getTypeLabel(type: string): string {
+  const labels: Record<string, string> = {
+    mindmap: '思维导图',
+    quiz: '练习题目',
+    reading: '拓展阅读',
+    code: '代码案例'
+  }
+
+  return labels[type] ?? type ?? '其他资源'
+}
+
+function getDifficultyLabel(difficulty: string): string {
+  const labels: Record<string, string> = {
+    easy: '简单',
+    medium: '中等',
+    hard: '困难'
+  }
+
+  return labels[difficulty] ?? difficulty ?? '未设置难度'
+}
+
+function goBack(): void {
+  router.push('/student/resources')
+}
+
+async function loadResource(): Promise<void> {
+  if (resourceId.value === null) {
+    resource.value = null
+    errorMessage.value = '资源编号无效'
+    return
+  }
+
+  loading.value = true
+  errorMessage.value = ''
+
+  try {
+    resource.value = await getResource(resourceId.value)
+  } catch (error) {
+    console.error('加载资源详情失败：', error)
+    resource.value = null
+    errorMessage.value = '资源详情加载失败，请稍后重试'
+  } finally {
+    loading.value = false
+  }
+}
+
+watch(resourceId, loadResource)
+onMounted(loadResource)
 </script>
 
 <style scoped>
-.resource-page {
-  display: flex; gap: 28px; padding: 32px 40px;
-  max-width: 1200px; margin: 0 auto;
-  min-height: calc(100vh - 60px); background: #fff;
+.resource-detail-page {
+  max-width: 1000px;
+  min-height: calc(100vh - 60px);
+  margin: 0 auto;
+  padding: 32px 40px;
 }
-.main-area { flex: 1; }
-.top-bar { display: flex; align-items: center; gap: 16px; margin-bottom: 8px; }
-.top-bar h2 { margin: 0; font-size: 22px; color: #1a1a1a; font-weight: 700; }
-.back-link { color: #4f8cff; cursor: pointer; font-size: 13px; }
-.chapter-desc { color: #999; margin: 0 0 28px; font-size: 14px; }
-.content-box {
-  background: #f8f9fb; border-radius: 14px;
-  padding: 80px; text-align: center; border: 1px dashed #dde;
-}
-.hint { color: #aaa; font-size: 15px; }
 
-.side-cards {
-  width: 140px; display: flex; flex-direction: column; gap: 14px;
-  padding-top: 80px;
+.top-bar {
+  margin-bottom: 20px;
 }
-.side-title {
-  font-size: 13px; color: #aaa; text-align: center;
-  text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;
+
+.back-button {
+  padding: 8px 14px;
+  color: #4f8cff;
+  background: transparent;
+  border: 1px solid #d9e5ff;
+  border-radius: 8px;
+  cursor: pointer;
 }
-.mini-card {
-  width: 120px; height: 110px; border-radius: 16px;
-  background: #fff; border: 1px solid #eee;
-  display: flex; flex-direction: column; align-items: center;
-  justify-content: center; cursor: pointer; transition: all .25s;
-  gap: 10px; box-shadow: 0 1px 3px rgba(0,0,0,.04);
+
+.back-button:hover {
+  background: #f5f8ff;
 }
-.mini-card:hover {
-  border-color: #4f8cff;
-  transform: translateY(-3px);
-  box-shadow: 0 8px 24px rgba(79,140,255,.15);
+
+.state-box,
+.content-box {
+  padding: 32px 40px;
+  background: #fff;
+  border: 1px solid #ebeef5;
+  border-radius: 14px;
 }
-.mini-icon { font-size: 34px; }
-.mini-label { font-size: 13px; color: #555; font-weight: 500; }
+
+.state-box {
+  color: #666;
+  text-align: center;
+}
+
+.state-box.error {
+  color: #d93025;
+}
+
+.resource-header {
+  padding-bottom: 20px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid #ebeef5;
+}
+
+.resource-header h1 {
+  margin: 0 0 14px;
+  color: #1a1a1a;
+  font-size: 28px;
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.meta span {
+  padding: 4px 10px;
+  color: #567;
+  background: #f3f6fa;
+  border-radius: 12px;
+  font-size: 13px;
+}
+
+.markdown-body {
+  color: #333;
+  font-size: 15px;
+  line-height: 1.9;
+}
+
+.markdown-body :deep(pre) {
+  padding: 18px;
+  overflow-x: auto;
+  color: #cdd6f4;
+  background: #1e1e2e;
+  border-radius: 10px;
+}
+
+.markdown-body :deep(code) {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+}
+
+.markdown-body :deep(img) {
+  max-width: 100%;
+  border-radius: 8px;
+}
+
+.markdown-body :deep(table) {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.markdown-body :deep(th),
+.markdown-body :deep(td) {
+  padding: 10px 14px;
+  border: 1px solid #e4e7ed;
+  text-align: left;
+}
+
+.empty-content {
+  padding: 50px 0;
+  color: #999;
+  text-align: center;
+}
 </style>
