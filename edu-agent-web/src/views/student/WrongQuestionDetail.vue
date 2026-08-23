@@ -59,11 +59,12 @@
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { getWrongQuestionById } from '@/api/tutor'
+import { getWrongQuestionById, type WrongQuestionItem } from '@/api/tutor'
 
 const route = useRoute()
+const router = useRouter()
 const loading = ref(true)
-const question = ref<any>(null)
+const question = ref<WrongQuestionItem | null>(null)
 
 onMounted(async () => {
   const id = Number(route.params.id)
@@ -85,21 +86,11 @@ onMounted(async () => {
 const continueToTutor = () => {
   const q = question.value
   if (!q) return
-  const messages = [
-    {
-      role: 'user',
-      content: `我遇到一道题：${q.question}\n我的答案：${q.userAnswer || ''}\n正确答案：${q.correctAnswer}\n请帮我深入讲解一下。`,
-      time: Date.now(),
-    },
-    {
-      role: 'assistant',
-      content: q.explanation || '',
-      time: Date.now(),
-    },
-  ]
-  localStorage.setItem('tutor_current_messages', JSON.stringify(messages))
-  localStorage.removeItem('tutor_current_session')
-  window.open('/student/tutor', '_self')
+  const prompt = `我遇到一道题：${q.question}\n我的答案：${q.userAnswer || '未作答'}\n正确答案：${q.correctAnswer}\n请帮我深入讲解一下。`
+  router.push({
+    path: '/student/tutor',
+    query: { prompt }
+  })
 }
 </script>
 

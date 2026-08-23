@@ -9,6 +9,10 @@
             <div class="header-left">
               <h2>个性化学习路径</h2>
               <div v-if="pathLoading" style="padding: 20px 0; color: #909399;">⏳ 正在生成学习路径...</div>
+              <div v-else-if="pathError" style="padding: 20px 0; color: #f56c6c;">
+                学习路径加载失败
+                <el-button type="primary" link @click="loadPath">重新加载</el-button>
+              </div>
               <div class="meta">
                 <span class="label">目标：</span>
                 <span class="value">{{ goalText }}</span>
@@ -180,13 +184,17 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { getLearningPath, generateLearningPath, updateTaskStatus } from '@/api/learning'
-import { getWrongQuestions } from '@/api/tutor'
-import request from '@/utils/request'
+import {
+  getLearningPath,
+  generateLearningPath,
+  updateTaskStatus,
+  type LearningPathData,
+  type LearningPathTask
+} from '@/api/learning'
+import { getWrongQuestions, type WrongQuestionItem } from '@/api/tutor'
 
 // 阶段
 const activeStage = ref('today')
-const activeResourceTab = ref('doc')
 const calendarDate = ref(new Date())
 const pathLoading = ref(false)
 const pathError = ref(false)
@@ -194,7 +202,7 @@ const pathError = ref(false)
 const router = useRouter()
 
 // ===== 后端数据 =====
-const pathData = ref<any>(null)
+const pathData = ref<LearningPathData | null>(null)
 
 // ===== 从后端数据映射到模板字段 =====
 
@@ -207,10 +215,10 @@ const stageNameToKey: Record<string, string> = {
 
 const currentTasks = computed(() => {
   if (!pathData.value?.stages) return []
-  const currentStage = pathData.value.stages.find((s: any) => stageNameToKey[s.name] === activeStage.value)
-  return (currentStage?.tasks || []).map((t: any) => ({
+  const currentStage = pathData.value.stages.find(s => stageNameToKey[s.name] === activeStage.value)
+  return (currentStage?.tasks || []).map((t: LearningPathTask) => ({
     name: t.title,
-    duration: t.duration ? t.duration + '分钟' : '30分钟',
+    duration: t.duration ? t.duration + '分钟' : '未设置',
     status: t.status === 2 ? 'completed' : t.status === 1 ? 'in-progress' : 'pending',
     progress: t.progress || 0,
     checked: t.status === 2
@@ -218,7 +226,7 @@ const currentTasks = computed(() => {
 })
 
 const totalTasks = computed(() => currentTasks.value.length)
-const completedCount = computed(() => currentTasks.value.filter((t: any) => t.status === 'completed').length)
+const completedCount = computed(() => currentTasks.value.filter(t => t.status === 'completed').length)
 const overallProgress = computed(() => {
   if (totalTasks.value === 0) return 0
   return Math.round((completedCount.value / totalTasks.value) * 100)
@@ -227,41 +235,16 @@ const totalHours = computed(() => pathData.value?.totalHours || 0)
 
 // 路径头部数据
 const goalText = computed(() => pathData.value?.goal || '加载中...')
-const targetMastery = computed(() => pathData.value?.targetMastery || '≥85%')
 const estimatedCompletion = computed(() => pathData.value?.estimatedCompletion || '')
-const profileText = computed(() => {
-  // 从画像数据生成描述
-  return '根据画像生成的学习路径'
-})
 
 // 建议 & 推荐
 const suggestions = computed(() => pathData.value?.suggestions || '暂无调整建议')
 const applicationAdvice = computed(() => pathData.value?.applicationAdvice || '暂无应用建议')
 const examAdvice = computed(() => pathData.value?.examAdvice || '暂无测评建议')
-const recommendTime = computed(() => pathData.value?.recommendTime || '每天 19:00-21:00')
-
-// 概览
-const masteryRate = computed(() => pathData.value?.masteryRate || 72)
-const learningRateVal = computed(() => pathData.value?.learningRate || 18)
-const unmasteredRate = computed(() => pathData.value?.unmasteredRate || 10)
-
-// 推荐资源
-const resources = computed(() => {
-  const r = pathData.value?.resources || {}
-  return {
-    doc: r.doc || [],
-    video: r.video || [],
-    exercise: r.exercise || [],
-    code: r.code || []
-  }
-})
-const currentResources = computed(() => resources.value[activeResourceTab.value as keyof typeof resources.value] || [])
-
-// 动态调整记录
-const adjustRecords = computed(() => pathData.value?.adjustRecords || [])
+const recommendTime = computed(() => pathData.value?.recommendTime || '暂无推荐时段')
 
 // ===== 历史错题 =====
-const wrongQuestions = ref<any[]>([])
+const wrongQuestions = ref<WrongQuestionItem[]>([])
 const wrongLoading = ref(false)
 
 /** 当前显示的错题（只展示最新 1 道） */
@@ -283,7 +266,7 @@ const loadWrongQuestions = async () => {
 }
 
 /** 点击错题跳转到详情页 */
-const goToWrongDetail = (q: any) => {
+const goToWrongDetail = (q: WrongQuestionItem) => {
   router.push(`/student/wrong-questions/${q.id}`)
 }
 
@@ -295,13 +278,13 @@ const goToList = () => {
 // ===== 模板字段兼容 =====
 const stageDesc = computed(() => {
   if (!pathData.value?.stages?.length) return '基于学习画像、掌握度与目标，为你规划动态学习路线'
-  const names = pathData.value.stages.map((s: any) => s.name).join('、')
+  const names = pathData.value.stages.map(s => s.name).join('、')
   return `基于学习画像，当前阶段：${names}`
 })
 
 // ===== 操作函数 =====
 /** 任务打勾/取消打勾：调后端持久化 + 本地响应式更新 */
-const handleTaskCheck = (checkedTask: any) => {
+const handleTaskCheck = async (checkedTask: { name: string; checked: boolean }) => {
   if (!pathData.value?.stages) return
   const currentKey = stageNameToKey[activeStage.value] || activeStage.value
 
@@ -310,16 +293,10 @@ const handleTaskCheck = (checkedTask: any) => {
   let foundTask = ''
   for (const stage of pathData.value.stages) {
     if (stageNameToKey[stage.name] === currentKey || stage.name === activeStage.value) {
-      const hit = stage.tasks?.find((t: any) => t.title === checkedTask.name)
+      const hit = stage.tasks?.find(t => t.title === checkedTask.name)
       if (hit) {
         foundStage = stage.name
         foundTask = hit.title
-        // 乐观更新本地状态
-        hit.status = checkedTask.checked ? 2 : 0
-        hit.progress = checkedTask.checked ? 100 : 0
-        if (checkedTask.checked) {
-          ElMessage.success({ message: `✅ "${hit.title}" 已完成！`, duration: 1500, offset: 60 })
-        }
       }
       break
     }
@@ -327,26 +304,19 @@ const handleTaskCheck = (checkedTask: any) => {
 
   if (!foundTask) return
 
-  // 调后端持久化
-  updateTaskStatus(foundStage, foundTask, checkedTask.checked).then((res: any) => {
-    console.log(`[学习路径] ✅ 已持久化: ${foundTask}, 总体进度: ${res?.progress || 0}%`)
-  }).catch((e: any) => {
-    console.warn('[学习路径] ⚠️ 持久化失败:', e)
-  })
-
-  // 更新画像
-  const userInfoStr = localStorage.getItem('userInfo')
-  const userInfo = userInfoStr ? JSON.parse(userInfoStr) : null
-  const studentId = Number(userInfo?.id)
-  if (studentId) {
-    request.post('/profile/save', {
-      userId: studentId,
-      last_score: Math.round(overallProgress.value)
-    }).then(() => {
-      console.log(`[学习路径] ✅ 画像已更新: progress=${overallProgress.value}%`)
-    }).catch((e: any) => {
-      console.warn('[学习路径] ⚠️ 画像更新失败:', e)
-    })
+  try {
+    await updateTaskStatus(foundStage, foundTask, checkedTask.checked)
+    if (!pathData.value?.stages) return
+    const stage = pathData.value.stages.find(item => item.name === foundStage)
+    const task = stage?.tasks?.find(item => item.title === foundTask)
+    if (task) {
+      task.status = checkedTask.checked ? 2 : 0
+      task.progress = checkedTask.checked ? 100 : 0
+    }
+    ElMessage.success(checkedTask.checked ? '任务已完成' : '任务已恢复为未完成')
+  } catch {
+    checkedTask.checked = !checkedTask.checked
+    ElMessage.error('任务状态更新失败，请稍后重试')
   }
 }
 
@@ -371,12 +341,11 @@ const loadPath = async () => {
     const data = await getLearningPath()
     if (data) {
       pathData.value = data
-      console.log('[学习路径] ✅ 从后端加载成功:', data)
     }
-  } catch (e) {
-    console.warn('[学习路径] ⚠️ 后端不可用，使用 mock 数据:', e)
+  } catch {
+    pathData.value = null
     pathError.value = true
-    // fallback mock 数据保持不变
+    ElMessage.error('学习路径加载失败，请稍后重试')
   } finally {
     pathLoading.value = false
   }
@@ -391,8 +360,7 @@ const handleRegenerate = async () => {
       pathData.value = data
       ElMessage.success('学习路径已重新生成！')
     }
-  } catch (e) {
-    console.warn('[学习路径] 重新生成失败:', e)
+  } catch {
     ElMessage.error('生成失败，请重试')
   } finally {
     pathLoading.value = false

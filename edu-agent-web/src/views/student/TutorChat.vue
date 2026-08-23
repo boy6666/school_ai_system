@@ -47,7 +47,7 @@
               <div class="struct-label">📝 个性化练习题</div>
               <div v-for="(q, qi) in parseJsonMsg(msg).questions" :key="qi" class="quiz-item">
                 <div class="q-header">
-                  <span class="q-num">{{ qi + 1 }}</span>
+                  <span class="q-num">{{ Number(qi) + 1 }}</span>
                   <span class="q-type-tag">{{ q.type === 'choice' ? '选择题' : '简答题' }}</span>
                   <span class="q-text">{{ q.question }}</span>
                 </div>
@@ -70,7 +70,7 @@
             <div v-else-if="parseJsonMsg(msg).type === 'tutor'" class="structured-tutor">
               <div class="struct-label">🎯 智能辅导</div>
               <div v-for="(step, si) in parseJsonMsg(msg).steps" :key="si" class="tutor-step">
-                <span class="step-num">{{ si + 1 }}</span>
+                <span class="step-num">{{ Number(si) + 1 }}</span>
                 <span class="step-text" v-html="renderMarkdown(step)"></span>
               </div>
               <div v-if="parseJsonMsg(msg).weaknesses_touched?.length" class="struct-tags">
@@ -117,45 +117,64 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, nextTick, watch } from 'vue'
-import { sendTutorMessage } from '@/api/tutor'
+import { ref, onMounted, nextTick } from 'vue'
+import { useRoute } from 'vue-router'
+import {
+  getSessions,
+  getTutorHistory,
+  sendTutorMessage,
+  type TutorSession
+} from '@/api/tutor'
 import { ElMessage } from 'element-plus'
 
+interface ChatMessage {
+  role: 'user' | 'assistant'
+  content: string
+}
+
+interface StructuredQuestion {
+  type?: string
+  question?: string
+  options?: string[]
+  answer?: string
+  explanation?: string
+}
+
+interface StructuredRecommendation {
+  priority?: string
+  title?: string
+  type?: string
+  reason?: string
+}
+
+interface StructuredMessage {
+  type?: string
+  content?: string
+  weaknesses_focus?: string[]
+  suggestion?: string
+  questions?: StructuredQuestion[]
+  steps?: string[]
+  weaknesses_touched?: string[]
+  summary?: string
+  recommendations?: StructuredRecommendation[]
+}
+
+const route = useRoute()
 const input = ref('')
 const loading = ref(false)
-const messages = ref<{ role: string; content: string }[]>([])
+const messages = ref<ChatMessage[]>([])
 const currentSessionId = ref('')
-const sessions = ref<{ sessionId: string; title: string; time: string }[]>([])
+const sessions = ref<TutorSession[]>([])
 const msgContainer = ref<HTMLElement>()
-
-const STORAGE_KEY = 'tutor_sessions'
-const MSG_KEY = 'tutor_current_messages'
 
 // 从后端加载会话列表
 const loadSessions = async () => {
   try {
-    const res = await fetch('/api/tutor/sessions', {
-      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-    })
-    const data = await res.json()
-    if (data.code === 200 && data.data) {
-      sessions.value = data.data
-    }
-  } catch { sessions.value = [] }
-}
-
-// 保存会话列表（仅当前会话，后端已持久化）
-const saveSessions = () => {}  // no-op: server is source of truth
-
-// 加载当前消息
-const loadMessages = () => {
-  const stored = localStorage.getItem(MSG_KEY)
-  if (stored) {
-    try { messages.value = JSON.parse(stored) } catch { messages.value = [] }
+    sessions.value = await getSessions()
+  } catch {
+    sessions.value = []
+    ElMessage.error('历史会话加载失败，请稍后重试')
   }
-}
-const saveMessages = () => {
-  localStorage.setItem(MSG_KEY, JSON.stringify(messages.value))
 }
 
 // 滚动到底部
@@ -170,7 +189,6 @@ const scrollBottom = async () => {
 const newChat = () => {
   currentSessionId.value = 'session_' + Date.now()
   messages.value = []
-  saveMessages()
 }
 
 // 切换会话
@@ -184,21 +202,18 @@ const switchSession = (sessionId: string) => {
 const loadHistoryFromServer = async (sessionId: string) => {
   loading.value = true
   try {
-    const res = await fetch(`/api/tutor/history?sessionId=${sessionId}`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-    })
-    const data = await res.json()
-    if (data.code === 200 && data.data) {
-      messages.value = data.data.flatMap((r: any) => [
-        { role: 'user', content: r.question || '（问题记录）' },
-        { role: 'assistant', content: r.answer }
-      ])
-    }
+    const history = await getTutorHistory(sessionId)
+    messages.value = history.map((item) => ({
+      role: item.role,
+      content: item.content
+    }))
+    await scrollBottom()
   } catch {
-    // 静默失败
+    messages.value = []
+    ElMessage.error('对话记录加载失败，请稍后重试')
+  } finally {
+    loading.value = false
   }
-  loading.value = false
-  saveMessages()
 }
 
 // 发送消息
@@ -214,7 +229,6 @@ const send = async () => {
   messages.value.push({ role: 'user', content: text })
   input.value = ''
   loading.value = true
-  saveMessages()
   await scrollBottom()
 
   try {
@@ -225,33 +239,36 @@ const send = async () => {
     }
     
     // 刷新会话列表
-    loadSessions()
+    await loadSessions()
   } catch {
     ElMessage.error('请求失败，请确认后端和AI引擎是否运行')
+  } finally {
+    loading.value = false
   }
-  loading.value = false
-  saveMessages()
   await scrollBottom()
 }
 
 /** 判断消息内容是否为 JSON */
-const isJsonMsg = (msg: any) => {
+const isJsonMsg = (msg: ChatMessage) => {
   if (!msg?.content || msg.role !== 'assistant') return false
   const s = String(msg.content).trim()
   return s.startsWith('{') || s.startsWith('[')
 }
 
 /** 安全解析 JSON 消息，失败时返回空对象 */
-const parseJsonMsg = (msg: any) => {
+const parseJsonMsg = (msg: ChatMessage): StructuredMessage => {
   try {
-    return JSON.parse(String(msg.content))
+    const parsed: unknown = JSON.parse(String(msg.content))
+    return typeof parsed === 'object' && parsed !== null
+      ? parsed as StructuredMessage
+      : {}
   } catch {
     return {}
   }
 }
 
 /** 简单 Markdown 转 HTML（支持换行、加粗、代码块） */
-const renderMarkdown = (text: string) => {
+const renderMarkdown = (text?: string) => {
   if (!text) return ''
   let html = text
     .replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -272,35 +289,16 @@ const formatTime = (t: string) => {
   return d.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })
 }
 
-onMounted(() => {
-  loadSessions()
+onMounted(async () => {
+  await loadSessions()
 
-  // 先检测是否有从题目页传来的预置消息（优先级高于 history）
-  const presetRaw = localStorage.getItem('tutor_current_messages')
-  localStorage.removeItem('tutor_current_messages')
-
-  if (presetRaw) {
-    try {
-      const preset = JSON.parse(presetRaw)
-      const firstUser = Array.isArray(preset) && preset.find((m: any) => m.role === 'user')
-      if (firstUser?.content) {
-        // 直接设 input 并发送，让 send() 创建 session + 存后端
-        currentSessionId.value = ''
-        input.value = firstUser.content
-        nextTick().then(() => send())
-      }
-    } catch { /* ignore */ }
-  } else {
-    loadMessages()
+  const preset = Array.isArray(route.query.prompt)
+    ? route.query.prompt[0]
+    : route.query.prompt
+  if (preset) {
+    input.value = preset
+    await send()
   }
-
-  if (messages.value.length > 0) {
-    currentSessionId.value = localStorage.getItem('tutor_current_session') || ''
-  }
-})
-
-watch(currentSessionId, (val) => {
-  if (val) localStorage.setItem('tutor_current_session', val)
 })
 </script>
 
