@@ -66,8 +66,6 @@ export const useUserStore = defineStore('user', () => {
     localStorage.removeItem('token')
     localStorage.removeItem('roles')
     localStorage.removeItem('userInfo')
-    localStorage.removeItem('tutor_current_session')
-    localStorage.removeItem('tutor_current_messages')
   }
 
   return {
