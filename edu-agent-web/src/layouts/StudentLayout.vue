@@ -17,7 +17,7 @@
           <el-icon><HomeFilled /></el-icon><span>首页</span>
         </el-menu-item>
         <el-menu-item index="/student/resources">
-          <el-icon><MagicStick /></el-icon><span>资源生成</span>
+          <el-icon><MagicStick /></el-icon><span>资源中心</span>
         </el-menu-item>
         <el-menu-item index="/student/path">
           <el-icon><Guide /></el-icon><span>学习路径</span>
@@ -37,7 +37,7 @@
       <el-header class="header">
         <el-dropdown @command="handleCommand">
           <div class="user-dropdown-trigger">
-            <span class="user-name">{{ userStore.userInfo?.name || '学生' }}</span>
+            <span class="user-name">{{ userStore.userInfo?.realName || userStore.userInfo?.name || '学生' }}</span>
             <el-icon class="el-icon--right"><ArrowDown /></el-icon>
           </div>
           <template #dropdown>
@@ -54,7 +54,7 @@
   </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { ElMessage } from 'element-plus'
@@ -63,19 +63,12 @@ import OnboardOverlay from '@/views/student/OnboardOverlay.vue'
 const router = useRouter()
 const userStore = useUserStore()
 
-console.log('[DEBUG] StudentLayout mounted')
-// 引导判断：后端 onboarded=0 时必须显示引导，不受 localStorage 残留影响
-const onboardKey = localStorage.getItem('tutor_init_done')
-const backendOnboarded = userStore.userInfo?.onboarded
-console.log('[DEBUG] tutor_init_done in localStorage:', onboardKey)
-console.log('[DEBUG] userInfo.onboarded from backend:', backendOnboarded)
-// 只要后端说还没引导(onboarded=0)，就显示引导，忽略 localStorage 残留
-const showOnboard = ref(backendOnboarded === 0 || !onboardKey)
-console.log('[DEBUG] showOnboard =', showOnboard.value)
+const showOnboard = computed(
+  () => userStore.userInfo?.onboarded === 0
+)
 
 const onOnboardDone = () => {
-  console.log('[DEBUG] onOnboardDone called')
-  showOnboard.value = false
+  userStore.setOnboarded(1)
 }
 
 const handleCommand = (command: string) => {

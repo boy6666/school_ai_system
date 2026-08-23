@@ -71,7 +71,7 @@ const stage = ref('init')           // init | collecting | generating | done
 const messages = ref<{ role: string; content: string }[]>([])
 const chatBox = ref<HTMLElement>()
 const sessionId = ref('onboard_' + Date.now())
-const onboardProfile = ref<any>({})
+const onboardProfile = ref<Record<string, unknown>>({})
 
 const genSteps = reactive([
   { label: '保存学习画像',        status: 'pending', time: '' },
@@ -154,7 +154,7 @@ async function startGeneration() {
   genSteps[0].status = 'active'
   await scrollToBottom()
   try {
-    await request.post('/profile/save', {
+    await request.post('/edu-agent-learning/profile', {
       course: profile.course,
       topic: profile.topic,
       learning_goal: profile.learning_goal,
@@ -179,6 +179,15 @@ async function startGeneration() {
     genSteps[0].status = 'done'
   } catch {
     genSteps[0].status = 'error'
+    genSteps[0].time = formatTime(timestamp() - tStart)
+    loading.value = false
+    stage.value = 'collecting'
+    messages.value.push({
+      role: 'assistant',
+      content: '学习画像保存失败，请稍后重试。'
+    })
+    await scrollToBottom()
+    return
   }
   genSteps[0].time = formatTime(timestamp() - tStart)
   await sleep(300)
@@ -187,22 +196,37 @@ async function startGeneration() {
   genSteps[1].status = 'active'
   await scrollToBottom()
   try {
-    await request.post('/student/learning-path/generate')
+    await request.post('/edu-agent-learning/learning-path/generate')
     genSteps[1].status = 'done'
   } catch {
     genSteps[1].status = 'error'
+    genSteps[1].time = formatTime(timestamp() - tStart)
+    loading.value = false
+    stage.value = 'collecting'
+    messages.value.push({
+      role: 'assistant',
+      content: '学习路径生成失败，请稍后重试。'
+    })
+    await scrollToBottom()
+    return
   }
   genSteps[1].time = formatTime(timestamp() - tStart)
   await sleep(300)
 
-  // ---- 标记引导完成 ----
+  // 完成状态必须由后端确认，不能使用本地业务标记伪装成功。
   try {
-    await request.post('/auth/onboard-done')
-  } catch {
-    console.warn('[Onboard] /auth/onboard-done 失败，本地标记仍然写入')
+    await request.post('/edu-agent-auth/onboard-done')
+  } catch (error) {
+    console.error('保存引导完成状态失败：', error)
+    loading.value = false
+    stage.value = 'collecting'
+    messages.value.push({
+      role: 'assistant',
+      content: '学习方案已生成，但完成状态保存失败，请稍后重试。'
+    })
+    await scrollToBottom()
+    return
   }
-  // 无论后端是否成功，都写入本地标记，防止用户重复走引导
-  localStorage.setItem('tutor_init_done', '1')
 
   loading.value = false
   stage.value = 'done'

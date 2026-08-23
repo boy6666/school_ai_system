@@ -1,5 +1,17 @@
 <template>
   <div class="course-detail-page">
+    <div v-if="loading" class="state-card">
+      课程加载中...
+    </div>
+
+    <div v-else-if="errorMessage" class="state-card">
+      <p>{{ errorMessage }}</p>
+      <button type="button" @click="fetchCourse(currentCourseId)">
+        重新加载
+      </button>
+    </div>
+
+    <template v-else>
     <section class="course-hero">
       <div>
         <p class="eyebrow">课堂 / 学习空间</p>
@@ -48,11 +60,7 @@
       </aside>
 
       <section class="learning-main">
-        <div v-if="loading" class="state-card">
-          课程加载中...
-        </div>
-
-        <template v-else-if="currentChapter">
+        <template v-if="currentChapter">
           <section class="content-card">
             <div class="section-title">
               <div>
@@ -144,65 +152,18 @@
           </div>
         </div>
 
-        <!-- ========== 学习资源（右侧面板）========== -->
+        <!-- 学习资源统一从正式资源服务读取。 -->
         <div class="side-card resource-side-card">
           <div class="resource-side-header">
             <h3>学习资源</h3>
             <span class="chapter-tag">{{ currentChapter?.title }}</span>
           </div>
-
-          <div v-if="resLoading" class="mini-empty" style="padding:20px 0;text-align:center;">
-            AI 生成中...
-          </div>
-
-          <div v-if="!resLoading">
-            <div
-              v-for="res in learningResources"
-              :key="res.type"
-              class="res-mini-card"
-              :class="{ 'is-loading': res.isLoadingAdj }"
-            >
-              <!-- AI 生成中状态 -->
-              <div v-if="res.isLoadingAdj" class="res-loading">
-                <span class="res-loading-icon">🤖</span>
-                <span class="res-loading-text">AI 生成中...</span>
-              </div>
-
-              <!-- 正常显示 -->
-              <div v-if="!res.isLoadingAdj" class="res-content-area">
-                <div class="res-mini-top">
-                  <span class="res-icon">{{ res.icon }}</span>
-                  <div class="res-mini-info">
-                    <strong>{{ res.title }}</strong>
-                    <span :class="['diff-tag', res.diffClass]">{{ res.difficulty }}</span>
-                  </div>
-                </div>
-
-                <p class="res-mini-summary">{{ res.summary }}</p>
-
-                <div class="res-mini-actions">
-                  <button class="view-btn" @click="viewFullResource(res.type)">查看</button>
-                  <!-- 评价按钮：点击后触发 AI 重新生成 -->
-                  <div class="diff-btns">
-                    <button
-                      class="diff-btn"
-                      onclick="console.log('>>> onclick 原始测试 太简单 被点击'); alert('测试点击');"
-                      title="内容太简单了，生成难一点"
-                    >太简单</button>
-                    <button
-                      class="diff-btn"
-                      @click="adjustResDifficulty(res.type, 'down')"
-                      title="内容太难了，生成简单一点"
-                    >太困难</button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="resource-side-footer">
-            <span>AI 根据你的画像生成，点击「简单/困难」调整难度</span>
-          </div>
+          <p class="suggestion">
+            资源列表、详情和收藏均从正式资源服务获取。
+          </p>
+          <button class="view-btn" @click="router.push('/student/resources')">
+            打开资源中心
+          </button>
         </div>
 
         <div class="side-card">
@@ -214,6 +175,7 @@
         </div>
       </aside>
     </main>
+    </template>
   </div>
 </template>
 
@@ -234,191 +196,12 @@ import type {
 
 const route = useRoute()
 const router = useRouter()
+const currentCourseId = computed(() => String(route.params.id || ''))
 
 const loading = ref(false)
+const errorMessage = ref('')
 const note = ref('')
 const currentChapterId = ref(1)
-
-const fallbackCourseMap: Record<string, CourseDetail> = {
-  ai: {
-    id: 'ai',
-    title: '人工智能导论',
-    teacher: '王老师',
-    description:
-      '系统学习人工智能基本概念、搜索算法、机器学习、神经网络和大模型应用。',
-    cover: '',
-    progress: 45,
-    learnedHours: 8,
-    totalHours: 18,
-    totalChapters: 5,
-    currentChapterId: 2,
-    tags: ['人工智能', '搜索算法', '机器学习'],
-    chapters: [
-      {
-        id: 1,
-        title: '第 1 章：人工智能概述',
-        description: '了解人工智能的发展历史、核心概念、主要分支和典型应用场景。',
-        duration: '45 分钟',
-        progress: 100,
-        status: 'done',
-        knowledgePoints: ['人工智能定义', '发展阶段', '应用场景'],
-        resources: [
-          {
-            id: 101,
-            title: '人工智能概述讲解文档',
-            type: '文档',
-            difficulty: '入门',
-            duration: '15 分钟'
-          },
-          {
-            id: 102,
-            title: '人工智能发展时间线思维导图',
-            type: '思维导图',
-            difficulty: '入门',
-            duration: '8 分钟'
-          }
-        ]
-      },
-      {
-        id: 2,
-        title: '第 2 章：搜索算法',
-        description:
-          '学习 BFS、DFS、启发式搜索和 A* 算法，理解问题求解中的状态空间搜索思想。',
-        duration: '70 分钟',
-        progress: 45,
-        status: 'learning',
-        knowledgePoints: ['BFS', 'DFS', '启发式搜索', 'A* 算法'],
-        resources: [
-          {
-            id: 1,
-            title: '搜索算法知识点讲解',
-            type: '文档',
-            difficulty: '基础',
-            duration: '20 分钟'
-          },
-          {
-            id: 2,
-            title: 'A* 算法可视化动画',
-            type: '动画',
-            difficulty: '进阶',
-            duration: '12 分钟'
-          },
-          {
-            id: 4,
-            title: '搜索算法练习题',
-            type: '题库',
-            difficulty: '基础',
-            duration: '25 分钟'
-          }
-        ]
-      },
-      {
-        id: 3,
-        title: '第 3 章：机器学习基础',
-        description:
-          '学习监督学习、无监督学习、训练集、测试集、模型评估和过拟合等基础概念。',
-        duration: '80 分钟',
-        progress: 0,
-        status: 'not-started',
-        knowledgePoints: ['监督学习', '无监督学习', '模型评估', '过拟合'],
-        resources: [
-          {
-            id: 6,
-            title: '机器学习入门练习题',
-            type: '题库',
-            difficulty: '基础',
-            duration: '30 分钟'
-          }
-        ]
-      }
-    ],
-    tasks: [
-      {
-        id: 1,
-        title: '完成搜索算法章节学习',
-        type: '章节学习',
-        deadline: '今天 22:00',
-        status: 'doing'
-      },
-      {
-        id: 2,
-        title: '提交搜索算法练习题',
-        type: '课后练习',
-        deadline: '明天 18:00',
-        status: 'todo'
-      },
-      {
-        id: 3,
-        title: '人工智能应用案例分析',
-        type: '项目任务',
-        deadline: '本周五',
-        status: 'todo'
-      }
-    ]
-  },
-  python: {
-    id: 'python',
-    title: 'Python 程序设计',
-    teacher: '李老师',
-    description:
-      '从基础语法、函数、文件操作到网络爬虫和数据处理的完整 Python 学习课程。',
-    cover: '',
-    progress: 70,
-    learnedHours: 16,
-    totalHours: 24,
-    totalChapters: 8,
-    currentChapterId: 2,
-    tags: ['Python', '编程基础', '爬虫'],
-    chapters: [
-      {
-        id: 1,
-        title: '第 1 章：Python 基础语法',
-        description: '学习变量、数据类型、条件判断、循环和基础输入输出。',
-        duration: '60 分钟',
-        progress: 100,
-        status: 'done',
-        knowledgePoints: ['变量', '数据类型', '条件判断', '循环'],
-        resources: [
-          {
-            id: 201,
-            title: 'Python 基础语法讲解文档',
-            type: '文档',
-            difficulty: '入门',
-            duration: '20 分钟'
-          }
-        ]
-      },
-      {
-        id: 2,
-        title: '第 6 章：网络爬虫基础',
-        description:
-          '学习 requests、BeautifulSoup、网页解析、数据清洗和结果保存的完整流程。',
-        duration: '90 分钟',
-        progress: 70,
-        status: 'learning',
-        knowledgePoints: ['requests', 'BeautifulSoup', '网页解析', '数据清洗'],
-        resources: [
-          {
-            id: 5,
-            title: 'Python 爬虫实操案例',
-            type: '代码案例',
-            difficulty: '进阶',
-            duration: '45 分钟'
-          }
-        ]
-      }
-    ],
-    tasks: [
-      {
-        id: 1,
-        title: '整理 Python 爬虫案例笔记',
-        type: '章节学习',
-        deadline: '今天 20:00',
-        status: 'doing'
-      }
-    ]
-  }
-}
 
 const createEmptyCourse = (): CourseDetail => ({
   id: '',
@@ -449,13 +232,15 @@ const setCourse = (data: CourseDetail) => {
 
 const fetchCourse = async (id: string) => {
   loading.value = true
+  errorMessage.value = ''
+  Object.assign(course, createEmptyCourse())
 
   try {
     const result = await getCourseDetail(id)
     setCourse(result)
   } catch (error) {
-    console.warn('课程详情接口暂不可用，使用页面静态数据：', error)
-    setCourse(fallbackCourseMap[id] || fallbackCourseMap.ai)
+    console.error('加载课程详情失败：', error)
+    errorMessage.value = '课程详情加载失败，请稍后重试'
   } finally {
     loading.value = false
   }
@@ -468,16 +253,18 @@ const selectChapter = (chapter: CourseChapter) => {
 const finishChapter = async () => {
   if (!currentChapter.value) return
 
-  currentChapter.value.progress = 100
-  currentChapter.value.status = 'done'
-
-  const doneCount = course.chapters.filter(item => item.status === 'done').length
-  course.progress = Math.round((doneCount / course.chapters.length) * 100)
-
   try {
     await updateChapterProgress(course.id, currentChapter.value.id, 100)
+    currentChapter.value.progress = 100
+    currentChapter.value.status = 'done'
+
+    const doneCount = course.chapters.filter(item => item.status === 'done').length
+    course.progress = course.chapters.length
+      ? Math.round((doneCount / course.chapters.length) * 100)
+      : 0
   } catch (error) {
-    console.warn('更新章节进度接口暂不可用，仅更新页面状态：', error)
+    console.error('更新章节进度失败：', error)
+    alert('章节进度保存失败，请稍后重试')
   }
 }
 
@@ -488,8 +275,8 @@ const saveNote = async () => {
     await saveCourseNote(course.id, currentChapter.value.id, note.value)
     alert('笔记已保存')
   } catch (error) {
-    console.warn('保存笔记接口暂不可用，仅更新页面状态：', error)
-    alert('笔记已保存')
+    console.error('保存笔记失败：', error)
+    alert('笔记保存失败，请稍后重试')
   }
 }
 
@@ -507,73 +294,6 @@ const getChapterStatusText = (status: CourseChapter['status']) => {
   return map[status]
 }
 
-// ===== 学习资源状态 =====
-interface LearningResource {
-  type: string
-  icon: string
-  title: string
-  summary: string
-  difficulty: string   // 展示用: 简单/适合/困难
-  diffClass: string    // CSS class
-  diffAdjust: string   // '' | 'up' | 'down' — 最后点击的方向
-  isLoadingAdj: boolean
-}
-
-// 假数据 — 每种资源类型的简短预览，后期接入 DB 后替换为 AI 生成内容
-const mockResources: Record<string, Omit<LearningResource, 'diffAdjust' | 'isLoadingAdj'>> = {
-  mindmap: {
-    type: 'mindmap',
-    icon: '🧠',
-    title: '思维导图',
-    summary: '当前章节知识结构图，梳理核心概念与知识点之间的关系。',
-    difficulty: '适合',
-    diffClass: 'medium'
-  },
-  quiz: {
-    type: 'quiz',
-    icon: '📝',
-    title: '练习题目',
-    summary: '基于本章重点设计的自测题，帮助巩固学习效果。',
-    difficulty: '适合',
-    diffClass: 'medium'
-  },
-  reading: {
-    type: 'reading',
-    icon: '📖',
-    title: '拓展阅读',
-    summary: '与本章相关的延伸材料，拓宽知识视野。',
-    difficulty: '适合',
-    diffClass: 'medium'
-  },
-  code: {
-    type: 'code',
-    icon: '💻',
-    title: '代码案例',
-    summary: '可运行的 Java 示例代码，动手实践本章知识点。',
-    difficulty: '适合',
-    diffClass: 'medium'
-  }
-}
-
-const resLoading = ref(false)
-const learningResources = ref<LearningResource[]>(
-  Object.values(mockResources).map(r => ({
-    ...r,
-    diffAdjust: '',
-    isLoadingAdj: false
-  }))
-)
-
-/** 查看已有资源；资源生成接口尚未提供。 */
-const viewFullResource = (_type: string) => {
-  router.push('/student/resources')
-}
-
-/** 正式难度调整接口尚未提供，不使用本地假数据伪装成功。 */
-const adjustResDifficulty = (_type: string, _direction: 'up' | 'down') => {
-  alert('资源难度调整接口暂未开放')
-}
-
 const getTaskStatusText = (status: string) => {
   const map: Record<string, string> = {
     todo: '待完成',
@@ -585,9 +305,13 @@ const getTaskStatusText = (status: string) => {
 }
 
 watch(
-  () => route.params.id,
+  currentCourseId,
   id => {
-    fetchCourse(String(id || 'ai'))
+    if (id) {
+      fetchCourse(id)
+    } else {
+      errorMessage.value = '课程编号无效'
+    }
   },
   {
     immediate: true
@@ -1020,9 +744,10 @@ textarea {
   color: #75849a;
   font-size: 12px;
   line-height: 1.5;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+display: -webkit-box;
+line-clamp: 2;
+-webkit-line-clamp: 2;
+-webkit-box-orient: vertical;
   overflow: hidden;
 }
 

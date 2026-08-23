@@ -9,10 +9,10 @@
         </p>
       </div>
 
-      <div class="hero-card">
+      <div v-if="recommendedCourse" class="hero-card">
         <span>当前推荐学习</span>
-        <strong>人工智能导论</strong>
-        <p>继续学习：第 2 章 搜索算法</p>
+        <strong>{{ recommendedCourse.title }}</strong>
+        <p>继续学习：{{ recommendedCourse.currentChapter }}</p>
       </div>
     </section>
 
@@ -37,6 +37,11 @@
       <section class="course-list">
         <div v-if="loading" class="empty-state">
           课程加载中...
+        </div>
+
+        <div v-else-if="loadError" class="empty-state error-state">
+          <p>{{ loadError }}</p>
+          <button type="button" @click="fetchCourses">重新加载</button>
         </div>
 
         <div v-else-if="filteredCourses.length === 0" class="empty-state">
@@ -119,7 +124,6 @@
 </template>
 
 <script setup lang="ts">
-import { getAdminResourceList } from '@/api/admin'
 import { computed, onMounted, ref } from 'vue'
 
 import { useRouter } from 'vue-router'
@@ -132,86 +136,8 @@ const router = useRouter()
 const keyword = ref('')
 const status = ref('')
 const loading = ref(false)
-
-const fallbackCourses: CourseListItem[] = [
-  {
-    id: 'ai',
-    title: '人工智能导论',
-    teacher: '王老师',
-    description: '系统学习人工智能基本概念、搜索算法、机器学习、神经网络和大模型应用。',
-    cover: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=700',
-    progress: 45,
-    totalChapters: 5,
-    learnedChapters: 2,
-    totalHours: 18,
-    learnedHours: 8,
-    currentChapter: '第 2 章：搜索算法',
-    status: 'learning',
-    tags: ['人工智能', '搜索算法', '机器学习']
-  },
-  {
-    id: 'python',
-    title: 'Python 程序设计',
-    teacher: '李老师',
-    description: '从基础语法、函数、文件操作到网络爬虫和数据处理的完整 Python 学习课程。',
-    cover: 'https://images.unsplash.com/photo-1526379095098-d400fd0bf935?w=700',
-    progress: 70,
-    totalChapters: 8,
-    learnedChapters: 6,
-    totalHours: 24,
-    learnedHours: 16,
-    currentChapter: '第 6 章：网络爬虫基础',
-    status: 'learning',
-    tags: ['Python', '编程基础', '爬虫']
-  },
-  {
-    id: 'data-structure',
-    title: '数据结构',
-    teacher: '陈老师',
-    description: '学习线性表、栈、队列、树、图、查找和排序等核心数据结构知识。',
-    cover: 'https://images.unsplash.com/photo-1515879218367-8466d910aaa4?w=700',
-    progress: 0,
-    totalChapters: 7,
-    learnedChapters: 0,
-    totalHours: 20,
-    learnedHours: 0,
-    currentChapter: '第 1 章：线性表',
-    status: 'not-started',
-    tags: ['数据结构', '算法基础', '编程能力']
-  },
-  {
-    id: 'ml',
-    title: '机器学习',
-    teacher: '赵老师',
-    description: '学习监督学习、无监督学习、模型评估、特征工程和基础神经网络方法。',
-    cover: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=700',
-    progress: 20,
-    totalChapters: 6,
-    learnedChapters: 1,
-    totalHours: 22,
-    learnedHours: 4,
-    currentChapter: '第 1 章：机器学习基础',
-    status: 'learning',
-    tags: ['机器学习', '模型评估', '数据分析']
-  },
-  {
-    id: 'network',
-    title: '计算机网络',
-    teacher: '周老师',
-    description: '学习网络体系结构、TCP/IP、HTTP、路由、交换和网络安全基础。',
-    cover: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=700',
-    progress: 35,
-    totalChapters: 6,
-    learnedChapters: 2,
-    totalHours: 18,
-    learnedHours: 6,
-    currentChapter: '第 2 章：传输层协议',
-    status: 'learning',
-    tags: ['计算机网络', 'TCP/IP', 'HTTP']
-  }
-]
-
 const courses = ref<CourseListItem[]>([])
+const loadError = ref('')
 
 const filteredCourses = computed(() => {
   return courses.value.filter(course => {
@@ -231,8 +157,11 @@ const learningCourses = computed(() => {
   return courses.value.filter(course => course.status === 'learning').slice(0, 3)
 })
 
+const recommendedCourse = computed(() => learningCourses.value[0] ?? null)
+
 const fetchCourses = async () => {
   loading.value = true
+  loadError.value = ''
 
   try {
     const result = await getCourseList({
@@ -241,9 +170,9 @@ const fetchCourses = async () => {
     })
 
     courses.value = result.list
-  } catch (error) {
-    console.warn('课程列表接口暂不可用，使用页面静态数据：', error)
-    courses.value = fallbackCourses
+  } catch {
+    courses.value = []
+    loadError.value = '课程列表加载失败，请检查网络后重试。'
   } finally {
     loading.value = false
   }
@@ -541,6 +470,16 @@ onMounted(() => {
   border-radius: 20px;
   color: #75849a;
   background: #ffffff;
+}
+
+.error-state button {
+  height: 40px;
+  padding: 0 18px;
+  border: none;
+  border-radius: 12px;
+  color: #ffffff;
+  background: #1769ff;
+  cursor: pointer;
 }
 
 @media (max-width: 1180px) {

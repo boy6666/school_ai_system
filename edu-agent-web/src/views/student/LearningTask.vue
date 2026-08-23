@@ -9,7 +9,6 @@
         </p>
       </div>
 
-      <button class="primary-btn" @click="openCreate">新增任务</button>
     </section>
 
     <section class="summary-grid">
@@ -111,52 +110,12 @@
       </div>
     </section>
 
-    <div v-if="dialogVisible" class="dialog-mask">
-      <div class="dialog">
-        <h3>新增学习任务</h3>
-
-        <label>
-          任务名称
-          <input
-            v-model="form.title"
-            type="text"
-            placeholder="例如：完成搜索算法章节学习"
-          />
-        </label>
-
-        <label>
-          所属课程
-          <input
-            v-model="form.courseName"
-            type="text"
-            placeholder="例如：人工智能导论"
-          />
-        </label>
-
-        <label>
-          优先级
-          <select v-model="form.priority">
-            <option value="high">高</option>
-            <option value="middle">中</option>
-            <option value="low">低</option>
-          </select>
-        </label>
-
-        <div class="dialog-actions">
-          <button class="outline-btn" @click="dialogVisible = false">
-            取消
-          </button>
-          <button class="primary-btn" @click="saveTask">
-            保存
-          </button>
-        </div>
-      </div>
-    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
+import { ElMessage } from 'element-plus'
 import {
   getLearningTasks,
   updateLearningTaskStatus
@@ -172,7 +131,6 @@ const loading = ref(false)
 const keyword = ref('')
 const status = ref('')
 const priority = ref('')
-const dialogVisible = ref(false)
 
 const summary = reactive<LearningTaskSummary>({
   todayCount: 0,
@@ -180,48 +138,6 @@ const summary = reactive<LearningTaskSummary>({
   doneCount: 0,
   averageProgress: 0
 })
-
-const form = reactive({
-  title: '',
-  courseName: '',
-  priority: 'middle' as TaskPriority
-})
-
-const fallbackTasks: LearningTaskItem[] = [
-  {
-    id: 1,
-    title: '完成搜索算法章节学习',
-    courseName: '人工智能导论',
-    chapterName: '第 2 章：搜索算法',
-    startTime: '今天 09:00',
-    endTime: '今天 22:00',
-    priority: 'high',
-    status: 'doing',
-    progress: 45
-  },
-  {
-    id: 2,
-    title: '提交 A* 算法练习题',
-    courseName: '人工智能导论',
-    chapterName: '第 2 章：搜索算法',
-    startTime: '明天 09:00',
-    endTime: '明天 18:00',
-    priority: 'middle',
-    status: 'todo',
-    progress: 0
-  },
-  {
-    id: 3,
-    title: '整理 Python 数据分析笔记',
-    courseName: 'Python 程序设计',
-    chapterName: 'Pandas 数据处理',
-    startTime: '周三 10:00',
-    endTime: '周五 20:00',
-    priority: 'low',
-    status: 'done',
-    progress: 100
-  }
-]
 
 const tasks = ref<LearningTaskItem[]>([])
 
@@ -269,60 +185,25 @@ const fetchTasks = async () => {
 
     tasks.value = result.list
     Object.assign(summary, result.summary)
-  } catch (error) {
-    console.warn('学习任务接口暂不可用，使用页面静态数据：', error)
-    tasks.value = fallbackTasks
+  } catch {
+    tasks.value = []
     updateSummary()
+    ElMessage.error('学习任务加载失败，请稍后重试')
   } finally {
     loading.value = false
   }
 }
 
 const markDone = async (task: LearningTaskItem) => {
-  const oldStatus = task.status
-  const oldProgress = task.progress
-
-  task.status = 'done'
-  task.progress = 100
-  updateSummary()
-
   try {
     await updateLearningTaskStatus(task.id, 'done')
-  } catch (error) {
-    console.warn('任务状态接口暂不可用，仅更新页面状态：', error)
-    task.status = oldStatus
-    task.progress = oldProgress
+    task.status = 'done'
+    task.progress = 100
     updateSummary()
+    ElMessage.success('任务已完成')
+  } catch {
+    ElMessage.error('任务状态更新失败，请稍后重试')
   }
-}
-
-const openCreate = () => {
-  form.title = ''
-  form.courseName = ''
-  form.priority = 'middle'
-  dialogVisible.value = true
-}
-
-const saveTask = () => {
-  if (!form.title.trim()) {
-    alert('请输入任务名称')
-    return
-  }
-
-  tasks.value.unshift({
-    id: Date.now(),
-    title: form.title,
-    courseName: form.courseName || '未选择课程',
-    chapterName: '自定义任务',
-    startTime: '今天',
-    endTime: '待设置',
-    priority: form.priority,
-    status: 'todo',
-    progress: 0
-  })
-
-  dialogVisible.value = false
-  updateSummary()
 }
 
 const getStatusText = (value: TaskStatus) => {

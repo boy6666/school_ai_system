@@ -649,9 +649,10 @@ const downloadAttachment = (attachment: any) => {
   font-size: 14px;
   margin-bottom: 10px;
   line-height: 1.6;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+display: -webkit-box;
+line-clamp: 2;
+-webkit-line-clamp: 2;
+-webkit-box-orient: vertical;
   overflow: hidden;
 }
 
