@@ -24,14 +24,14 @@
             </el-badge>
           </template>
           <div class="message-filters">
-            <el-select v-model="filters.type" placeholder="消息类型" style="width: 150px; margin-right: 15px">
+            <el-select v-model="filters.type" placeholder="消息类型" style="width: 150px; margin-right: 15px" @change="handleFilterChange">
               <el-option label="全部" value="" />
               <el-option label="系统通知" value="system" />
               <el-option label="学习提醒" value="learning" />
               <el-option label="私信" value="private" />
               <el-option label="作业反馈" value="feedback" />
             </el-select>
-            <el-select v-model="filters.status" placeholder="消息状态" style="width: 150px">
+            <el-select v-model="filters.status" placeholder="消息状态" style="width: 150px" @change="handleFilterChange">
               <el-option label="全部" value="" />
               <el-option label="未读" value="unread" />
               <el-option label="已读" value="read" />
@@ -49,6 +49,8 @@
             :total="pagination.total"
             layout="total, prev, pager, next"
             style="margin-top: 20px; text-align: center"
+            @size-change="handleSizeChange"
+            @current-change="handlePageChange"
           />
         </el-tab-pane>
 
@@ -142,7 +144,7 @@
                     />
                     <div class="input-actions">
                       <span class="input-hint">按 Ctrl+Enter 发送</span>
-                      <el-button type="primary" @click="sendMessage" :disabled="!newMessage.trim()">
+                      <el-button type="primary" @click="sendMessage" :disabled="!newMessage.trim()" :loading="sending">
                         发送
                       </el-button>
                     </div>
@@ -209,38 +211,33 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, reactive, nextTick } from 'vue'
+import { computed, nextTick, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Paperclip } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
+import {
+  deleteMessage as deleteMessageApi,
+  getConversationList,
+  getConversationMessages,
+  getMessageDetail,
+  getMessageList,
+  markAllRead as markAllReadApi,
+  markAsRead as markAsReadApi,
+  sendMessage as sendMessageApi,
+  type ChatMessage,
+  type ConversationItem,
+  type MessageAttachment,
+  type MessageItem
+} from '@/api/message'
 
-interface Message {
-  id: number
-  title: string
-  content: string
-  type: string
-  read: boolean
-  time: string
-  attachment?: {
-    name: string
-    url: string
-  }
+type TagType = 'success' | 'warning' | 'danger' | 'info'
+type ConversationView = ConversationItem & { messages: ChatMessage[] }
+
+const typeTags: Record<string, TagType> = {
+  system: 'danger', learning: 'warning', private: 'success', feedback: 'info'
 }
-
-interface Conversation {
-  id: number
-  name: string
-  avatar: string
-  lastMessage: string
-  time: string
-  unread: number
-  messages: ChatMessage[]
-}
-
-interface ChatMessage {
-  content: string
-  time: string
-  isMine: boolean
+const typeLabels: Record<string, string> = {
+  system: '系统通知', learning: '学习提醒', private: '私信', feedback: '作业反馈'
 }
 
 const MessageList = {
@@ -249,20 +246,13 @@ const MessageList = {
   template: `
     <el-skeleton :loading="loading" :count="5" animated>
       <template #template>
-        <el-skeleton-item variant="rect" style="height: 80px; margin-bottom: 15px" />
+        <el-skeleton-item variant="rect" style="height:80px;margin-bottom:15px" />
       </template>
       <template #default>
-        <div v-if="messages.length === 0" class="empty-messages">
-          <el-empty description="暂无消息" />
-        </div>
+        <el-empty v-if="messages.length === 0" description="暂无消息" />
         <div v-else class="message-list">
-          <div
-            v-for="message in messages"
-            :key="message.id"
-            class="message-item"
-            :class="{ unread: !message.read }"
-            @click="$emit('messageClick', message)"
-          >
+          <div v-for="message in messages" :key="message.id" class="message-item"
+            :class="{ unread: !message.read }" @click="$emit('messageClick', message)">
             <div class="message-main">
               <div class="message-header">
                 <div class="message-title">{{ message.title }}</div>
@@ -270,17 +260,9 @@ const MessageList = {
               </div>
               <div class="message-content-preview">{{ message.content }}</div>
               <div class="message-footer">
-                <el-tag :type="getTypeTag(message.type)" size="small">
-                  {{ getTypeLabel(message.type) }}
-                </el-tag>
-                <el-button
-                  link
-                  type="danger"
-                  size="small"
-                  @click.stop="$emit('messageDelete', message)"
-                >
-                  删除
-                </el-button>
+                <el-tag :type="getTypeTag(message.type)" size="small">{{ getTypeLabel(message.type) }}</el-tag>
+                <el-button link type="danger" size="small"
+                  @click.stop="$emit('messageDelete', message)">删除</el-button>
               </div>
             </div>
             <div v-if="!message.read" class="unread-dot"></div>
@@ -290,264 +272,167 @@ const MessageList = {
     </el-skeleton>
   `,
   methods: {
-    getTypeTag(type: string) {
-      const tags: Record<string, any> = {
-        system: 'danger',
-        learning: 'warning',
-        private: 'success',
-        feedback: 'info'
-      }
-      return tags[type] || 'info'
-    },
-    getTypeLabel(type: string) {
-      const labels: Record<string, string> = {
-        system: '系统通知',
-        learning: '学习提醒',
-        private: '私信',
-        feedback: '作业反馈'
-      }
-      return labels[type] || type
-    }
+    getTypeTag: (type: string): TagType => typeTags[type] || 'info',
+    getTypeLabel: (type: string): string => typeLabels[type] || type
   }
 }
 
 const userStore = useUserStore()
 const userInfo = computed(() => userStore.userInfo)
-
 const activeTab = ref('all')
 const loading = ref(false)
+const sending = ref(false)
 const messageDetailVisible = ref(false)
-const selectedMessage = ref<Message | null>(null)
-const selectedConversation = ref<Conversation | null>(null)
+const selectedMessage = ref<MessageItem | null>(null)
+const selectedConversation = ref<ConversationView | null>(null)
 const newMessage = ref('')
-const chatMessagesRef = ref()
+const chatMessagesRef = ref<HTMLElement>()
+const filters = reactive({ type: '', status: '' })
+const pagination = reactive({ page: 1, size: 10, total: 0 })
+const messages = ref<MessageItem[]>([])
+const conversations = ref<ConversationView[]>([])
 
-const filters = reactive({
-  type: '',
-  status: ''
-})
-
-const pagination = reactive({
-  page: 1,
-  size: 10,
-  total: 50
-})
-
-const messages = ref<Message[]>([
-  {
-    id: 1,
-    title: '系统升级通知',
-    content: '系统将于今晚23:00-01:00进行升级维护，届时将暂停服务，请提前做好准备。',
-    type: 'system',
-    read: false,
-    time: '2026-05-02 14:30'
-  },
-  {
-    id: 2,
-    title: '学习任务提醒',
-    content: '您有3个学习任务即将到期，请及时完成：1. Vue组件练习 2. Spring Boot基础 3. 数据库设计',
-    type: 'learning',
-    read: false,
-    time: '2026-05-02 12:00'
-  },
-  {
-    id: 3,
-    title: '作业批改完成',
-    content: '您的"电商管理系统前端开发"作业已批改完成，得分：85分。请查看详细评语和改进建议。',
-    type: 'feedback',
-    read: true,
-    time: '2026-05-01 18:20',
-    attachment: {
-      name: '作业评语.pdf',
-      url: '/files/feedback.pdf'
-    }
-  },
-  {
-    id: 4,
-    title: '新课程上线',
-    content: '【高级】React性能优化实战课程已上线，原价399元，现在报名立减100元！',
-    type: 'system',
-    read: true,
-    time: '2026-04-30 10:00'
-  },
-  {
-    id: 5,
-    title: '学习计划完成',
-    content: '恭喜您完成本月学习计划！您的前端开发能力已达到中级水平，可以尝试进阶课程。',
-    type: 'learning',
-    read: false,
-    time: '2026-04-29 09:30'
-  }
-])
-
-const conversations = ref<Conversation[]>([
-  {
-    id: 1,
-    name: '李老师',
-    avatar: '',
-    lastMessage: '好的，我们明天再详细讨论项目需求。',
-    time: '14:20',
-    unread: 2,
-    messages: [
-      { content: '同学你好，关于你的项目我有一些建议。', time: '14:10', isMine: false },
-      { content: '老师您好，请问有什么建议？', time: '14:15', isMine: true },
-      { content: '首先，你的代码结构很好，但是在错误处理方面还可以改进。', time: '14:16', isMine: false },
-      { content: '好的，我明白了。请问具体应该怎么改呢？', time: '14:18', isMine: true },
-      { content: '好的，我们明天再详细讨论项目需求。', time: '14:20', isMine: false }
-    ]
-  },
-  {
-    id: 2,
-    name: '张同学',
-    avatar: '',
-    lastMessage: '那个组件的实现方法确实很不错！',
-    time: '昨天',
-    unread: 0,
-    messages: [
-      { content: '你好，看到你做的Vue组件很棒！', time: '昨天 15:00', isMine: false },
-      { content: '谢谢！只是基础的组件练习而已。', time: '昨天 15:10', isMine: true },
-      { content: '那个组件的实现方法确实很不错！', time: '昨天 15:15', isMine: false }
-    ]
-  },
-  {
-    id: 3,
-    name: '王助教',
-    avatar: '',
-    lastMessage: '你的作业批改结果已经出来了。',
-    time: '2天前',
-    unread: 1,
-    messages: [
-      { content: '你的作业批改结果已经出来了。', time: '2天前', isMine: false }
-    ]
-  }
-])
-
-const filteredMessages = computed(() => {
-  return messages.value.filter(msg => {
-    const typeMatch = !filters.type || msg.type === filters.type
-    const statusMatch = !filters.status ||
-      (filters.status === 'unread' && !msg.read) ||
-      (filters.status === 'read' && msg.read)
-    return typeMatch && statusMatch
-  })
-})
-
-const systemMessages = computed(() => messages.value.filter(msg => msg.type === 'system'))
-const learningMessages = computed(() => messages.value.filter(msg => msg.type === 'learning'))
-const privateMessages = computed(() => messages.value.filter(msg => msg.type === 'private'))
-const feedbackMessages = computed(() => messages.value.filter(msg => msg.type === 'feedback'))
-
-const unreadCount = computed(() => messages.value.filter(msg => !msg.read).length)
+const filteredMessages = computed(() => messages.value)
+const systemMessages = computed(() => messages.value.filter((message) => message.type === 'system'))
+const learningMessages = computed(() => messages.value.filter((message) => message.type === 'learning'))
+const privateMessages = computed(() => messages.value.filter((message) => message.type === 'private'))
+const feedbackMessages = computed(() => messages.value.filter((message) => message.type === 'feedback'))
+const unreadCount = computed(() => messages.value.filter((message) => !message.read).length)
 const allCount = computed(() => messages.value.length)
-const systemCount = computed(() => systemMessages.value.filter(msg => !msg.read).length)
-const learningCount = computed(() => learningMessages.value.filter(msg => !msg.read).length)
-const privateCount = computed(() => privateMessages.value.filter(msg => !msg.read).length)
-const feedbackCount = computed(() => feedbackMessages.value.filter(msg => !msg.read).length)
+const systemCount = computed(() => systemMessages.value.filter((message) => !message.read).length)
+const learningCount = computed(() => learningMessages.value.filter((message) => !message.read).length)
+const privateCount = computed(() => privateMessages.value.filter((message) => !message.read).length)
+const feedbackCount = computed(() => feedbackMessages.value.filter((message) => !message.read).length)
+const getTypeTag = (type: string): TagType => typeTags[type] || 'info'
+const getTypeLabel = (type: string): string => typeLabels[type] || type
 
-const getTypeTag = (type: string) => {
-  const tags: Record<string, any> = {
-    system: 'danger',
-    learning: 'warning',
-    private: 'success',
-    feedback: 'info'
+const loadMessages = async () => {
+  loading.value = true
+  try {
+    const result = await getMessageList({
+      type: filters.type || undefined,
+      status: filters.status || undefined,
+      page: pagination.page,
+      pageSize: pagination.size
+    })
+    messages.value = result.records
+    pagination.total = result.total
+  } catch {
+    messages.value = []
+    pagination.total = 0
+    ElMessage.error('消息列表加载失败，请稍后重试')
+  } finally {
+    loading.value = false
   }
-  return tags[type] || 'info'
 }
 
-const getTypeLabel = (type: string) => {
-  const labels: Record<string, string> = {
-    system: '系统通知',
-    learning: '学习提醒',
-    private: '私信',
-    feedback: '作业反馈'
+const loadConversations = async () => {
+  try {
+    const result = await getConversationList()
+    conversations.value = result.map((item) => ({ ...item, messages: item.messages || [] }))
+  } catch {
+    conversations.value = []
+    ElMessage.error('私信会话加载失败，请稍后重试')
   }
-  return labels[type] || type
 }
 
-const viewMessage = (message: Message) => {
-  selectedMessage.value = message
-  messageDetailVisible.value = true
+const handleFilterChange = () => { pagination.page = 1; loadMessages() }
+const handleSizeChange = (size: number) => { pagination.size = size; loadMessages() }
+const handlePageChange = (page: number) => { pagination.page = page; loadMessages() }
+
+const viewMessage = async (message: MessageItem) => {
+  try {
+    selectedMessage.value = await getMessageDetail(message.id)
+    messageDetailVisible.value = true
+  } catch {
+    ElMessage.error('消息详情加载失败，请稍后重试')
+  }
 }
 
-const deleteMessage = (message: Message) => {
-  ElMessageBox.confirm('确定要删除这条消息吗？', '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning'
-  }).then(() => {
-    const index = messages.value.findIndex(m => m.id === message.id)
-    if (index > -1) {
-      messages.value.splice(index, 1)
-      ElMessage.success('删除成功')
-    }
-  }).catch(() => {})
+const deleteMessage = async (message: MessageItem) => {
+  try {
+    await ElMessageBox.confirm('确定要删除这条消息吗？', '提示', {
+      confirmButtonText: '确定', cancelButtonText: '取消', type: 'warning'
+    })
+  } catch { return }
+  try {
+    await deleteMessageApi(message.id)
+    ElMessage.success('删除成功')
+    await loadMessages()
+  } catch {
+    ElMessage.error('删除失败，请稍后重试')
+  }
 }
 
-const markAsRead = () => {
-  if (selectedMessage.value) {
+const markAsRead = async () => {
+  if (!selectedMessage.value) return
+  try {
+    await markAsReadApi(selectedMessage.value.id)
     selectedMessage.value.read = true
     ElMessage.success('已标记为已读')
+    await loadMessages()
+  } catch {
+    ElMessage.error('标记已读失败，请稍后重试')
   }
 }
 
-const markAllRead = () => {
-  messages.value.forEach(msg => msg.read = true)
-  conversations.value.forEach(conv => conv.unread = 0)
-  ElMessage.success('已全部标记为已读')
+const markAllRead = async () => {
+  try {
+    await markAllReadApi()
+    ElMessage.success('已全部标记为已读')
+    await Promise.all([loadMessages(), loadConversations()])
+  } catch {
+    ElMessage.error('批量标记失败，请稍后重试')
+  }
 }
 
-const clearMessages = () => {
-  ElMessageBox.confirm('确定要清空所有消息吗？此操作不可恢复！', '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning'
-  }).then(() => {
-    messages.value = []
-    ElMessage.success('消息已清空')
-  }).catch(() => {})
-}
+const clearMessages = () => ElMessage.info('清空消息接口暂未开放')
 
-const selectConversation = (conversation: Conversation) => {
-  selectedConversation.value = conversation
-  conversation.unread = 0
-  nextTick(() => {
+const selectConversation = async (conversation: ConversationView) => {
+  try {
+    const history = await getConversationMessages(conversation.id)
+    selectedConversation.value = { ...conversation, messages: history, unread: 0 }
+    await nextTick()
     scrollToBottom()
-  })
+  } catch {
+    ElMessage.error('会话记录加载失败，请稍后重试')
+  }
 }
 
-const sendMessage = () => {
-  if (!newMessage.value.trim()) return
-
-  const now = new Date()
-  const time = `${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`
-
-  selectedConversation.value?.messages.push({
-    content: newMessage.value,
-    time,
-    isMine: true
-  })
-
-  selectedConversation.value!.lastMessage = newMessage.value
-  selectedConversation.value!.time = time
-
-  newMessage.value = ''
-
-  nextTick(() => {
+const sendMessage = async () => {
+  const content = newMessage.value.trim()
+  if (!content || !selectedConversation.value || sending.value) return
+  sending.value = true
+  try {
+    const sent = await sendMessageApi({
+      conversationId: selectedConversation.value.id,
+      content
+    })
+    selectedConversation.value.messages.push(sent)
+    selectedConversation.value.lastMessage = sent.content
+    selectedConversation.value.time = sent.time
+    newMessage.value = ''
+    await nextTick()
     scrollToBottom()
-  })
-
-  ElMessage.success('消息已发送')
+    ElMessage.success('消息已发送')
+  } catch {
+    ElMessage.error('消息发送失败，请稍后重试')
+  } finally {
+    sending.value = false
+  }
 }
 
 const scrollToBottom = () => {
-  if (chatMessagesRef.value) {
-    chatMessagesRef.value.scrollTop = chatMessagesRef.value.scrollHeight
-  }
+  if (chatMessagesRef.value) chatMessagesRef.value.scrollTop = chatMessagesRef.value.scrollHeight
 }
 
-const downloadAttachment = (attachment: any) => {
-  ElMessage.success(`正在下载：${attachment.name}`)
+const downloadAttachment = (attachment: MessageAttachment) => {
+  if (!attachment.url) { ElMessage.info('附件下载地址暂不可用'); return }
+  window.open(attachment.url, '_blank', 'noopener,noreferrer')
 }
+
+loadMessages()
+loadConversations()
 </script>
 
 <style scoped>

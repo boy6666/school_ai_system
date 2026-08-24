@@ -28,7 +28,7 @@
       </el-row>
     </el-card>
 
-    <div v-if="!isProjectDetail">
+    <div v-if="!isProjectDetail" v-loading="loading">
       <el-row :gutter="20">
         <el-col :span="8" v-for="project in projects" :key="project.id">
           <el-card class="project-card" @click="viewProject(project)">
@@ -95,6 +95,8 @@
         :total="pagination.total"
         layout="total, prev, pager, next"
         style="margin-top: 20px; text-align: center"
+        @size-change="handleSizeChange"
+        @current-change="handlePageChange"
       />
     </div>
 
@@ -223,18 +225,7 @@
             <div class="code-section">
               <el-button type="primary" @click="openIDE">打开在线IDE</el-button>
               <el-button type="info" @click="downloadCode">下载项目代码</el-button>
-              <div class="code-preview">
-                <p>项目代码结构：</p>
-                <pre><code>├── src/
-│   ├── components/
-│   ├── views/
-│   ├── api/
-│   ├── utils/
-│   └── main.js
-├── public/
-├── package.json
-└── README.md</code></pre>
-              </div>
+              <el-empty description="项目代码接口暂未开放" />
             </div>
           </el-tab-pane>
 
@@ -256,19 +247,10 @@
                   />
                 </el-form-item>
                 <el-form-item label="附件上传">
-                  <el-upload
-                    drag
-                    action="/api/upload"
-                    multiple
-                  >
-                    <el-icon class="el-icon--upload"><UploadFilled /></el-icon>
-                    <div class="el-upload__text">
-                      拖拽文件到此处或 <em>点击上传</em>
-                    </div>
-                  </el-upload>
+                  <el-alert title="附件上传接口暂未开放" type="info" :closable="false" />
                 </el-form-item>
                 <el-form-item>
-                  <el-button type="primary" @click="handleSubmit">提交作业</el-button>
+                  <el-button type="primary" :loading="submitting" @click="handleSubmit">提交作业</el-button>
                   <el-button @click="resetForm">重置</el-button>
                 </el-form-item>
               </el-form>
@@ -281,336 +263,153 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { User, Star, Clock, ArrowLeft, UploadFilled } from '@element-plus/icons-vue'
+import { User, Star, Clock, ArrowLeft } from '@element-plus/icons-vue'
+import {
+  getProjectDetail,
+  getProjectList,
+  joinProject,
+  submitProject,
+  type ProjectItem,
+  type ProjectResource
+} from '@/api/project'
 
-interface Project {
-  id: number
-  title: string
-  description: string
-  avatar: string
-  category: string
-  level: string
-  tags: string[]
-  enrolled: number
-  rating: number
-  duration: string
-  progress: number
-  objectives: string[]
-  technologies: string[]
-  steps: Step[]
-  resources: Resource[]
-}
-
-interface Step {
-  title: string
-  description: string
-  content?: string
-  completed: boolean
-  locked: boolean
-}
-
-interface Resource {
-  title: string
-  type: string
-  duration: string
-}
-
-const filters = reactive({
-  category: '',
-  level: '',
-  keyword: ''
-})
-
-const pagination = reactive({
-  page: 1,
-  size: 9,
-  total: 45
-})
-
+const filters = reactive({ category: '', level: '', keyword: '' })
+const pagination = reactive({ page: 1, size: 9, total: 0 })
+const projects = ref<ProjectItem[]>([])
+const loading = ref(false)
+const submitting = ref(false)
 const isProjectDetail = ref(false)
-const currentProject = ref<Project | null>(null)
+const currentProject = ref<ProjectItem | null>(null)
 const activeTab = ref('overview')
 const isFavorite = ref(false)
 
-const submitForm = reactive({
-  projectUrl: '',
-  repoUrl: '',
-  description: ''
-})
+const submitForm = reactive({ projectUrl: '', repoUrl: '', description: '' })
 
-const projects = ref<Project[]>([
-  {
-    id: 1,
-    title: '电商管理系统',
-    description: '从零开始构建一个完整的电商管理系统，包含商品管理、订单处理、用户系统等核心功能',
-    avatar: '',
-    category: 'fullstack',
-    level: 'intermediate',
-    tags: ['Vue', 'Spring Boot', 'MySQL', '电商'],
-    enrolled: 1234,
-    rating: 4.8,
-    duration: '40小时',
-    progress: 35,
-    objectives: [
-      '掌握前后端分离架构设计',
-      '学习RESTful API设计规范',
-      '实现完整的CRUD操作',
-      '掌握数据库设计和优化',
-      '学习项目部署流程'
-    ],
-    technologies: ['Vue 3', 'Element Plus', 'Spring Boot', 'MySQL', 'Redis', 'Nginx'],
-    steps: [
-      {
-        title: '项目初始化',
-        description: '搭建开发环境和项目骨架',
-        completed: true,
-        locked: false
-      },
-      {
-        title: '数据库设计',
-        description: '设计并创建数据库表结构',
-        completed: true,
-        locked: false
-      },
-      {
-        title: '后端API开发',
-        description: '实现商品、订单、用户等API接口',
-        completed: false,
-        locked: false
-      },
-      {
-        title: '前端页面开发',
-        description: '开发管理后台页面',
-        completed: false,
-        locked: true
-      },
-      {
-        title: '系统测试',
-        description: '进行功能测试和性能优化',
-        completed: false,
-        locked: true
-      }
-    ],
-    resources: [
-      { title: '项目需求文档', type: '文档', duration: 'PDF' },
-      { title: '数据库设计图', type: '文档', duration: 'PDF' },
-      { title: 'API接口文档', type: '文档', duration: 'PDF' },
-      { title: '前端开发视频', type: '视频', duration: '2小时' },
-      { title: '后端开发视频', type: '视频', duration: '3小时' }
-    ]
-  },
-  {
-    id: 2,
-    title: '在线学习平台',
-    description: '开发一个在线学习平台，支持视频课程播放、作业提交、在线讨论等功能',
-    avatar: '',
-    category: 'fullstack',
-    level: 'advanced',
-    tags: ['React', 'Node.js', 'MongoDB', '在线教育'],
-    enrolled: 876,
-    rating: 4.9,
-    duration: '50小时',
-    progress: 0,
-    objectives: [
-      '学习大型项目架构设计',
-      '掌握视频流处理技术',
-      '实现实时通信功能',
-      '学习用户权限管理',
-      '掌握性能优化技巧'
-    ],
-    technologies: ['React', 'Node.js', 'MongoDB', 'Socket.io', 'FFmpeg'],
-    steps: [
-      {
-        title: '需求分析',
-        description: '分析项目需求和技术选型',
-        completed: false,
-        locked: false
-      },
-      {
-        title: '架构设计',
-        description: '设计系统架构和数据库模型',
-        completed: false,
-        locked: true
-      },
-      {
-        title: '后端开发',
-        description: '实现核心业务逻辑',
-        completed: false,
-        locked: true
-      },
-      {
-        title: '前端开发',
-        description: '开发用户界面',
-        completed: false,
-        locked: true
-      },
-      {
-        title: '集成测试',
-        description: '进行系统集成测试',
-        completed: false,
-        locked: true
-      }
-    ],
-    resources: [
-      { title: '技术选型分析', type: '文档', duration: 'PDF' },
-      { title: '架构设计文档', type: '文档', duration: 'PDF' }
-    ]
-  },
-  {
-    id: 3,
-    title: '博客系统',
-    description: '构建一个现代化的博客系统，包含文章管理、评论系统、标签分类等功能',
-    avatar: '',
-    category: 'frontend',
-    level: 'beginner',
-    tags: ['Vue', 'Vite', 'TypeScript', '博客'],
-    enrolled: 2345,
-    rating: 4.7,
-    duration: '20小时',
-    progress: 0,
-    objectives: [
-      '学习Vue 3组合式API',
-      '掌握TypeScript基础',
-      '学习路由和状态管理',
-      '掌握Markdown渲染',
-      '学习响应式布局'
-    ],
-    technologies: ['Vue 3', 'Vite', 'TypeScript', 'Vue Router', 'Pinia', 'markdown-it'],
-    steps: [
-      {
-        title: '项目搭建',
-        description: '使用Vite创建项目',
-        completed: false,
-        locked: false
-      },
-      {
-        title: '路由配置',
-        description: '配置Vue Router',
-        completed: false,
-        locked: true
-      },
-      {
-        title: '状态管理',
-        description: '使用Pinia管理状态',
-        completed: false,
-        locked: true
-      },
-      {
-        title: '页面开发',
-        description: '开发各个页面组件',
-        completed: false,
-        locked: true
-      }
-    ],
-    resources: [
-      { title: 'Vue 3教程', type: '文档', duration: 'PDF' },
-      { title: 'TypeScript入门', type: '视频', duration: '1小时' }
-    ]
-  }
-])
-
-const getLevelType = (level = '') => {
-  const types: Record<string, any> = {
-    beginner: 'success',
-    intermediate: 'warning',
-    advanced: 'danger'
+type TagType = 'success' | 'warning' | 'danger' | 'info'
+const getLevelType = (level = ''): TagType => {
+  const types: Record<string, TagType> = {
+    beginner: 'success', intermediate: 'warning', advanced: 'danger'
   }
   return types[level] || 'info'
 }
 
 const getLevelLabel = (level = '') => {
   const labels: Record<string, string> = {
-    beginner: '入门',
-    intermediate: '进阶',
-    advanced: '高级'
+    beginner: '入门', intermediate: '进阶', advanced: '高级'
   }
   return labels[level] || level
 }
 
 const getCategoryLabel = (category = '') => {
   const labels: Record<string, string> = {
-    frontend: '前端项目',
-    backend: '后端项目',
-    fullstack: '全栈项目'
+    frontend: '前端项目', backend: '后端项目', fullstack: '全栈项目'
   }
   return labels[category] || category
 }
 
-const handleSearch = () => {
-  ElMessage.success('搜索功能开发中...')
+const loadProjects = async () => {
+  loading.value = true
+  try {
+    const result = await getProjectList({
+      category: filters.category || undefined,
+      level: filters.level || undefined,
+      keyword: filters.keyword || undefined,
+      page: pagination.page,
+      pageSize: pagination.size
+    })
+    projects.value = result.records
+    pagination.total = result.total
+  } catch {
+    projects.value = []
+    pagination.total = 0
+    ElMessage.error('项目列表加载失败，请稍后重试')
+  } finally {
+    loading.value = false
+  }
 }
 
+const handleSearch = () => { pagination.page = 1; loadProjects() }
 const handleReset = () => {
-  filters.category = ''
-  filters.level = ''
-  filters.keyword = ''
-  ElMessage.success('重置成功')
+  filters.category = ''; filters.level = ''; filters.keyword = ''; pagination.page = 1
+  loadProjects()
+}
+const handleSizeChange = (size: number) => { pagination.size = size; loadProjects() }
+const handlePageChange = (page: number) => { pagination.page = page; loadProjects() }
+
+const viewProject = async (project: ProjectItem) => {
+  try {
+    currentProject.value = await getProjectDetail(project.id)
+    isProjectDetail.value = true
+    activeTab.value = 'overview'
+  } catch {
+    ElMessage.error('项目详情加载失败，请稍后重试')
+  }
 }
 
-const viewProject = (project: Project) => {
-  currentProject.value = project
-  isProjectDetail.value = true
-  activeTab.value = 'overview'
-}
-
-const continueProject = (project: Project) => {
-  viewProject(project)
-  if (project.progress > 0) {
-    activeTab.value = 'steps'
+const continueProject = async (project: ProjectItem) => {
+  try {
+    currentProject.value = project.progress > 0
+      ? await getProjectDetail(project.id)
+      : await joinProject(project.id)
+    isProjectDetail.value = true
+    activeTab.value = project.progress > 0 ? 'steps' : 'overview'
+    await loadProjects()
+  } catch {
+    ElMessage.error(project.progress > 0 ? '项目加载失败，请稍后重试' : '加入项目失败，请稍后重试')
   }
 }
 
 const goBack = () => {
-  isProjectDetail.value = false
-  currentProject.value = null
-  activeTab.value = 'overview'
+  isProjectDetail.value = false; currentProject.value = null; activeTab.value = 'overview'
 }
+const toggleFavorite = () => ElMessage.info('项目收藏接口暂未开放')
+const startStep = (_index: number) => ElMessage.info('项目步骤更新接口暂未开放')
 
-const toggleFavorite = () => {
-  isFavorite.value = !isFavorite.value
-  ElMessage.success(isFavorite.value ? '收藏成功' : '取消收藏成功')
+const openResourceUrl = (url?: string) => {
+  if (!url) { ElMessage.info('该资源暂未提供访问地址'); return }
+  window.open(url, '_blank', 'noopener,noreferrer')
 }
+const viewResource = (resource: ProjectResource) => openResourceUrl(resource.url)
+const downloadResource = (resource: ProjectResource) => openResourceUrl(resource.downloadUrl)
+const openIDE = () => ElMessage.info('在线 IDE 接口暂未开放')
+const downloadCode = () => ElMessage.info('项目代码下载接口暂未开放')
 
-const startStep = (index: number) => {
-  if (currentProject.value) {
-    ElMessage.success(`开始步骤：${currentProject.value.steps[index].title}`)
+const handleSubmit = async () => {
+  if (!currentProject.value) return
+  if (!submitForm.projectUrl.trim() && !submitForm.repoUrl.trim()) {
+    ElMessage.warning('请至少填写项目链接或代码仓库地址')
+    return
+  }
+  try {
+    await ElMessageBox.confirm('确定要提交作业吗？', '提示', {
+      confirmButtonText: '确定', cancelButtonText: '取消', type: 'warning'
+    })
+  } catch { return }
+
+  submitting.value = true
+  try {
+    await submitProject({
+      projectId: currentProject.value.id,
+      projectUrl: submitForm.projectUrl.trim(),
+      repoUrl: submitForm.repoUrl.trim(),
+      description: submitForm.description.trim()
+    })
+    ElMessage.success('作业提交成功')
+    resetForm()
+  } catch {
+    ElMessage.error('作业提交失败，请稍后重试')
+  } finally {
+    submitting.value = false
   }
 }
 
-const viewResource = (resource: Resource) => {
-  ElMessage.success(`查看资源：${resource.title}`)
-}
-
-const downloadResource = (resource: Resource) => {
-  ElMessage.success(`开始下载：${resource.title}`)
-}
-
-const openIDE = () => {
-  ElMessage.success('正在打开在线IDE...')
-}
-
-const downloadCode = () => {
-  ElMessage.success('正在下载项目代码...')
-}
-
-const handleSubmit = () => {
-  ElMessageBox.confirm('确定要提交作业吗？', '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning'
-  }).then(() => {
-    ElMessage.success('作业提交成功！')
-    resetForm()
-  }).catch(() => {})
-}
-
 const resetForm = () => {
-  submitForm.projectUrl = ''
-  submitForm.repoUrl = ''
-  submitForm.description = ''
+  submitForm.projectUrl = ''; submitForm.repoUrl = ''; submitForm.description = ''
 }
+
+loadProjects()
 </script>
 
 <style scoped>

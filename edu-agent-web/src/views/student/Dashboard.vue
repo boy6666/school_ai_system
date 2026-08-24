@@ -104,9 +104,24 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { getProfile } from '@/api/profile'
+import { ElMessage } from 'element-plus'
+import { getProfile, type ProfileData } from '@/api/profile'
+import {
+  generateDashboardAiSummary,
+  generateDashboardLearningReview,
+  getDashboardAiSummary,
+  getDashboardEvaluation,
+  getDashboardLearningReview,
+  getDashboardPath,
+  getDashboardSummary,
+  getDashboardTasks,
+  type DashboardAiSummary,
+  type DashboardEvaluation,
+  type DashboardTask,
+  type DashboardReviewItem,
+  type LearningPathData
+} from '@/api/learning'
 import { useUserStore } from '@/stores/user'
-import request from '@/utils/request'
 
 const userStore = useUserStore()
 const userName = computed(() => userStore.userInfo?.realName || userStore.userInfo?.username || '')
@@ -120,31 +135,27 @@ const labelMap: Record<string, string> = { mindmap: '思维导图', quiz: '练�
 
 // AI 学习总结
 const aiLoading = ref(false)
-const aiSummary = ref<any>(null)
+const aiSummary = ref<DashboardAiSummary | null>(null)
 
 async function generateAiSummary() {
   aiLoading.value = true
   try {
-    const res: any = await request.post('/dashboard/ai-summary')
-    if (res) {
-      aiSummary.value = res
-      console.log('[Dashboard] ✅ AI 学习总结已生成:', res)
-    }
-  } catch (e) {
-    console.warn('[Dashboard] ⚠️ AI 总结生成失败:', e)
+    aiSummary.value = await generateDashboardAiSummary()
+  } catch {
+    ElMessage.error('AI 学习总结生成失败，请稍后重试')
   } finally {
     aiLoading.value = false
   }
 }
 
 // API 数据
-const tasks = ref<any[]>([])
-const reviewList = ref<any[]>([])
+const tasks = ref<DashboardTask[]>([])
+const reviewList = ref<DashboardReviewItem[]>([])
 const totalHours = ref(0)
 const totalScore = ref<number | null>(null)
-const profile = ref<any>({})
-const pathData = ref<any>({})
-const evalData = ref<any>(null)
+const profile = ref<ProfileData>({})
+const pathData = ref<LearningPathData>({})
+const evalData = ref<DashboardEvaluation | null>(null)
 
 const summaryDims = computed(() => {
   const d = evalData.value
@@ -156,23 +167,26 @@ const summaryDims = computed(() => {
     { label: '错误规避力', key: 'mistake_avoidance' },
     { label: '综合能力', key: 'overall_level' },
   ]
-  const scores: number[] = []
-  items.forEach(x => {
-    if (d[x.key]?.score) scores.push(d[x.key].score)
+  return items.flatMap((item) => {
+    const dimension = d[item.key]
+    if (!dimension || typeof dimension !== 'object' || !('score' in dimension)) return []
+    const score = (dimension as { score?: unknown }).score
+    return typeof score === 'number' ? [{ label: item.label, score }] : []
   })
-  return scores.length ? items.map((x, i) => ({ label: x.label, score: scores[i] || 0 })) : []
 })
 
 // AI 学习回顾
 const reviewLoading = ref(false)
-const reviewResult = ref<any>(null)
+const reviewResult = ref<DashboardAiSummary | null>(null)
 async function generateReview() {
   reviewLoading.value = true
   try {
-    const res: any = await request.post('/dashboard/learning-review')
-    if (res) { reviewResult.value = res; console.log('[Dashboard] ✅ AI 学习回顾已生成:', res) }
-  } catch (e) { console.warn('[Dashboard] ⚠️ AI 回顾生成失败:', e) }
-  reviewLoading.value = false
+    reviewResult.value = await generateDashboardLearningReview()
+  } catch {
+    ElMessage.error('AI 学习回顾生成失败，请稍后重试')
+  } finally {
+    reviewLoading.value = false
+  }
 }
 
 const evalItems = computed(() => {
@@ -194,24 +208,18 @@ const evalItems = computed(() => {
 })
 
 onMounted(async () => {
-  console.log('[DEBUG] Dashboard mounted')
-  console.log('[DEBUG] userStore.userInfo =', JSON.stringify(userStore.userInfo))
-  console.log('[DEBUG] userStore.userInfo?.id =', userStore.userInfo?.id)
-  console.log('[DEBUG] userStore.token =', userStore.token ? 'has token' : 'no token')
-
-  const userId = userStore.userInfo?.id
-  console.log('[DEBUG] userId =', userId)
+  const userId = userStore.userInfo?.id ?? userStore.userInfo?.userId
 
   // Step 1: 并行加载 DB 数据
   const [summaryRes, tasksRes, pathRes, profileRes] = await Promise.allSettled([
-    request.get('/dashboard/summary'),
-    request.get('/dashboard/tasks'),
-    request.get('/dashboard/path'),
+    getDashboardSummary(),
+    getDashboardTasks(),
+    getDashboardPath(),
     userId ? getProfile(userId) : Promise.resolve(null),
   ])
 
   if (summaryRes.status === 'fulfilled' && summaryRes.value) {
-    const s = summaryRes.value as any
+    const s = summaryRes.value
     totalHours.value = Math.round((s.totalSec || 0) / 3600 * 10) / 10
     reviewList.value = s.today || []
   }
@@ -222,28 +230,41 @@ onMounted(async () => {
   }
 
   if (tasksRes.status === 'fulfilled' && tasksRes.value) {
-    const t = tasksRes.value as any
-    tasks.value = Array.isArray(t) ? t.filter((x: any) => x.status !== 'done') : []
+    tasks.value = tasksRes.value.filter((task) => task.status !== 'done')
   }
 
-  if (profileRes && (profileRes as any).status === 'fulfilled') {
-    const p = (profileRes as any).value
+  if (profileRes.status === 'fulfilled') {
+    const p = profileRes.value
     if (p && p.exists !== false) {
       profile.value = p
       totalScore.value = p.last_score ?? null
     }
   }
 
-  // Step 2: 从 DB 读取已有评价 + AI 总结（不阻塞首次渲染）
-  request.get('/dashboard/evaluation').then((res: any) => {
-    if (res && Object.keys(res).length) evalData.value = res
-  }).catch(() => {})
-  request.get('/dashboard/ai-summary').then((res: any) => {
-    if (res && res.summary) aiSummary.value = res
-  }).catch(() => {})
-  request.get('/dashboard/learning-review').then((res: any) => {
-    if (res && res.summary) reviewResult.value = res
-  }).catch(() => {})
+  // Step 2: 从 DB 读取已有评价、AI 总结和学习回顾
+  const [evaluationRes, aiSummaryRes, learningReviewRes] = await Promise.allSettled([
+    getDashboardEvaluation(),
+    getDashboardAiSummary(),
+    getDashboardLearningReview()
+  ])
+  if (evaluationRes.status === 'fulfilled' && Object.keys(evaluationRes.value).length) {
+    evalData.value = evaluationRes.value
+  }
+  if (aiSummaryRes.status === 'fulfilled' && aiSummaryRes.value.summary) {
+    aiSummary.value = aiSummaryRes.value
+  }
+  if (learningReviewRes.status === 'fulfilled' && learningReviewRes.value.summary) {
+    reviewResult.value = learningReviewRes.value
+  }
+
+  const primaryRequests = [summaryRes, tasksRes, pathRes, profileRes]
+  if (primaryRequests.some((result) => result.status === 'rejected')) {
+    ElMessage.warning('部分首页数据加载失败，请稍后刷新重试')
+  }
+  const supplementalRequests = [evaluationRes, aiSummaryRes, learningReviewRes]
+  if (supplementalRequests.some((result) => result.status === 'rejected')) {
+    ElMessage.warning('部分学习评价与总结加载失败，请稍后重试')
+  }
 })
 </script>
 

@@ -29,7 +29,7 @@
       </el-row>
     </el-card>
 
-    <div v-if="!isDoingPractice">
+    <div v-if="!isDoingPractice" v-loading="loading">
       <el-row :gutter="20" class="question-list">
         <el-col :span="24" v-for="question in questions" :key="question.id">
           <el-card class="question-card" @click="startPractice(question)">
@@ -103,7 +103,7 @@
           </div>
 
           <div class="action-buttons">
-            <el-button @click="handleSubmit">提交答案</el-button>
+            <el-button type="primary" :loading="submitting" @click="handleSubmit">提交答案</el-button>
             <el-button type="info" @click="handleHint">查看提示</el-button>
           </div>
         </div>
@@ -116,17 +116,12 @@
 import { ref, reactive } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { View, User } from '@element-plus/icons-vue'
-
-interface Question {
-  id: number
-  title: string
-  description: string
-  subject: string
-  difficulty: string
-  requirements: string[]
-  views: number
-  completed: number
-}
+import {
+  getPracticeDetail,
+  getPracticeList,
+  submitAnswer,
+  type PracticeQuestion
+} from '@/api/practice'
 
 const filters = reactive({
   subject: '',
@@ -137,88 +132,21 @@ const filters = reactive({
 const pagination = reactive({
   page: 1,
   size: 10,
-  total: 50
+  total: 0
 })
 
 const isDoingPractice = ref(false)
-const currentQuestion = ref<Question | null>(null)
+const currentQuestion = ref<PracticeQuestion | null>(null)
 const answer = ref('')
+const submitting = ref(false)
+const loading = ref(false)
 
-const questions = ref<Question[]>([
-  {
-    id: 1,
-    title: 'Vue组件基础练习',
-    description: '创建一个简单的计数器组件，包含增加、减少、重置功能',
-    subject: 'frontend',
-    difficulty: 'easy',
-    requirements: [
-      '使用Vue 3组合式API',
-      '实现计数器状态管理',
-      '添加样式美化'
-    ],
-    views: 1234,
-    completed: 567
-  },
-  {
-    id: 2,
-    title: 'RESTful API设计',
-    description: '设计一个用户管理系统的RESTful API接口',
-    subject: 'backend',
-    difficulty: 'medium',
-    requirements: [
-      '设计CRUD接口',
-      '使用Spring Boot实现',
-      '添加参数验证'
-    ],
-    views: 987,
-    completed: 234
-  },
-  {
-    id: 3,
-    title: '数据库查询优化',
-    description: '优化一个复杂的SQL查询语句',
-    subject: 'database',
-    difficulty: 'hard',
-    requirements: [
-      '分析查询性能问题',
-      '设计优化方案',
-      '验证优化效果'
-    ],
-    views: 654,
-    completed: 123
-  },
-  {
-    id: 4,
-    title: '电商系统前端开发',
-    description: '开发一个电商系统的前端页面',
-    subject: 'project',
-    difficulty: 'medium',
-    requirements: [
-      '使用Vue 3 + Element Plus',
-      '实现商品展示、购物车功能',
-      '对接后端API'
-    ],
-    views: 876,
-    completed: 345
-  },
-  {
-    id: 5,
-    title: 'React组件通信',
-    description: '实现父子组件、兄弟组件之间的通信',
-    subject: 'frontend',
-    difficulty: 'easy',
-    requirements: [
-      '使用Context API',
-      '实现事件冒泡和捕获',
-      '添加错误处理'
-    ],
-    views: 1123,
-    completed: 456
-  }
-])
+const questions = ref<PracticeQuestion[]>([])
 
-const getDifficultyType = (difficulty = '') => {
-  const types: Record<string, any> = {
+type TagType = 'success' | 'warning' | 'danger' | 'info'
+
+const getDifficultyType = (difficulty = ''): TagType => {
+  const types: Record<string, TagType> = {
     easy: 'success',
     medium: 'warning',
     hard: 'danger'
@@ -246,28 +174,57 @@ const getSubjectLabel = (subject: string) => {
 }
 
 const handleSearch = () => {
-  ElMessage.success('搜索功能开发中...')
+  pagination.page = 1
+  loadQuestions()
 }
 
 const handleReset = () => {
   filters.subject = ''
   filters.difficulty = ''
   filters.keyword = ''
-  ElMessage.success('重置成功')
+  pagination.page = 1
+  loadQuestions()
 }
 
 const handleSizeChange = (size: number) => {
   pagination.size = size
+  loadQuestions()
 }
 
 const handlePageChange = (page: number) => {
   pagination.page = page
+  loadQuestions()
 }
 
-const startPractice = (question: Question) => {
-  currentQuestion.value = question
-  isDoingPractice.value = true
-  answer.value = ''
+const loadQuestions = async () => {
+  loading.value = true
+  try {
+    const result = await getPracticeList({
+      subject: filters.subject || undefined,
+      difficulty: filters.difficulty || undefined,
+      keyword: filters.keyword || undefined,
+      page: pagination.page,
+      pageSize: pagination.size
+    })
+    questions.value = result.records
+    pagination.total = result.total
+  } catch {
+    questions.value = []
+    pagination.total = 0
+    ElMessage.error('练习列表加载失败，请稍后重试')
+  } finally {
+    loading.value = false
+  }
+}
+
+const startPractice = async (question: PracticeQuestion) => {
+  try {
+    currentQuestion.value = await getPracticeDetail(question.id)
+    isDoingPractice.value = true
+    answer.value = ''
+  } catch {
+    ElMessage.error('练习详情加载失败，请稍后重试')
+  }
 }
 
 const exitPractice = () => {
@@ -282,41 +239,43 @@ const exitPractice = () => {
   }).catch(() => {})
 }
 
-const handleSubmit = () => {
+const handleSubmit = async () => {
   if (!answer.value.trim()) {
     ElMessage.warning('请输入您的答案')
     return
   }
 
-  ElMessage.success('答案提交成功！系统正在评分...')
+  if (!currentQuestion.value) return
 
-  setTimeout(() => {
-    ElMessageBox.alert(
-      '您的答案已提交！\n\n得分：85分\n评价：思路清晰，实现基本正确，建议在错误处理方面进一步完善。',
-      '练习结果',
-      {
-        confirmButtonText: '查看详情',
-        callback: () => {
-          isDoingPractice.value = false
-          currentQuestion.value = null
-          answer.value = ''
-        }
-      }
-    )
-  }, 2000)
+  submitting.value = true
+  try {
+    const result = await submitAnswer({
+      questionId: currentQuestion.value.id,
+      answer: answer.value.trim()
+    })
+    const details = [
+      typeof result.score === 'number' ? `得分：${result.score}分` : '',
+      result.evaluation || result.explanation || ''
+    ].filter(Boolean).join('\n')
+    await ElMessageBox.alert(details || '答案已提交，评分结果暂未返回。', '练习结果', {
+      confirmButtonText: '确定'
+    })
+    isDoingPractice.value = false
+    currentQuestion.value = null
+    answer.value = ''
+    await loadQuestions()
+  } catch {
+    ElMessage.error('答案提交失败，请稍后重试')
+  } finally {
+    submitting.value = false
+  }
 }
 
 const handleHint = () => {
-  if (currentQuestion.value) {
-    ElMessageBox.alert(
-      '提示：\n1. 先理解题目需求\n2. 设计算法思路\n3. 逐步实现功能\n4. 测试边界情况',
-      '练习提示',
-      {
-        confirmButtonText: '知道了'
-      }
-    )
-  }
+  ElMessage.info('练习提示接口暂未开放')
 }
+
+loadQuestions()
 </script>
 
 <style scoped>

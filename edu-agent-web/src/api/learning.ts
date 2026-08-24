@@ -33,6 +33,45 @@ export interface LearningPathData {
   examAdvice?: string
   recommendTime?: string
   stages?: LearningPathStage[]
+  progress?: number
+}
+
+export interface DashboardReviewItem {
+  module: string
+  total: number
+}
+
+export interface DashboardSummary {
+  totalSec: number
+  today: DashboardReviewItem[]
+}
+
+export interface DashboardTask {
+  id: number | string
+  title: string
+  priority?: string
+  status?: string
+}
+
+export interface DashboardEvaluationDimension {
+  score?: number
+}
+
+export interface DashboardEvaluation extends Record<string, unknown> {
+  learning_goal?: string
+  cognitive_style?: string
+  course?: string
+  weaknesses?: string[] | string
+  pace?: string
+}
+
+export interface DashboardAiSummary {
+  summary?: string
+  feedback?: string
+  strengths?: string
+  weaknessAnalysis?: string
+  suggestion?: string
+  focusNext?: string
 }
 
 export interface LearningPathUpdateResult {
@@ -94,4 +133,36 @@ export function updateTaskStatus(stageName: string, taskTitle: string, completed
     '/edu-agent-learning/learning-path/task',
     { stageName, taskTitle, completed }
   )
+}
+
+export function getDashboardSummary() {
+  return request.get<unknown, DashboardSummary>('/edu-agent-learning/dashboard/summary')
+}
+
+export function getDashboardTasks() {
+  return request.get<unknown, DashboardTask[]>('/edu-agent-learning/dashboard/tasks')
+}
+
+export function getDashboardPath() {
+  return request.get<unknown, LearningPathData>('/edu-agent-learning/dashboard/path')
+}
+
+export function getDashboardEvaluation() {
+  return request.get<unknown, DashboardEvaluation>('/edu-agent-learning/dashboard/evaluation')
+}
+
+export function getDashboardAiSummary() {
+  return request.get<unknown, DashboardAiSummary>('/edu-agent-learning/dashboard/ai-summary')
+}
+
+export function generateDashboardAiSummary() {
+  return request.post<unknown, DashboardAiSummary>('/edu-agent-learning/dashboard/ai-summary')
+}
+
+export function getDashboardLearningReview() {
+  return request.get<unknown, DashboardAiSummary>('/edu-agent-learning/dashboard/learning-review')
+}
+
+export function generateDashboardLearningReview() {
+  return request.post<unknown, DashboardAiSummary>('/edu-agent-learning/dashboard/learning-review')
 }
