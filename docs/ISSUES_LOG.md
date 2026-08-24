@@ -187,3 +187,125 @@ JWT 验签密钥不一致：
 - **本机 MySQL**（方案 B 复用它，不做 Docker）：`database/init-microservice.sql` 会建 5 库（`auth_db/learning_db/resource_db/teacher_db/code_db`）+ 账号 `edu_agent/edu_agent`，需用本机 MySQL 的 root 执行一次。
 - root 连接验证：`mysql -uroot -p1234`（本机 root 口令 1234，见 `.env` 对应项，生产勿复用）。
 - Docker Desktop 引擎曾中途掉线（named pipe 消失、容器全停）→ 属环境抖动，重启 Docker Desktop 后 `docker compose up -d` 拉回即可，与代码无关。
+---
+
+# 第二部分：前端与 code 模块排坑（由 feat/code 合入）
+
+## 问题 1：ECharts SVG 渲染器不解析 CSS 变量，图表配 `color:'var(--primary)'` 渲染成黑/无效
+
+**现象**
+`useEChart.ts` 用 `SVGRenderer` 时，`series.itemStyle.color` / `lineStyle.color` 传 `'var(--primary)'`，图表该系列颜色失效。
+
+**根因**
+ECharts 底层把 color 写进 SVG 的 `fill`/`stroke` **XML 属性**（如 `fill="var(--primary)"`）。CSS 变量只在 CSS 属性里解析，属性值是字面量字符串，浏览器不会解析 `var(...)`，于是颜色落到默认。
+
+**处理**
+图表 option 内取色一律用**品牌色字面量**（`#5645d4` 等，与 `style.css` 的 `--primary` 同值），CSS 样式中才用 `var(--primary)`。样板：`views/student/Report.vue` 的双图。
+
+**结论**
+ECharts option 里永远写字面量色值，不要为了"MVC 一致"把 token 变量写入 option；SVG 属性不是 CSS。
+
+---
+
+## 问题 2：模板不解包 composable 返回对象内的 ref，`p.page <= 1` 比较的是 Ref 对象
+
+**现象**
+`usePagination()` 最初返回普通对象 `{ page: ref(1), ... }`，模板里 `p.page<=1`、`p.page-1` 出现「Operator '<=' cannot be applied to types 'Ref<number>' and 'number'」，且运行时也是 bug（比的是 Ref 对象，恒 false）。
+
+**根因**
+Vue 模板的自动 ref 解包只作用于**顶层 setup 绑定**；composable 返回的**普通对象**里的 ref 属性不会被解包，`p.page` 拿到的是 `Ref` 实例而非 number。
+
+**处理**
+`usePagination` 返回值用 `reactive({ page, pageSize, total, start, end, maxPage, pageNums, go, reset })` 包装：reactive 内的 ref/computed 属性自动解包，模板与脚本里 `p.page` 直接是 number（读写均可），`go/reset` 内部仍以 ref 语义操作。样板：`views/admin/ResourceManage.vue` 的分页。
+
+**结论**
+写共享 composable 时若返回对象要直接在模板里用，用 `reactive` 或 `toRefs` 包装让属性解包；否则模板里得手写 `.value`。
+
+---
+
+## 问题 3：`@vueuse/core` 未安装，`useResizeObserver` 不可用
+
+**现象**
+审查报告里 `useEChart` 参考实现 `import { useResizeObserver } from '@vueuse/core'`，但项目 `package.json` 没有 @vueuse/core 依赖，直接 import 会编译失败。
+
+**根因**
+项目只装了 vue / element-plus / echarts / pinia / vue-router / marked 等，没有工具库 @vueuse/core。
+
+**处理**
+`useEChart.ts` 的 resize 用原生 `ResizeObserver`（`new ResizeObserver(() => chart?.resize())`，`onBeforeUnmount` 时 `disconnect`），不引入新依赖。
+
+**结论**
+改动前先核对依赖白名单；一个 ResizeObserver 的 polyfill 成本远低于加一个重型工具库。
+
+---
+
+## 问题 4（已解决·构建污染）：嵌套项目 `src/edu-agent-web/` 被 tsconfig 一并吞入
+
+**现象**
+`npm run build`（`vue-tsc -b` 前置）在 `src/edu-agent-web/src/**` 下报成堆错误（api admin 导出缺失、`AgentManage.vue` 缺路由、router 模块声明缺失等），与根项目错误交织刷屏；根项目本身也有预存错误（`src/api/index.ts` 引用了 `admin.ts` 未导出的函数、`Login.vue/Register.vue` 缺模块声明 TS7016、`MermaidRenderer.vue` 缺 mermaid 依赖）。
+
+**根因**
+`tsconfig.app.json` 的 `include: ["src/**/*.ts", ...]` 包含 `src/edu-agent-web/**`——那是 239M 的嵌套重复前端项目（独立 package.json/node_modules/dist），本不该在根项目编译范围里。多层语义：一是 tsconfig 吞并，二是引用目录里 hardcode 的绝对别名 `@/views/...` 落到根项目侧造成混淆报错。
+
+**处理**
+（2026-08-19 R2 拍板）删除 `src/edu-agent-web/`：83 个被 git 跟踪的文件整体移除，node_modules/dist 一并清掉，`src/` 从 239M 降到 578K。tsconfig `include: ["src/**"]` 无需改动，删除后目录自然不在编译范围。嵌套项目历史内容若需取回，在 git 历史（删除前的 commit）里仍可检出。
+
+**结论**
+嵌套重复项目是构建长期为红的直接原因，已除。剩余预存错误另见各文件复盘：`src/api/index.ts` 导出的函数名与 `admin.ts` 实现及后端真实端点长期脱节，需要按「后端 AdminController 真实端点」对齐重写（本档 R1/Settings 修复一并处理）。
+
+---
+
+## 问题 5：PMD 7 规则集三坑——类别迁移 + 属性拆分 + 静默降级（edu-agent-code）
+
+**现象**
+三个症状先后出现：① 配置的 `EmptyCatchBlock` 规则从不触发；② `CyclomaticComplexity` 配 `reportLevel=15` 报 2 条 XML 校验错误；③ 报错期间 PMD 判违规结果恒为空，但测试只断言「JSON 非空」所以**仍然通过**（伪装成功）。
+
+**根因**
+PMD 7.0.0 相对 6.x 大改规则集定义：
+- `EmptyCatchBlock` 从 `category/java/bestpractices.xml` 迁到 `category/java/errorprone.xml`，旧引用导致 ruleset 校验失败；
+- `CyclomaticComplexity` 的 `reportLevel` 属性被拆为 `methodReportLevel`（默认 10）与 `classReportLevel`（默认 80），属性名不存在 → 校验失败；
+- ruleset 校验失败时 `PmdAnalysis` 只打 ERROR 日志、**不抛异常**，静默返回全空结果——这是最危险的降级。
+
+**处理**
+- `pmd/ruleset.xml`：`EmptyCatchBlock` 改用 `errorprone.xml`；`CyclomaticComplexity` 改为 `methodReportLevel=15`（教学阈值）。
+- 单测强化防伪装成功：`emptyCatchBlockTriggersPmd` 断言 `r.pmd()` 真实命中 `EmptyCatchBlock` **且** `totalPmd()>0`，任何静默降级都会红。
+
+**结论**
+升级 PMD 大版本后必须跑出**至少一条真违规**验证引擎是活的；规则失效与引擎降级是两码事。判定类服务（判题得分依赖 PMD 扣分）尤其不能只断言「结果非空/JSON 非空」。
+
+---
+
+## 问题 6：Saxon-HE 版本冲突——checkstyle 12.4 vs PMD 7.0.0(10.9) → NoSuchMethodError（edu-agent-code）
+
+**现象**
+问题 5 修好后 PMD 首次真正运行，`SaxonXPathRuleQuery.initialize` 抛
+`NoSuchMethodError: net.sf.saxon.sxpath.IndependentContext.declareNamespace(String,String)`，3 个 StaticCheck 用例全 Error。
+
+**根因**
+- pom 中 checkstyle 声明在 pmd 之前；checkstyle 10.12.7 **传递依赖 Saxon-HE 12.4**，Maven「就近声明」让 12.4 赢出。
+- PMD 7.0.0 的编译目标是 Saxon-HE **10.9**（`pmd-parent` BOM 的 `saxon.version=10.9`）。Saxon 12.4 把 `IndependentContext.declareNamespace(String,String)` 改成 `(String, NamespaceUri)`，签名变了 → PMD 二进制调用落空。
+- 用 `javap -p -c`（jar 在 classpath）核对字节码确证：10.9 有 `(String,String)`，12.4 只有 `(String,NamespaceUri)`。
+
+**处理**
+pom 直接声明 `net.sf.saxon:Saxon-HE:10.9`（显式版本 = 就近覆盖 transitive 12.4）。
+前提校验：本模块 `checkstyle.xml` 无任何 XPath filter（`SuppressionXpathFilter` 等），checkstyle 运行期根本不触碰 Saxon，降版本无副作用。
+
+**结论**
+同模块混用 checkstyle + PMD 时，Saxon 版本必须**显式钉死**并注释原因；见到 `NoSuchMethodError` 先怀疑「谁把被调方法的类签名换掉了」（方法名一致但参数类型变），用 javap 对字节码查证，而不是盲目升/降版本。
+
+---
+
+## 问题 7（环境·私有不提交）：central-settings.xml——本机 Maven 变通配置（edu-agent-code）
+
+**现象**
+仓库根目录 `mvn test` 无法构建 code 模块：reactor 会把 sibling 模块（auth/learning/resource/teacher）的 pom 一并读入，其中引用了未版本化的 `mybatis-plus-boot-starter` → 解析失败。
+
+**根因**
+多模块 reactor 连带加载整仓 pom；retro 工程部分依赖未统一版本管理；本机另有私有 mirror/本地仓库需求。
+
+**处理**
+- 构建一律 `mvn -s central-settings.xml -f edu-agent-code/pom.xml test`，`-f` 单模块隔离 reactor，`.gitignore` 已加入 `central-settings.xml`（本机私有，**绝不提交**）。
+- 本机私有 local repository：`D:/software/apache-maven-3.9.4/mvn_repo`（common 0.1.0 已 install）。
+
+**结论**
+私有环境变通不进仓库，只在本文档留档；遇到被兄弟模块 pom 拖挂的构建，优先 `-f` 指定目标模块，而不是在代码里加 workaround。
