@@ -79,6 +79,25 @@
             <artifactId>pmd-java</artifactId>
             <version>7.0.0</version>
         </dependency>
+        <!-- Saxon-HE 固定 10.9（PMD 7.0.0 编译目标版）：checkstyle 传递引入 12.4，其 IndependentContext 用
+             declareNamespace(String, NamespaceUri)，与 PMD 期望的 (String, String) 冲突 → PMD XPath 初始化 NoSuchMethodError。
+             直接声明 10.9 按"就近声明"覆盖；本模块 checkstyle.xml 无 XPath filter，运行期不触碰 Saxon，不受影响。 -->
+        <dependency>
+            <groupId>net.sf.saxon</groupId>
+            <artifactId>Saxon-HE</artifactId>
+            <version>10.9</version>
+        </dependency>
+        <!-- Docker 沙箱（生产安全红线，见 dev-wuyoucheng §2.4.4；本地用 docker-java URI 连 Docker Desktop） -->
+        <dependency>
+            <groupId>com.github.docker-java</groupId>
+            <artifactId>docker-java-core</artifactId>
+            <version>3.3.6</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.docker-java</groupId>
+            <artifactId>docker-java-transport-httpclient5</artifactId>
+            <version>3.3.6</version>
+        </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>

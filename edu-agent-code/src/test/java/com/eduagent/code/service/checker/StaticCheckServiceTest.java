@@ -28,10 +28,13 @@ class StaticCheckServiceTest {
     }
 
     @Test
-    void unimportedPackageTriggersPmd() {
-        // UnusedImports 是 checkstyle；PMD 规则集仅在确实触发时产出（可空），验证不抛异常即可
+    void emptyCatchBlockTriggersPmd() {
+        // 空 catch 触发 EmptyCatchBlock（PMD 7 该规则在 errorprone 类别）——断言真实命中，
+        // 防止 PMD 引擎静默降级却仍返回空结果的情况发生
         StaticCheckResult r = service.check(List.of(
                 new SourceFile("Main.java", "public class Main { public void go() { try { } catch (Exception e) { } } }")));
-        assertThat(r.pmdJson()).isNotBlank();
+        assertThat(r.pmd()).anyMatch(v -> "EmptyCatchBlock".equals(v.rule()));
+        assertThat(r.pmdJson()).contains("EmptyCatchBlock");
+        assertThat(r.totalPmd()).isGreaterThan(0);
     }
 }

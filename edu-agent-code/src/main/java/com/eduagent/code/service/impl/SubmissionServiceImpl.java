@@ -9,6 +9,7 @@ import com.eduagent.code.entity.SubmissionStatus;
 import com.eduagent.code.mapper.CodeCheckReportMapper;
 import com.eduagent.code.mapper.CodeSubmissionMapper;
 import com.eduagent.code.service.SubmissionService;
+import com.eduagent.code.service.worker.JudgeWorker;
 import com.eduagent.code.vo.CodeSubmitReceiptVO;
 import com.eduagent.code.vo.CodeSubmitResultVO;
 import com.eduagent.common.result.ApiException;
@@ -17,6 +18,8 @@ import com.eduagent.common.security.AuthContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -34,6 +37,7 @@ public class SubmissionServiceImpl implements SubmissionService {
 
     private final CodeSubmissionMapper submissionMapper;
     private final CodeCheckReportMapper reportMapper;
+    private final JudgeWorker judgeWorker;
 
     @Override
     @Transactional
@@ -49,7 +53,16 @@ public class SubmissionServiceImpl implements SubmissionService {
         entity.setStatus(SubmissionStatus.PENDING);
 
         submissionMapper.insert(entity);
-        return new CodeSubmitReceiptVO(entity.getId(), SubmissionStatus.PENDING);
+        Long id = entity.getId();
+
+        // 事务提交后再把判分任务丢进线程池，避免 Worker 读到未提交的行（afterCommit 回调）
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                judgeWorker.judge(id);
+            }
+        });
+        return new CodeSubmitReceiptVO(id, SubmissionStatus.PENDING);
     }
 
     @Override

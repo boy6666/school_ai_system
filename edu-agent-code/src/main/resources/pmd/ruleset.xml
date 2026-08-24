@@ -10,11 +10,13 @@
     -->
     <description>EduAgent 教学判分 PMD 规则集</description>
 
-    <rule ref="category/java/bestpractices.xml/EmptyCatchBlock"/>
+    <!-- PMD 7：EmptyCatchBlock 从 bestpractices 迁至 errorprone（错误引用会导致整个 PMD 校验失败→静默降级） -->
+    <rule ref="category/java/errorprone.xml/EmptyCatchBlock"/>
     <rule ref="category/java/codestyle.xml/UnnecessaryImport"/>
     <rule ref="category/java/design.xml/CyclomaticComplexity">
         <properties>
-            <property name="reportLevel" value="15"/>
+            <!-- PMD 7 移除 reportLevel，拆为 methodReportLevel/classReportLevel（②编译字节码求证） -->
+            <property name="methodReportLevel" value="15"/>
         </properties>
     </rule>
     <rule ref="category/java/errorprone.xml/CloseResource"/>
