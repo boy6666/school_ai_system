@@ -1,6 +1,10 @@
 langchain
 langgraph
 langchain-openai
+# llm_client.py 直连官方 SDK（base_url=tokenhub 兼容 OpenAI）
+openai
+# code_review.py 解析 LLM 输出兜底：字符串内裸换行/未转义引号等 slop
+json_repair
 python-dotenv
 pydantic
 fastapi
