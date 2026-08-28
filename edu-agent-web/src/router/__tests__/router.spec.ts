@@ -81,4 +81,37 @@ describe('Router authentication and role control', () => {
 
     expect(result).toBe(true)
   })
+  it('allows teacher to access teacher route', () => {
+    setLogin([ROLE.TEACHER])
+
+    const result = authGuard(
+      createRoute('/teacher/dashboard')
+    )
+
+    expect(result).toBe(true)
+  })
+
+  it('redirects student away from teacher route', () => {
+    setLogin([ROLE.STUDENT])
+
+    const result = authGuard(
+      createRoute('/teacher/dashboard')
+    )
+
+    expect(result).toBe('/student/dashboard')
+  })
+
+  it('redirects teacher away from student and admin routes', () => {
+    setLogin([ROLE.TEACHER])
+
+    const studentResult = authGuard(
+      createRoute('/student/dashboard')
+    )
+    const adminResult = authGuard(
+      createRoute('/admin/dashboard')
+    )
+
+    expect(studentResult).toBe('/teacher/dashboard')
+    expect(adminResult).toBe('/teacher/dashboard')
+  })
 })

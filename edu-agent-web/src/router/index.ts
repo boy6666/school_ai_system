@@ -114,6 +114,20 @@ const routes: RouteRecordRaw[] = [
       }
     ]
   },
+  // 教师端
+  {
+    path: '/teacher',
+    name: 'TeacherLayout',
+    component: () => import('@/layouts/TeacherLayout.vue'),
+    redirect: '/teacher/dashboard',
+    children: [
+      {
+        path: 'dashboard',
+        name: 'TeacherDashboard',
+        component: () => import('@/views/teacher/Dashboard.vue')
+      }
+    ]
+  },
 
   // 管理端
   {
