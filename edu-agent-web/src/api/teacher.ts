@@ -344,3 +344,66 @@ export function publishTeacherAssignment(
     `${TEACHER_SERVICE}/assignments/${assignmentId}/publish`
   )
 }
+export interface TeacherGrade {
+  id: number
+  assignmentId: number
+  studentId: number
+  itemId: number
+  type: string
+  language: string | null
+  submission: string
+  score: number
+  status: 0 | 1
+  gradedAt: string | null
+  hasAiReport: boolean
+}
+
+export interface TeacherGradeDetail
+  extends TeacherGrade {
+  runResult: string
+  staticReport: string
+  aiReport: string
+  comment: string
+}
+
+export interface UpdateGradeRequest {
+  score?: number
+  comment?: string
+  aiReportOverride?: string | null
+}
+
+/** 查询作业成绩，可按学生筛选 */
+export function getAssignmentGrades(
+  assignmentId: number,
+  studentId?: number
+): Promise<TeacherGrade[]> {
+  return request.get<unknown, TeacherGrade[]>(
+    `${TEACHER_SERVICE}/assignments/${assignmentId}/grades`,
+    {
+      params:
+        studentId === undefined
+          ? undefined
+          : { studentId }
+    }
+  )
+}
+
+/** 查询单条成绩详情 */
+export function getTeacherGrade(
+  gradeId: number
+): Promise<TeacherGradeDetail> {
+  return request.get<unknown, TeacherGradeDetail>(
+    `${TEACHER_SERVICE}/grades/${gradeId}`
+  )
+}
+
+/** 教师复核成绩、评语或 AI 报告 */
+export function updateTeacherGrade(
+  gradeId: number,
+  data: UpdateGradeRequest
+): Promise<TeacherGradeDetail> {
+  return request.put<unknown, TeacherGradeDetail>(
+    `${TEACHER_SERVICE}/grades/${gradeId}`,
+    data
+  )
+}

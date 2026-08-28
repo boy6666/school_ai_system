@@ -136,11 +136,17 @@ const routes: RouteRecordRaw[] = [
         name: 'TeacherQuestions',
         component: () => import('@/views/teacher/QuestionBank.vue')
       },
-      {
+          {
         path: 'assignments',
         name: 'TeacherAssignments',
         component: () =>
           import('@/views/teacher/AssignmentManage.vue')
+      },
+      {
+        path: 'grades',
+        name: 'TeacherGrades',
+        component: () =>
+          import('@/views/teacher/GradeReview.vue')
       }
     ]
   },

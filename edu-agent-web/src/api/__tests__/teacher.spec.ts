@@ -29,14 +29,17 @@ import {
   generateTeacherQuestions,
   getTeacherQuestion,
   getTeacherQuestions,
-   updateTeacherQuestion,
+  updateTeacherQuestion,
   addTeacherAssignmentItem,
   createTeacherAssignment,
   deleteTeacherAssignment,
   getTeacherAssignment,
   getTeacherAssignments,
   publishTeacherAssignment,
-  updateTeacherAssignment
+  updateTeacherAssignment,
+  getAssignmentGrades,
+  getTeacherGrade,
+  updateTeacherGrade
 } from '@/api/teacher'
 
 const mock = new AxiosMockAdapter(request)
@@ -487,6 +490,97 @@ describe('教师端班级接口契约', () => {
 
     expect(mock.history.delete[0]?.url).toBe(
       `${assignmentPath}/201`
+    )
+  })
+  it('应按正式路径查询作业成绩并传递学生筛选参数', async () => {
+    const gradeListPath =
+      '/edu-agent-teacher/assignments/201/grades'
+
+    mock.onGet(gradeListPath).reply(200, {
+      code: 0,
+      message: 'success',
+      data: []
+    })
+
+    await getAssignmentGrades(201, 12)
+
+    expect(mock.history.get[0]?.url).toBe(
+      gradeListPath
+    )
+    expect(mock.history.get[0]?.params).toEqual({
+      studentId: 12
+    })
+  })
+
+  it('应按正式路径查询成绩详情', async () => {
+    const gradePath = '/edu-agent-teacher/grades/301'
+
+    mock.onGet(gradePath).reply(200, {
+      code: 0,
+      message: 'success',
+      data: {
+        id: 301,
+        assignmentId: 201,
+        studentId: 12,
+        itemId: 401,
+        type: 'code',
+        language: 'java',
+        submission: 'class Main {}',
+        score: 80,
+        status: 1,
+        gradedAt: '2026-08-28T10:00:00',
+        hasAiReport: true,
+        runResult: '{}',
+        staticReport: '{}',
+        aiReport: '{}',
+        comment: ''
+      }
+    })
+
+    await getTeacherGrade(301)
+
+    expect(mock.history.get[0]?.url).toBe(
+      gradePath
+    )
+  })
+
+  it('应使用正式请求体复核成绩', async () => {
+    const gradePath = '/edu-agent-teacher/grades/301'
+    const updateData = {
+      score: 85,
+      comment: '思路正确，注意边界处理',
+      aiReportOverride: '复核后的建议'
+    }
+
+    mock.onPut(gradePath).reply(200, {
+      code: 0,
+      message: 'success',
+      data: {
+        id: 301,
+        assignmentId: 201,
+        studentId: 12,
+        itemId: 401,
+        type: 'code',
+        language: 'java',
+        submission: 'class Main {}',
+        score: 85,
+        status: 1,
+        gradedAt: '2026-08-28T10:00:00',
+        hasAiReport: true,
+        runResult: '{}',
+        staticReport: '{}',
+        aiReport: '{}',
+        comment: updateData.comment
+      }
+    })
+
+    await updateTeacherGrade(301, updateData)
+
+    expect(mock.history.put[0]?.url).toBe(
+      gradePath
+    )
+    expect(JSON.parse(mock.history.put[0]?.data)).toEqual(
+      updateData
     )
   })
 })
