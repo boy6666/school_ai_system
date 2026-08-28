@@ -120,11 +120,16 @@ const routes: RouteRecordRaw[] = [
     name: 'TeacherLayout',
     component: () => import('@/layouts/TeacherLayout.vue'),
     redirect: '/teacher/dashboard',
-    children: [
+     children: [
       {
         path: 'dashboard',
         name: 'TeacherDashboard',
         component: () => import('@/views/teacher/Dashboard.vue')
+      },
+      {
+        path: 'classes',
+        name: 'TeacherClasses',
+        component: () => import('@/views/teacher/ClassManage.vue')
       }
     ]
   },
