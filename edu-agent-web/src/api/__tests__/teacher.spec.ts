@@ -23,7 +23,13 @@ import {
   getTeacherClass,
   getTeacherClasses,
   removeClassStudent,
-  updateTeacherClass
+  updateTeacherClass,
+  createTeacherQuestion,
+  deleteTeacherQuestion,
+  generateTeacherQuestions,
+  getTeacherQuestion,
+  getTeacherQuestions,
+  updateTeacherQuestion
 } from '@/api/teacher'
 
 const mock = new AxiosMockAdapter(request)
@@ -185,6 +191,131 @@ describe('教师端班级接口契约', () => {
     })
     expect(mock.history.delete[0]?.url).toBe(
       `${studentsPath}/12`
+    )
+  })
+  it('应使用正式查询参数筛选题目列表', async () => {
+    const questionPath = '/edu-agent-teacher/questions'
+    const params = {
+      chapter: '第2章 面向对象',
+      topic: '继承',
+      type: 'choice' as const,
+      difficulty: 'easy' as const
+    }
+
+    mock.onGet(questionPath).reply(200, {
+      code: 0,
+      message: 'success',
+      data: []
+    })
+
+    await getTeacherQuestions(params)
+
+    expect(mock.history.get[0]?.url).toBe(questionPath)
+    expect(mock.history.get[0]?.params).toEqual(params)
+  })
+
+  it('应按正式路径查询题目详情', async () => {
+    const questionPath = '/edu-agent-teacher/questions'
+
+    mock.onGet(`${questionPath}/101`).reply(200, {
+      code: 0,
+      message: 'success',
+      data: {
+        id: 101,
+        type: 'choice',
+        chapter: '第2章 面向对象',
+        topic: '继承',
+        content: '以下哪个关键字用于继承？',
+        options: ['extends', 'implements'],
+        answer: 'extends',
+        explanation: 'Java使用extends继承',
+        difficulty: 'easy',
+        creatorId: 3,
+        createTime: '2026-08-08T10:00:00'
+      }
+    })
+
+    const detail = await getTeacherQuestion(101)
+
+    expect(detail.id).toBe(101)
+    expect(mock.history.get[0]?.url).toBe(
+      `${questionPath}/101`
+    )
+  })
+
+  it('应使用完整正式请求体新增和更新题目', async () => {
+    const questionPath = '/edu-agent-teacher/questions'
+    const data = {
+      type: 'choice' as const,
+      chapter: '第2章 面向对象',
+      topic: '继承',
+      content: '以下哪个关键字用于继承？',
+      options: ['extends', 'implements'],
+      answer: 'extends',
+      explanation: 'Java使用extends继承',
+      difficulty: 'easy' as const
+    }
+
+    mock.onPost(questionPath).reply(200, {
+      code: 0,
+      message: 'success',
+      data: { id: 101, creatorId: 3, ...data }
+    })
+
+    mock.onPut(`${questionPath}/101`).reply(200, {
+      code: 0,
+      message: 'success',
+      data: { id: 101, creatorId: 3, ...data }
+    })
+
+    await createTeacherQuestion(data)
+    await updateTeacherQuestion(101, data)
+
+    expect(JSON.parse(mock.history.post[0]?.data)).toEqual(
+      data
+    )
+    expect(mock.history.post[0]?.url).toBe(questionPath)
+    expect(JSON.parse(mock.history.put[0]?.data)).toEqual(
+      data
+    )
+    expect(mock.history.put[0]?.url).toBe(
+      `${questionPath}/101`
+    )
+  })
+
+  it('应按正式契约生成草稿并删除题目', async () => {
+    const questionPath = '/edu-agent-teacher/questions'
+    const generateData = {
+      chapter: '第3章 集合',
+      topic: 'HashMap',
+      type: 'choice' as const,
+      difficulty: 'medium' as const,
+      count: 5
+    }
+
+    mock.onPost(`${questionPath}/generate`).reply(200, {
+      code: 0,
+      message: 'success',
+      data: []
+    })
+
+    mock.onDelete(`${questionPath}/101`).reply(200, {
+      code: 0,
+      message: 'success',
+      data: null
+    })
+
+    await generateTeacherQuestions(generateData)
+    await deleteTeacherQuestion(101)
+
+    expect(mock.history.post[0]?.url).toBe(
+      `${questionPath}/generate`
+    )
+    expect(JSON.parse(mock.history.post[0]?.data)).toEqual(
+      generateData
+    )
+    expect(mock.history.delete[0]?.url).toBe(
+      `${questionPath}/101`
     )
   })
 })

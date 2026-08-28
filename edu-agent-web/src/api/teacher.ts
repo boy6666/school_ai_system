@@ -110,3 +110,108 @@ export function removeClassStudent(
     `${TEACHER_SERVICE}/classes/${classId}/students/${studentId}`
   )
 }
+export type QuestionType = 'choice' | 'code' | 'blank'
+
+export type QuestionDifficulty =
+  | 'easy'
+  | 'medium'
+  | 'hard'
+
+export interface TeacherQuestion {
+  id: number
+  type: QuestionType
+  chapter: string
+  topic: string
+  content: string
+  options: string[]
+  answer: string
+  explanation: string
+  difficulty: QuestionDifficulty
+  creatorId: number
+  createTime: string
+}
+
+export interface QuestionQuery {
+  chapter?: string
+  topic?: string
+  type?: QuestionType
+  difficulty?: QuestionDifficulty
+}
+
+export interface CreateQuestionRequest {
+  type: QuestionType
+  chapter?: string
+  topic?: string
+  content: string
+  options?: string[]
+  answer?: string
+  explanation?: string
+  difficulty?: QuestionDifficulty
+}
+
+export interface QuestionGenerateRequest {
+  chapter?: string
+  topic?: string
+  type?: QuestionType
+  difficulty?: QuestionDifficulty
+  count?: number
+}
+
+/** 查询题库，可按章节、知识点、题型和难度筛选 */
+export function getTeacherQuestions(
+  params: QuestionQuery = {}
+): Promise<TeacherQuestion[]> {
+  return request.get<unknown, TeacherQuestion[]>(
+    `${TEACHER_SERVICE}/questions`,
+    { params }
+  )
+}
+
+/** 查询题目详情 */
+export function getTeacherQuestion(
+  questionId: number
+): Promise<TeacherQuestion> {
+  return request.get<unknown, TeacherQuestion>(
+    `${TEACHER_SERVICE}/questions/${questionId}`
+  )
+}
+
+/** 新增题目 */
+export function createTeacherQuestion(
+  data: CreateQuestionRequest
+): Promise<TeacherQuestion> {
+  return request.post<unknown, TeacherQuestion>(
+    `${TEACHER_SERVICE}/questions`,
+    data
+  )
+}
+
+/** 更新题目，正式契约使用完整 CreateQuestionRequest */
+export function updateTeacherQuestion(
+  questionId: number,
+  data: CreateQuestionRequest
+): Promise<TeacherQuestion> {
+  return request.put<unknown, TeacherQuestion>(
+    `${TEACHER_SERVICE}/questions/${questionId}`,
+    data
+  )
+}
+
+/** 删除题目 */
+export function deleteTeacherQuestion(
+  questionId: number
+): Promise<void> {
+  return request.delete<unknown, void>(
+    `${TEACHER_SERVICE}/questions/${questionId}`
+  )
+}
+
+/** AI 生成题目草稿，教师确认后再调用新增接口保存 */
+export function generateTeacherQuestions(
+  data: QuestionGenerateRequest
+): Promise<TeacherQuestion[]> {
+  return request.post<unknown, TeacherQuestion[]>(
+    `${TEACHER_SERVICE}/questions/generate`,
+    data
+  )
+}
