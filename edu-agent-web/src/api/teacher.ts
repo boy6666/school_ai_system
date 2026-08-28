@@ -215,3 +215,132 @@ export function generateTeacherQuestions(
     data
   )
 }
+export type AssignmentType = 'homework' | 'code'
+export type AssignmentStatus = 0 | 1
+
+export interface TeacherAssignment {
+  id: number
+  classId: number
+  title: string
+  type: AssignmentType
+  deadline: string | null
+  status: AssignmentStatus
+  createTime: string
+  itemCount: number
+  totalScore: number
+}
+
+export interface AssignmentItemRequest {
+  questionId: number
+  score?: number
+}
+
+export interface CreateAssignmentRequest {
+  classId: number
+  title: string
+  type: AssignmentType
+  deadline?: string | null
+  description?: string
+  items: AssignmentItemRequest[]
+}
+
+export interface UpdateAssignmentRequest {
+  title?: string
+  deadline?: string | null
+  status?: '0' | '1'
+}
+
+export interface AssignmentItemDetail {
+  itemId: number
+  questionId: number
+  score: number
+  question: TeacherQuestion
+  submittedCount: number
+  gradedCount: number
+}
+
+export interface TeacherAssignmentDetail {
+  id: number
+  classId: number
+  title: string
+   type: string
+  description: string
+  deadline: string | null
+  status: AssignmentStatus
+  createTime: string
+  items: AssignmentItemDetail[]
+}
+
+/** 查询当前教师的作业，可按班级筛选 */
+export function getTeacherAssignments(
+  classId?: number
+): Promise<TeacherAssignment[]> {
+  return request.get<unknown, TeacherAssignment[]>(
+    `${TEACHER_SERVICE}/assignments`,
+    {
+      params:
+        classId === undefined
+          ? undefined
+          : { classId }
+    }
+  )
+}
+
+/** 查询作业详情 */
+export function getTeacherAssignment(
+  assignmentId: number
+): Promise<TeacherAssignmentDetail> {
+  return request.get<unknown, TeacherAssignmentDetail>(
+    `${TEACHER_SERVICE}/assignments/${assignmentId}`
+  )
+}
+
+/** 创建作业并添加初始题目 */
+export function createTeacherAssignment(
+  data: CreateAssignmentRequest
+): Promise<TeacherAssignment> {
+  return request.post<unknown, TeacherAssignment>(
+    `${TEACHER_SERVICE}/assignments`,
+    data
+  )
+}
+
+/** 更新作业基本信息或状态 */
+export function updateTeacherAssignment(
+  assignmentId: number,
+  data: UpdateAssignmentRequest
+): Promise<TeacherAssignment> {
+  return request.put<unknown, TeacherAssignment>(
+    `${TEACHER_SERVICE}/assignments/${assignmentId}`,
+    data
+  )
+}
+
+/** 删除作业 */
+export function deleteTeacherAssignment(
+  assignmentId: number
+): Promise<void> {
+  return request.delete<unknown, void>(
+    `${TEACHER_SERVICE}/assignments/${assignmentId}`
+  )
+}
+
+/** 向已有作业添加题目 */
+export function addTeacherAssignmentItem(
+  assignmentId: number,
+  data: AssignmentItemRequest
+): Promise<void> {
+  return request.post<unknown, void>(
+    `${TEACHER_SERVICE}/assignments/${assignmentId}/items`,
+    data
+  )
+}
+
+/** 发布或重新发布作业 */
+export function publishTeacherAssignment(
+  assignmentId: number
+): Promise<void> {
+  return request.post<unknown, void>(
+    `${TEACHER_SERVICE}/assignments/${assignmentId}/publish`
+  )
+}

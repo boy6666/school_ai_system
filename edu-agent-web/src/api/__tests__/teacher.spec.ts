@@ -29,7 +29,14 @@ import {
   generateTeacherQuestions,
   getTeacherQuestion,
   getTeacherQuestions,
-  updateTeacherQuestion
+   updateTeacherQuestion,
+  addTeacherAssignmentItem,
+  createTeacherAssignment,
+  deleteTeacherAssignment,
+  getTeacherAssignment,
+  getTeacherAssignments,
+  publishTeacherAssignment,
+  updateTeacherAssignment
 } from '@/api/teacher'
 
 const mock = new AxiosMockAdapter(request)
@@ -316,6 +323,170 @@ describe('教师端班级接口契约', () => {
     )
     expect(mock.history.delete[0]?.url).toBe(
       `${questionPath}/101`
+    )
+  })
+  it('应按正式路径查询作业列表与详情', async () => {
+    const assignmentPath =
+      '/edu-agent-teacher/assignments'
+
+    mock.onGet(assignmentPath).reply(200, {
+      code: 0,
+      message: 'success',
+      data: []
+    })
+
+    mock.onGet(`${assignmentPath}/201`).reply(200, {
+      code: 0,
+      message: 'success',
+      data: {
+        id: 201,
+        classId: 1,
+        title: '第一章作业',
+        type: 'homework',
+        description: '',
+        deadline: null,
+        status: 0,
+        createTime: '2026-08-28T10:00:00',
+        items: []
+      }
+    })
+
+    await getTeacherAssignments(1)
+    await getTeacherAssignment(201)
+
+    expect(mock.history.get[0]?.url).toBe(
+      assignmentPath
+    )
+    expect(mock.history.get[0]?.params).toEqual({
+      classId: 1
+    })
+    expect(mock.history.get[1]?.url).toBe(
+      `${assignmentPath}/201`
+    )
+  })
+
+  it('应使用正式请求体创建和更新作业', async () => {
+    const assignmentPath =
+      '/edu-agent-teacher/assignments'
+
+    const createData = {
+      classId: 1,
+      title: '集合练习',
+      type: 'homework' as const,
+      deadline: '2026-09-01T20:00:00',
+      description: '完成集合章节练习',
+      items: [
+        {
+          questionId: 101,
+          score: 10
+        }
+      ]
+    }
+
+    const updateData = {
+      title: '集合练习（修订）',
+      deadline: '2026-09-02T20:00:00',
+      status: '1' as const
+    }
+
+    mock.onPost(assignmentPath).reply(200, {
+      code: 0,
+      message: 'success',
+      data: {
+        id: 201,
+        ...createData,
+        status: 0,
+        createTime: '2026-08-28T10:00:00',
+        itemCount: 1,
+        totalScore: 10
+      }
+    })
+
+    mock.onPut(`${assignmentPath}/201`).reply(200, {
+      code: 0,
+      message: 'success',
+      data: {
+        id: 201,
+        classId: 1,
+        title: updateData.title,
+        type: 'homework',
+        deadline: updateData.deadline,
+        status: 1,
+        createTime: '2026-08-28T10:00:00',
+        itemCount: 1,
+        totalScore: 10
+      }
+    })
+
+    await createTeacherAssignment(createData)
+    await updateTeacherAssignment(201, updateData)
+
+    expect(mock.history.post[0]?.url).toBe(
+      assignmentPath
+    )
+    expect(JSON.parse(mock.history.post[0]?.data)).toEqual(
+      createData
+    )
+    expect(mock.history.put[0]?.url).toBe(
+      `${assignmentPath}/201`
+    )
+    expect(JSON.parse(mock.history.put[0]?.data)).toEqual(
+      updateData
+    )
+  })
+
+  it('应按正式契约添加题目并发布作业', async () => {
+    const assignmentPath =
+      '/edu-agent-teacher/assignments'
+    const itemData = {
+      questionId: 102,
+      score: 20
+    }
+
+    mock
+      .onPost(`${assignmentPath}/201/items`)
+      .reply(200, {
+        code: 0,
+        message: 'success',
+        data: null
+      })
+
+    mock
+      .onPost(`${assignmentPath}/201/publish`)
+      .reply(200, {
+        code: 0,
+        message: 'success',
+        data: null
+      })
+
+    await addTeacherAssignmentItem(201, itemData)
+    await publishTeacherAssignment(201)
+
+    expect(mock.history.post[0]?.url).toBe(
+      `${assignmentPath}/201/items`
+    )
+    expect(JSON.parse(mock.history.post[0]?.data)).toEqual(
+      itemData
+    )
+    expect(mock.history.post[1]?.url).toBe(
+      `${assignmentPath}/201/publish`
+    )
+  })
+
+  it('应按正式路径删除作业', async () => {
+    const assignmentPath =
+      '/edu-agent-teacher/assignments'
+
+    mock.onDelete(`${assignmentPath}/201`).reply(200, {
+      code: 0,
+      message: 'success',
+      data: null
+    })
+
+    await deleteTeacherAssignment(201)
+
+    expect(mock.history.delete[0]?.url).toBe(
+      `${assignmentPath}/201`
     )
   })
 })
