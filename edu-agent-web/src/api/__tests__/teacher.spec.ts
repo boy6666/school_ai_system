@@ -37,9 +37,11 @@ import {
   getTeacherAssignments,
   publishTeacherAssignment,
   updateTeacherAssignment,
-  getAssignmentGrades,
+   getAssignmentGrades,
   getTeacherGrade,
-  updateTeacherGrade
+  updateTeacherGrade,
+  getClassAnalytics,
+  getClassOverview
 } from '@/api/teacher'
 
 const mock = new AxiosMockAdapter(request)
@@ -582,5 +584,88 @@ describe('教师端班级接口契约', () => {
     expect(JSON.parse(mock.history.put[0]?.data)).toEqual(
       updateData
     )
+  })
+    it('应按正式路径查询班级完整学情聚合', async () => {
+    const analyticsPath =
+      `${classPath}/101/analytics`
+
+    mock.onGet(analyticsPath).reply(200, {
+      code: 0,
+      message: 'success',
+      data: {
+        classId: 101,
+        className: '计科2301',
+        studentCount: 30,
+        masteryDist: [
+          {
+            level: '优秀',
+            count: 8
+          }
+        ],
+        dimensionAvg: {
+          knowledge: 82
+        },
+        taskCompletion: [
+          {
+            studentId: 12,
+            name: '学生',
+            progress: 80,
+            lastScore: 85
+          }
+        ],
+        weakTopics: [
+          {
+            topic: '集合',
+            count: 6
+          }
+        ],
+        trend: [
+          {
+            day: '2026-08-28',
+            activeStudents: 24
+          }
+        ]
+      }
+    })
+
+    const result = await getClassAnalytics(101)
+
+    expect(mock.history.get[0]?.url).toBe(
+      analyticsPath
+    )
+    expect(result.classId).toBe(101)
+    expect(result.masteryDist[0]?.count).toBe(8)
+  })
+
+  it('应按正式路径查询班级轻量概览', async () => {
+    const overviewPath =
+      `${classPath}/101/overview`
+
+    mock.onGet(overviewPath).reply(200, {
+      code: 0,
+      message: 'success',
+      data: {
+        classId: 101,
+        className: '计科2301',
+        studentCount: 30,
+        avgMastery: 82.5,
+        completionRate: 76.8,
+        activeStudents: 24
+      }
+    })
+
+    const result = await getClassOverview(101)
+
+    expect(mock.history.get[0]?.url).toBe(
+      overviewPath
+    )
+    expect(result).toEqual({
+      classId: 101,
+      className: '计科2301',
+      studentCount: 30,
+      avgMastery: 82.5,
+      completionRate: 76.8,
+      activeStudents: 24
+    })
   })
 })

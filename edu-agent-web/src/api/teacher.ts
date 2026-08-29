@@ -407,3 +407,62 @@ export function updateTeacherGrade(
     data
   )
 }
+export interface MasteryDistribution {
+  level: string
+  count: number
+}
+
+export interface TaskCompletionEntry {
+  studentId: number
+  name: string
+  progress: number
+  lastScore: number | null
+}
+
+export interface WeakTopicEntry {
+  topic: string
+  count: number
+}
+
+export interface LearningTrendDay {
+  day: string
+  activeStudents: number
+}
+
+export interface ClassAnalytics {
+  classId: number
+  className: string
+  studentCount: number
+  masteryDist: MasteryDistribution[]
+  dimensionAvg: Record<string, number>
+  taskCompletion: TaskCompletionEntry[]
+  weakTopics: WeakTopicEntry[]
+  trend: LearningTrendDay[]
+}
+
+export interface ClassOverview {
+  classId: number
+  className: string
+  studentCount: number
+  avgMastery: number
+  completionRate: number
+  activeStudents: number
+}
+
+/** 查询班级完整学情聚合 */
+export function getClassAnalytics(
+  classId: number
+): Promise<ClassAnalytics> {
+  return request.get<unknown, ClassAnalytics>(
+    `${TEACHER_SERVICE}/classes/${classId}/analytics`
+  )
+}
+
+/** 查询班级均分、完成率和活跃度概览 */
+export function getClassOverview(
+  classId: number
+): Promise<ClassOverview> {
+  return request.get<unknown, ClassOverview>(
+    `${TEACHER_SERVICE}/classes/${classId}/overview`
+  )
+}
