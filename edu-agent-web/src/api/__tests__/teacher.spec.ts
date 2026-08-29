@@ -37,11 +37,13 @@ import {
   getTeacherAssignments,
   publishTeacherAssignment,
   updateTeacherAssignment,
-   getAssignmentGrades,
+  getAssignmentGrades,
   getTeacherGrade,
   updateTeacherGrade,
   getClassAnalytics,
-  getClassOverview
+  getClassOverview,
+  askTeacherAi,
+  explainTeacherGrade
 } from '@/api/teacher'
 
 const mock = new AxiosMockAdapter(request)
@@ -667,5 +669,65 @@ describe('教师端班级接口契约', () => {
       completionRate: 76.8,
       activeStudents: 24
     })
+  })
+    it('应按正式契约提交教师 AI 教学问答', async () => {
+    const askPath = '/edu-agent-teacher/ai/ask'
+    const askData = {
+      message: '如何讲解多态？',
+      classId: 101
+    }
+
+    mock.onPost(askPath).reply(200, {
+      code: 0,
+      message: 'success',
+      data: {
+        answer: '可结合接口与实现类进行讲解。',
+        intent: 'teaching_question',
+        references: null
+      }
+    })
+
+    const result = await askTeacherAi(askData)
+
+    expect(mock.history.post[0]?.url).toBe(askPath)
+    expect(
+      JSON.parse(mock.history.post[0]?.data)
+    ).toEqual(askData)
+    expect(result.answer).toBe(
+      '可结合接口与实现类进行讲解。'
+    )
+    expect(result.references).toBeNull()
+  })
+
+  it('应按正式契约请求 AI 成绩解读', async () => {
+    const explainPath =
+      '/edu-agent-teacher/ai/explain-grade'
+    const explainData = {
+      studentId: 12,
+      assignmentId: 201
+    }
+    const explanation = {
+      summary: '本次作业基础知识掌握较好',
+      suggestions: [
+        '继续练习边界条件处理'
+      ]
+    }
+
+    mock.onPost(explainPath).reply(200, {
+      code: 0,
+      message: 'success',
+      data: explanation
+    })
+
+    const result =
+      await explainTeacherGrade(explainData)
+
+    expect(mock.history.post[0]?.url).toBe(
+      explainPath
+    )
+    expect(
+      JSON.parse(mock.history.post[0]?.data)
+    ).toEqual(explainData)
+    expect(result).toEqual(explanation)
   })
 })

@@ -148,11 +148,17 @@ const routes: RouteRecordRaw[] = [
         component: () =>
           import('@/views/teacher/GradeReview.vue')
       },
-      {
+       {
         path: 'analytics',
         name: 'TeacherAnalytics',
         component: () =>
           import('@/views/teacher/Analytics.vue')
+      },
+      {
+        path: 'ai-tutor',
+        name: 'TeacherAiTutor',
+        component: () =>
+          import('@/views/teacher/AiTutor.vue')
       }
     ]
   },

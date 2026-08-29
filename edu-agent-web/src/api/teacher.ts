@@ -466,3 +466,42 @@ export function getClassOverview(
     `${TEACHER_SERVICE}/classes/${classId}/overview`
   )
 }
+export interface TeacherAiAskRequest {
+  message: string
+  classId?: number
+  context?: Record<string, object>
+}
+
+export interface TeacherAiAnswer {
+  answer: string
+  intent: string
+  references: Record<string, unknown> | null
+}
+
+export interface ExplainGradeRequest {
+  studentId: number
+  assignmentId: number
+}
+
+export type GradeExplanation =
+  Record<string, unknown> | null
+
+/** 教师 AI 教学答疑 */
+export function askTeacherAi(
+  data: TeacherAiAskRequest
+): Promise<TeacherAiAnswer> {
+  return request.post<unknown, TeacherAiAnswer>(
+    `${TEACHER_SERVICE}/ai/ask`,
+    data
+  )
+}
+
+/** AI 成绩解读，正式契约暂未固定返回对象字段 */
+export function explainTeacherGrade(
+  data: ExplainGradeRequest
+): Promise<GradeExplanation> {
+  return request.post<unknown, GradeExplanation>(
+    `${TEACHER_SERVICE}/ai/explain-grade`,
+    data
+  )
+}
