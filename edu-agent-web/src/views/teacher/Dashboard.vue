@@ -45,8 +45,8 @@
     </section>
 
     <el-alert
-      title="教师端功能正在按照正式接口契约逐步接入"
-      description="当前工作台不展示模拟业务数据；各模块完成后将接入真实服务或契约桩进行验证。"
+      title="教师端功能已按正式接口契约接入"
+      description="当前页面不使用模拟业务数据，业务数据以正式服务返回结果为准。"
       type="info"
       :closable="false"
       show-icon

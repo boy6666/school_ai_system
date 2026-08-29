@@ -322,7 +322,7 @@ export function authGuard(to: RouteLocationNormalized) {
 
   // 已登录用户访问未知地址时返回对应首页
   if (to.matched.length === 0) {
-    // 教师端页面将在P3新增，避免当前预留地址反复重定向
+    // 避免对应角色首页未匹配时产生重复重定向
     if (to.path === home) {
       return true
     }

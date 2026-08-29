@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import type { RouteLocationNormalized } from 'vue-router'
-import { authGuard } from '@/router'
+import router, { authGuard } from '@/router'
 import { ROLE } from '@/utils/constants'
 
 function createRoute(
@@ -113,5 +113,23 @@ describe('Router authentication and role control', () => {
 
     expect(studentResult).toBe('/teacher/dashboard')
     expect(adminResult).toBe('/teacher/dashboard')
+  })
+    it('registers all teacher routes', () => {
+    const routeNames = router
+      .getRoutes()
+      .map(route => route.name)
+
+    expect(routeNames).toEqual(
+      expect.arrayContaining([
+        'TeacherDashboard',
+        'TeacherClasses',
+        'TeacherQuestions',
+        'TeacherAssignments',
+        'TeacherGrades',
+        'TeacherAnalytics',
+        'TeacherAiTutor',
+        'TeacherResources'
+      ])
+    )
   })
 })

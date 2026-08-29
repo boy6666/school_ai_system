@@ -355,7 +355,7 @@ export interface TeacherGrade {
   score: number
   status: 0 | 1
   gradedAt: string | null
-  hasAiReport: boolean
+  hasAiReport?: boolean
 }
 
 export interface TeacherGradeDetail
