@@ -25,6 +25,14 @@ export interface ResourceVO {
   favorites?: number
   createTime?: string
 }
+export interface ResourceEntity
+  extends ResourceVO {
+  userId?: number
+  chapterId?: string
+  courseName?: string
+  description?: string
+  updateTime?: string
+}
 
 export interface CreateResourceRequest {
   userId?: number
@@ -53,11 +61,11 @@ export function getResourceList(): Promise<ResourceVO[]> {
 /** 新增资源 */
 export function createResource(
   data: CreateResourceRequest
-): Promise<CreateResourceRequest> {
-  return request.post<
-    unknown,
-    CreateResourceRequest
-  >('/edu-agent-resource', data)
+): Promise<ResourceEntity> {
+  return request.post<unknown, ResourceEntity>(
+    '/edu-agent-resource',
+    data
+  )
 }
 
 /** 查询资源详情 */
