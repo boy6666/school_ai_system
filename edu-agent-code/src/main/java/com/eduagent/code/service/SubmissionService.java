@@ -15,4 +15,7 @@ public interface SubmissionService {
 
     /** 查询判分结果（C1：GET /api/code/result/{id}） */
     CodeSubmitResultVO getResult(Long submissionId);
+
+    /** 教师触发重新判分（首判失败/结果有问题的补救口）：终态校验通过后重置状态并重新入队 */
+    CodeSubmitReceiptVO regrade(Long submissionId);
 }

@@ -64,6 +64,13 @@ public class CodeController {
         return Result.success(submissionService.getResult(id));
     }
 
+    /** 教师重新判分：202 异步重跑判分流水线，回执同 /submit（非终态 409、非教师 403） */
+    @PostMapping("/submissions/{id}/regrade")
+    public ResponseEntity<Result<CodeSubmitReceiptVO>> regrade(@PathVariable Long id) {
+        CodeSubmitReceiptVO receipt = submissionService.regrade(id);
+        return ResponseEntity.status(HttpStatus.ACCEPTED).body(Result.success(receipt));
+    }
+
     @GetMapping("/exercises/{id}")
     public Result<CodeExerciseVO> get(@PathVariable Long id) {
         return Result.success(service.get(id));

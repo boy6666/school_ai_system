@@ -101,6 +101,49 @@ public class SubmissionServiceImpl implements SubmissionService {
         throw new ApiException(ErrorCode.BAD_REQUEST, "缺少 studentId");
     }
 
+    /**
+     * 教师触发重新判分：仅终态（DONE/TIMEOUT/COMPILE_ERROR/FAILED）可再判，
+     * PENDING/RUNNING 说明首判未完成，重复触发会并发双判 → 409。
+     * 重置状态与旧运行痕迹、删除旧报告行（{@link CodeCheckReportService#save} 仅 insert，不删则报告重复堆积），
+     * 事务提交后再入队（同 submit），Worker 全量重跑流水线并以新事件回填 teacher 成绩。
+     */
+    @Override
+    @Transactional
+    public CodeSubmitReceiptVO regrade(Long submissionId) {
+        requireTeacher();
+        CodeSubmission sub = submissionMapper.selectById(submissionId);
+        if (sub == null) {
+            throw new ApiException(ErrorCode.NOT_FOUND, "submissionId=" + submissionId);
+        }
+        if (sub.getStatus() == null
+                || sub.getStatus() == SubmissionStatus.PENDING
+                || sub.getStatus() == SubmissionStatus.RUNNING) {
+            throw new ApiException(ErrorCode.CONFLICT, "判分进行中，勿重复触发 submissionId=" + submissionId);
+        }
+        sub.setStatus(SubmissionStatus.PENDING);
+        sub.setStdout(null);
+        sub.setStderr(null);
+        sub.setRunTimeMs(null);
+        submissionMapper.updateById(sub);
+        reportMapper.delete(new LambdaQueryWrapper<CodeCheckReport>()
+                .eq(CodeCheckReport::getSubmissionId, submissionId));
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                judgeWorker.judge(submissionId);
+            }
+        });
+        return new CodeSubmitReceiptVO(submissionId, SubmissionStatus.PENDING);
+    }
+
+    /** code 服务无班级归属数据，仅做教师角色门禁；作业归属校验由 teacher 侧消费事件时兜底 */
+    private void requireTeacher() {
+        String roles = AuthContext.getRoles();
+        if (roles == null || !roles.contains("ROLE_TEACHER")) {
+            throw new ApiException(ErrorCode.FORBIDDEN, "仅教师可触发重新判分");
+        }
+    }
+
     /** 优先 files[]（共识 1）；为空时兼容单文件 sourceCode 形态 */
     private String buildSource(CodeSubmitRequest request) {
         if (request.getFiles() != null && !request.getFiles().isEmpty()) {
