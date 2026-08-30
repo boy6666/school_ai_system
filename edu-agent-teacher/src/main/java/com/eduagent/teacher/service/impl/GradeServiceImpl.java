@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.eduagent.common.constant.ServiceConstants;
 import com.eduagent.common.result.ApiException;
 import com.eduagent.common.result.ErrorCode;
+import com.eduagent.common.result.Result;
 import com.eduagent.common.security.AuthContext;
 import com.eduagent.teacher.dto.SubmitAssignmentRequest;
 import com.eduagent.teacher.dto.UpdateGradeRequest;
@@ -14,6 +15,7 @@ import com.eduagent.teacher.entity.Grade;
 import com.eduagent.teacher.entity.Question;
 import com.eduagent.teacher.feign.CodeServiceClient;
 import com.eduagent.teacher.feign.CodeSubmissionRequest;
+import com.eduagent.teacher.feign.CodeSubmitReceiptVO;
 import com.eduagent.teacher.mapper.AssignmentItemMapper;
 import com.eduagent.teacher.mapper.AssignmentMapper;
 import com.eduagent.teacher.mapper.ClassesMapper;
@@ -102,14 +104,8 @@ public class GradeServiceImpl implements GradeService {
             local = true;
         }
 
-        if (isNew) {
-            gradeMapper.insert(grade);
-        } else {
-            gradeMapper.updateById(grade);
-        }
-
         if (!local) {
-            // code 题：提交受理，不读全量报告（事件回填）
+            // code 题：先受理拿回执（submissionId 是教师重判入口），失败不阻断，事件回填兜底
             String language = itemReq.getLanguage() == null ? "java" : itemReq.getLanguage();
             CodeSubmissionRequest req = CodeSubmissionRequest.builder()
                     .studentId(studentId)
@@ -121,11 +117,21 @@ public class GradeServiceImpl implements GradeService {
                     .className(null)
                     .build();
             try {
-                codeClient.submit(req);
+                Result<CodeSubmitReceiptVO> receipt = codeClient.submit(req);
+                if (receipt != null && receipt.getData() != null
+                        && receipt.getData().submissionId() != null) {
+                    grade.setSubmissionId(receipt.getData().submissionId());
+                }
             } catch (Exception e) {
                 log.warn("提交 code 判分受理失败 assignmentId={} itemId={}: {}",
                         assignmentId, item.getId(), e.getMessage());
             }
+        }
+
+        if (isNew) {
+            gradeMapper.insert(grade);
+        } else {
+            gradeMapper.updateById(grade);
         }
         return grade;
     }
@@ -146,8 +152,8 @@ public class GradeServiceImpl implements GradeService {
         // 学生只能看自己，教师/管理员可看
         requireViewer(grade);
         return new GradeDetailVO(grade.getId(), grade.getAssignmentId(), grade.getStudentId(),
-                grade.getItemId(), grade.getItemType(), grade.getLanguage(), grade.getSubmission(),
-                grade.getScore(), grade.getStatus(), grade.getGradedAt(),
+                grade.getItemId(), grade.getItemType(), grade.getLanguage(), grade.getSubmissionId(),
+                grade.getSubmission(), grade.getScore(), grade.getStatus(), grade.getGradedAt(),
                 grade.getRunResult(), grade.getStaticReport(), grade.getAiReport(), grade.getComment());
     }
 
@@ -258,7 +264,7 @@ public class GradeServiceImpl implements GradeService {
 
     private GradeVO toGradeVO(Grade g) {
         return new GradeVO(g.getId(), g.getAssignmentId(), g.getStudentId(), g.getItemId(),
-                g.getItemType(), g.getLanguage(), g.getSubmission(), g.getScore(),
-                g.getStatus(), g.getGradedAt(), g.getAiReport() != null);
+                g.getItemType(), g.getLanguage(), g.getSubmissionId(), g.getSubmission(),
+                g.getScore(), g.getStatus(), g.getGradedAt(), g.getAiReport() != null);
     }
 }

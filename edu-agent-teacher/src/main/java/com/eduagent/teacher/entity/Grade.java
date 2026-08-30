@@ -28,6 +28,9 @@ public class Grade extends BaseEntity {
     /** code 题语言，如 java */
     private String language;
 
+    /** code 服务受理号（教师重判分入口），受理回执/事件回填双落点 */
+    private Long submissionId;
+
     /** 学生提交内容/代码 */
     private String submission;
 

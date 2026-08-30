@@ -86,4 +86,32 @@ class AssignmentGradedConsumerTest {
 
         verify(gradeMapper, never()).updateById(any(Grade.class));
     }
+
+    @DisplayName("事件回填时写入 submissionId（教师重判入口数据源）")
+    @Test
+    void onAssignmentGraded_backfillsSubmissionId() {
+        consumer = new AssignmentGradedConsumer(gradeMapper, objectMapper);
+        grade.setId(9L);
+        when(gradeMapper.selectByStuItem(1L, 2L, 3L)).thenReturn(grade);
+
+        AssignmentGradedEvent e = new AssignmentGradedEvent();
+        e.setAssignmentId(1L);
+        e.setAssignmentItemId(3L);
+        e.setStudentId(2L);
+        e.setSubmissionId(1024L);
+        e.setStdout("Hello");
+        e.setRunTimeMs(10L);
+        e.setRunPassed(true);
+        e.setStatus("done");
+        e.setCompileOk(true);
+        e.setCheckstyle("ok");
+        e.setPmd("minor");
+        e.setAiSuggestion("可以");
+        e.setOverallScore(88);
+
+        consumer.onAssignmentGraded(e);
+
+        assertThat(grade.getSubmissionId()).isEqualTo(1024L);
+        assertThat(grade.getStatus()).isEqualTo(1);
+    }
 }

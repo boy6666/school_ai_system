@@ -1,6 +1,7 @@
 package com.eduagent.teacher.service.impl;
 
 import com.eduagent.common.result.ApiException;
+import com.eduagent.common.result.Result;
 import com.eduagent.common.security.AuthContext;
 import com.eduagent.teacher.dto.SubmitAssignmentRequest;
 import com.eduagent.teacher.dto.UpdateGradeRequest;
@@ -10,18 +11,21 @@ import com.eduagent.teacher.entity.Classes;
 import com.eduagent.teacher.entity.Grade;
 import com.eduagent.teacher.entity.Question;
 import com.eduagent.teacher.feign.CodeServiceClient;
+import com.eduagent.teacher.feign.CodeSubmitReceiptVO;
 import com.eduagent.teacher.mapper.AssignmentItemMapper;
 import com.eduagent.teacher.mapper.AssignmentMapper;
 import com.eduagent.teacher.mapper.ClassesMapper;
 import com.eduagent.teacher.mapper.ClassStudentMapper;
 import com.eduagent.teacher.mapper.GradeMapper;
 import com.eduagent.teacher.mapper.QuestionMapper;
+import com.eduagent.teacher.vo.GradeDetailVO;
 import com.eduagent.teacher.vo.GradeVO;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -154,6 +158,41 @@ class GradeServiceImplTest {
 
         assertThat(gv.status()).isZero();
         verify(gradeMapper).insert(any(Grade.class));
+    }
+
+    @Test
+    @DisplayName("code 题受理回执 submissionId 落库并随 VO 返回（教师重判入口）")
+    void submit_code_receiptSubmissionId_persistedAndExposed() {
+        AuthContext.set("1", "ROLE_STUDENT");
+        when(assignmentMapper.selectById(1L)).thenReturn(a(1L));
+        when(itemMapper.selectById(20L)).thenReturn(item(20L, 1L, 200L, "code", 100));
+        when(questionMapper.selectById(200L)).thenReturn(q("code", "expected"));
+        when(gradeMapper.selectByStuItem(1L, 1L, 20L)).thenReturn(null);
+        when(codeClient.submit(any()))
+                .thenReturn(Result.success(new CodeSubmitReceiptVO(1024L, "PENDING")));
+
+        GradeVO gv = service.submit(1L, reqWith(20L, "code")).get(0);
+
+        assertThat(gv.submissionId()).isEqualTo(1024L);
+        ArgumentCaptor<Grade> cap = ArgumentCaptor.forClass(Grade.class);
+        verify(gradeMapper).insert(cap.capture());
+        assertThat(cap.getValue().getSubmissionId()).isEqualTo(1024L);
+    }
+
+    @Test
+    @DisplayName("成绩详情返回 submissionId（教师重判入口）")
+    void getGrade_exposesSubmissionId() {
+        AuthContext.set("1", "ROLE_STUDENT");
+        Grade g = new Grade();
+        g.setId(5L);
+        g.setAssignmentId(1L);
+        g.setStudentId(1L);
+        g.setSubmissionId(1024L);
+        when(gradeMapper.selectById(5L)).thenReturn(g);
+
+        GradeDetailVO vo = service.getGrade(5L);
+
+        assertThat(vo.submissionId()).isEqualTo(1024L);
     }
 
     @Test

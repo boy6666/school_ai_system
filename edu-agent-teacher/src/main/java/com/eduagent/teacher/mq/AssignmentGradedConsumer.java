@@ -14,7 +14,7 @@ import java.util.Map;
 /**
  * 代码判分完成事件消费者（方案 A，不轮询）。
  * 消费 assignment.graded（来自 edu-agent-code），payload 携带完整报告体，
- * 按 uk_stu_item 定位 grade 并回填 run_result/static_report/ai_report/score，status→1。
+ * 按 uk_stu_item 定位 grade 并回填 run_result/static_report/ai_report/score/submission_id，status→1。
  * 天然幂等：事件重投仍按同一 key 定位覆盖。
  */
 @Slf4j
@@ -43,6 +43,9 @@ public class AssignmentGradedConsumer {
                 "checkstyle", e.getCheckstyle(),
                 "pmd", e.getPmd())));
         grade.setAiReport(writeJson(Map.of("aiSuggestion", e.getAiSuggestion())));
+        if (e.getSubmissionId() != null) {
+            grade.setSubmissionId(e.getSubmissionId());
+        }
         if (e.getOverallScore() != null) {
             grade.setScore(e.getOverallScore());
         }
