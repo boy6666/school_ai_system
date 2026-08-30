@@ -1,0 +1,1038 @@
+openapi: 3.0.3
+info:
+  title: EduAgent Teacher 服务接口（教师六大模块）
+  description: |
+    独立微服务 edu-agent-teacher（端口 8084，teacher_db）。班级 / 作业 / 题库 / 提交与批改 / 学情看板 / AI 助教。
+    code 题异步两段式：submit 经 Feign 向 code 服务受理（202），判分结果由 assignment.graded 事件回填 grades（幂等）。
+    grades.submissionId 为教师重判分入口（code 服务 POST /api/edu-agent-code/submissions/{id}/regrade）。
+    经网关完整路径前缀：/api/edu-agent-teacher。
+  version: 1.0.0
+
+servers:
+  - url: http://<网关>:8080/api/edu-agent-teacher
+    description: 经网关访问
+  - url: http://localhost:8084/api/edu-agent-teacher
+    description: 服务直连（本机）
+
+tags:
+  - name: 班级
+    description: 班级管理与花名册（ROLE_TEACHER，属主校验）
+  - name: 作业
+    description: 作业管理与发布（发布发 assignment.published 事件）
+  - name: 题库
+    description: 题目 CRUD 与 AI 出题草稿（ROLE_TEACHER）
+  - name: 提交与批改
+    description: 学生提交 / 教师复核 / 成绩查询（核心，跨服务）
+  - name: 学情看板
+    description: 班级学情聚合（消费 study.progress）
+  - name: AI助教
+    description: 助教问答与成绩解读（经 ai 服务）
+
+paths:
+  /classes:
+    post:
+      tags: [班级]
+      summary: 创建班级
+      operationId: createClass
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClassUpsertRequest'
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultClass'
+    get:
+      tags: [班级]
+      summary: 我教的班级列表
+      operationId: listClasses
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultClassList'
+
+  /classes/{id}:
+    get:
+      tags: [班级]
+      summary: 班级详情
+      operationId: getClass
+      parameters:
+        - $ref: '#/components/parameters/ClassId'
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultClass'
+        '403':
+          description: 非本人班级
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultVoid'
+    put:
+      tags: [班级]
+      summary: 更新班级
+      operationId: updateClass
+      parameters:
+        - $ref: '#/components/parameters/ClassId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClassUpsertRequest'
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultClass'
+    delete:
+      tags: [班级]
+      summary: 删除班级
+      operationId: deleteClass
+      parameters:
+        - $ref: '#/components/parameters/ClassId'
+      responses:
+        '200':
+          description: 成功
+
+  /classes/{id}/students:
+    post:
+      tags: [班级]
+      summary: 添加学生
+      operationId: addStudent
+      parameters:
+        - $ref: '#/components/parameters/ClassId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddStudentRequest'
+      responses:
+        '200':
+          description: 成功
+    get:
+      tags: [班级]
+      summary: 花名册
+      operationId: listStudents
+      parameters:
+        - $ref: '#/components/parameters/ClassId'
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultClassStudentList'
+
+  /classes/{id}/students/{studentId}:
+    delete:
+      tags: [班级]
+      summary: 移除学生
+      operationId: removeStudent
+      parameters:
+        - $ref: '#/components/parameters/ClassId'
+        - name: studentId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: 成功
+
+  /classes/{id}/analytics:
+    get:
+      tags: [学情看板]
+      summary: 班级学情聚合（ECharts 直接消费）
+      operationId: classAnalytics
+      parameters:
+        - $ref: '#/components/parameters/ClassId'
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultClassAnalytics'
+
+  /classes/{id}/overview:
+    get:
+      tags: [学情看板]
+      summary: 班级概览卡片
+      operationId: classOverview
+      parameters:
+        - $ref: '#/components/parameters/ClassId'
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultClassOverview'
+
+  /assignments:
+    post:
+      tags: [作业]
+      summary: 创建作业（草稿 status=0）
+      operationId: createAssignment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAssignmentRequest'
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultAssignment'
+    get:
+      tags: [作业]
+      summary: 作业列表（可按班级过滤）
+      operationId: listAssignments
+      parameters:
+        - name: classId
+          in: query
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultAssignmentList'
+
+  /assignments/{id}:
+    get:
+      tags: [作业]
+      summary: 作业详情（含题目项与提交/批改计数）
+      operationId: assignmentDetail
+      parameters:
+        - $ref: '#/components/parameters/AssignmentId'
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultAssignmentDetail'
+    put:
+      tags: [作业]
+      summary: 更新作业（title/deadline/status）
+      operationId: updateAssignment
+      parameters:
+        - $ref: '#/components/parameters/AssignmentId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAssignmentRequest'
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultAssignment'
+    delete:
+      tags: [作业]
+      summary: 删除作业
+      operationId: deleteAssignment
+      parameters:
+        - $ref: '#/components/parameters/AssignmentId'
+      responses:
+        '200':
+          description: 成功
+
+  /assignments/{id}/items:
+    post:
+      tags: [作业]
+      summary: 追加题目项
+      operationId: addAssignmentItem
+      parameters:
+        - $ref: '#/components/parameters/AssignmentId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssignmentItemReq'
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultAssignment'
+
+  /assignments/{id}/publish:
+    post:
+      tags: [作业]
+      summary: 发布作业（status→1，发 assignment.published 事件）
+      operationId: publishAssignment
+      parameters:
+        - $ref: '#/components/parameters/AssignmentId'
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultAssignment'
+
+  /assignments/{id}/submit:
+    post:
+      tags: [提交与批改]
+      summary: 学生提交作业（choice/blank 即时判分；code 异步两段式）
+      description: |
+        code 题受理后 status=0 待批，由 assignment.graded 事件回填；受理回执 submissionId 随成绩落库。
+        受理失败不阻断提交（best-effort）。
+      operationId: submitAssignment
+      parameters:
+        - $ref: '#/components/parameters/AssignmentId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubmitAssignmentRequest'
+      responses:
+        '200':
+          description: 成功（每题一条 GradeVO）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultGradeList'
+        '400':
+          description: items 为空 / 题目项不属于该作业
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultVoid'
+        '404':
+          description: 作业不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultVoid'
+
+  /assignments/{id}/grades:
+    get:
+      tags: [提交与批改]
+      summary: 成绩列表（教师复核；可按学生过滤）
+      operationId: listGrades
+      parameters:
+        - $ref: '#/components/parameters/AssignmentId'
+        - name: studentId
+          in: query
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultGradeList'
+        '403':
+          description: 需要教师权限
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultVoid'
+
+  /grades/{gradeId}:
+    get:
+      tags: [提交与批改]
+      summary: 成绩详情（含全量报告 JSON + submissionId）
+      description: 学生仅限本人；教师/管理员可查任意。submissionId 供发起重判分。
+      operationId: gradeDetail
+      parameters:
+        - $ref: '#/components/parameters/GradeId'
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultGradeDetail'
+        '404':
+          description: 成绩不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultVoid'
+    put:
+      tags: [提交与批改]
+      summary: 教师复核成绩（覆盖 score/comment/aiReport）
+      operationId: updateGrade
+      parameters:
+        - $ref: '#/components/parameters/GradeId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateGradeRequest'
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultGrade'
+        '403':
+          description: 无权操作他人班级
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultVoid'
+
+  /students/{studentId}/assignments:
+    get:
+      tags: [提交与批改]
+      summary: 学生作业汇总（我的得分/总分/提交时间）
+      description: 学生查本人；教师可查他人。
+      operationId: studentAssignments
+      parameters:
+        - name: studentId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultStudentAssignmentList'
+        '403':
+          description: 无权查看他人作业
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultVoid'
+
+  /questions:
+    post:
+      tags: [题库]
+      summary: 创建题目
+      operationId: createQuestion
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateQuestionRequest'
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultQuestion'
+    get:
+      tags: [题库]
+      summary: 题目筛选（chapter/topic/type/difficulty）
+      operationId: listQuestions
+      parameters:
+        - name: chapter
+          in: query
+          schema:
+            type: string
+        - name: topic
+          in: query
+          schema:
+            type: string
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [choice, blank, code]
+        - name: difficulty
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultQuestionList'
+
+  /questions/{id}:
+    get:
+      tags: [题库]
+      summary: 题目详情
+      operationId: getQuestion
+      parameters:
+        - $ref: '#/components/parameters/QuestionId'
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultQuestion'
+    put:
+      tags: [题库]
+      summary: 更新题目
+      operationId: updateQuestion
+      parameters:
+        - $ref: '#/components/parameters/QuestionId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateQuestionRequest'
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultQuestion'
+    delete:
+      tags: [题库]
+      summary: 删除题目
+      operationId: deleteQuestion
+      parameters:
+        - $ref: '#/components/parameters/QuestionId'
+      responses:
+        '200':
+          description: 成功
+
+  /questions/generate:
+    post:
+      tags: [题库]
+      summary: AI 出题草稿（不落库，教师确认后走 POST /questions）
+      operationId: generateQuestions
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QuestionGenerateRequest'
+      responses:
+        '200':
+          description: 成功（候选题目列表）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultQuestionList'
+
+  /ai/ask:
+    post:
+      tags: [AI助教]
+      summary: 教师向 AI 助教提问
+      operationId: aiAsk
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AiAskRequest'
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultAiChat'
+
+  /ai/explain-grade:
+    post:
+      tags: [AI助教]
+      summary: AI 解读某学生某作业的成绩报告
+      operationId: aiExplainGrade
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AiExplainGradeRequest'
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultAiChat'
+
+components:
+  parameters:
+    ClassId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+      description: 班级 id
+    AssignmentId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+      description: 作业 id
+    QuestionId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+      description: 题目 id
+    GradeId:
+      name: gradeId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+      description: 成绩 id
+
+  schemas:
+    Result:
+      type: object
+      properties:
+        code:
+          type: integer
+          description: 0=成功
+        message:
+          type: string
+        data:
+          nullable: true
+    ResultVoid:
+      allOf:
+        - $ref: '#/components/schemas/Result'
+    ResultClass:
+      allOf:
+        - $ref: '#/components/schemas/Result'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/ClassVO'
+    ResultClassList:
+      allOf:
+        - $ref: '#/components/schemas/Result'
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/ClassVO'
+    ResultClassStudentList:
+      allOf:
+        - $ref: '#/components/schemas/Result'
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/ClassStudentVO'
+    ResultClassAnalytics:
+      allOf:
+        - $ref: '#/components/schemas/Result'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/ClassAnalyticsVO'
+    ResultClassOverview:
+      allOf:
+        - $ref: '#/components/schemas/Result'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/ClassOverviewVO'
+    ResultAssignment:
+      allOf:
+        - $ref: '#/components/schemas/Result'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/AssignmentVO'
+    ResultAssignmentList:
+      allOf:
+        - $ref: '#/components/schemas/Result'
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/AssignmentVO'
+    ResultAssignmentDetail:
+      allOf:
+        - $ref: '#/components/schemas/Result'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/AssignmentDetailVO'
+    ResultGrade:
+      allOf:
+        - $ref: '#/components/schemas/Result'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/GradeVO'
+    ResultGradeList:
+      allOf:
+        - $ref: '#/components/schemas/Result'
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/GradeVO'
+    ResultGradeDetail:
+      allOf:
+        - $ref: '#/components/schemas/Result'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/GradeDetailVO'
+    ResultStudentAssignmentList:
+      allOf:
+        - $ref: '#/components/schemas/Result'
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/StudentAssignmentVO'
+    ResultQuestion:
+      allOf:
+        - $ref: '#/components/schemas/Result'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/QuestionVO'
+    ResultQuestionList:
+      allOf:
+        - $ref: '#/components/schemas/Result'
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/QuestionVO'
+    ResultAiChat:
+      allOf:
+        - $ref: '#/components/schemas/Result'
+        - type: object
+          properties:
+            data:
+              type: object
+              additionalProperties: true
+              description: AI 返回（answer/intent/references 等）
+
+    ClassUpsertRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          maxLength: 64
+        course:
+          type: string
+          maxLength: 64
+        semester:
+          type: string
+          maxLength: 32
+
+    AddStudentRequest:
+      type: object
+      required: [studentId]
+      properties:
+        studentId:
+          type: integer
+          format: int64
+
+    ClassVO:
+      type: object
+      properties:
+        id: { type: integer, format: int64 }
+        name: { type: string }
+        teacherId: { type: integer, format: int64 }
+        course: { type: string }
+        semester: { type: string }
+        status: { type: integer, description: 1=启用 0=归档 }
+        createTime: { type: string, format: date-time }
+        studentCount: { type: integer }
+
+    ClassStudentVO:
+      type: object
+      properties:
+        studentId: { type: integer, format: int64 }
+        studentName: { type: string }
+        joinedAt: { type: string, format: date-time }
+
+    CreateAssignmentRequest:
+      type: object
+      required: [classId, title, type, items]
+      properties:
+        classId: { type: integer, format: int64 }
+        title: { type: string, maxLength: 128 }
+        type: { type: string, description: homework / code }
+        deadline: { type: string, format: date-time }
+        description: { type: string }
+        items:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/AssignmentItemReq'
+
+    AssignmentItemReq:
+      type: object
+      required: [questionId]
+      properties:
+        questionId: { type: integer, format: int64 }
+        score: { type: integer, default: 10 }
+
+    UpdateAssignmentRequest:
+      type: object
+      properties:
+        title: { type: string, maxLength: 128 }
+        deadline: { type: string, format: date-time }
+        status: { type: string }
+
+    AssignmentVO:
+      type: object
+      properties:
+        id: { type: integer, format: int64 }
+        classId: { type: integer, format: int64 }
+        title: { type: string }
+        type: { type: string }
+        deadline: { type: string, format: date-time, nullable: true }
+        status: { type: integer, description: 0=草稿 1=已发布 }
+        createTime: { type: string, format: date-time }
+        itemCount: { type: integer }
+        totalScore: { type: integer }
+
+    AssignmentDetailVO:
+      type: object
+      properties:
+        id: { type: integer, format: int64 }
+        classId: { type: integer, format: int64 }
+        title: { type: string }
+        type: { type: string }
+        description: { type: string }
+        deadline: { type: string, format: date-time, nullable: true }
+        status: { type: integer }
+        createTime: { type: string, format: date-time }
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              itemId: { type: integer, format: int64 }
+              questionId: { type: integer, format: int64 }
+              score: { type: integer }
+              question: { $ref: '#/components/schemas/QuestionVO' }
+              submittedCount: { type: integer }
+              gradedCount: { type: integer }
+
+    SubmitAssignmentRequest:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            required: [itemId, submission]
+            properties:
+              itemId: { type: integer, format: int64 }
+              submission: { type: string }
+              language: { type: string, maxLength: 16, description: code 题语言，默认 java }
+
+    UpdateGradeRequest:
+      type: object
+      properties:
+        score: { type: integer }
+        comment: { type: string, maxLength: 2000 }
+        aiReportOverride: { type: string, description: 覆盖 AI 建议报告（JSON 字符串） }
+
+    GradeVO:
+      type: object
+      properties:
+        id: { type: integer, format: int64 }
+        assignmentId: { type: integer, format: int64 }
+        studentId: { type: integer, format: int64 }
+        itemId: { type: integer, format: int64 }
+        type: { type: string, description: choice / blank / code }
+        language: { type: string }
+        submissionId:
+          type: integer
+          format: int64
+          description: code 服务受理号；有值即可调重判分 POST /api/edu-agent-code/submissions/{id}/regrade
+        submission: { type: string }
+        score: { type: integer }
+        status: { type: integer, description: 0=待批 1=已批 }
+        gradedAt: { type: string, format: date-time, nullable: true }
+        hasAiReport: { type: boolean }
+
+    GradeDetailVO:
+      type: object
+      properties:
+        id: { type: integer, format: int64 }
+        assignmentId: { type: integer, format: int64 }
+        studentId: { type: integer, format: int64 }
+        itemId: { type: integer, format: int64 }
+        type: { type: string }
+        language: { type: string }
+        submissionId: { type: integer, format: int64, description: 教师重判分入口 }
+        submission: { type: string }
+        score: { type: integer }
+        status: { type: integer, description: 0=待批 1=已批 }
+        gradedAt: { type: string, format: date-time, nullable: true }
+        runResult: { type: string, description: JSON 字符串 }
+        staticReport: { type: string, description: JSON 字符串 }
+        aiReport: { type: string, description: JSON 字符串 }
+        comment: { type: string }
+
+    StudentAssignmentVO:
+      type: object
+      properties:
+        assignmentId: { type: integer, format: int64 }
+        classId: { type: integer, format: int64 }
+        title: { type: string }
+        type: { type: string }
+        deadline: { type: string, format: date-time, nullable: true }
+        status: { type: integer }
+        myScore: { type: integer }
+        totalScore: { type: integer }
+        submittedAt: { type: string, format: date-time, nullable: true }
+
+    CreateQuestionRequest:
+      type: object
+      required: [type, content]
+      properties:
+        type: { type: string, enum: [choice, blank, code] }
+        chapter: { type: string, maxLength: 64 }
+        topic: { type: string, maxLength: 64 }
+        content: { type: string }
+        options: { type: array, items: { type: string } }
+        answer: { type: string, description: 参考答案 }
+        explanation: { type: string }
+        difficulty: { type: string, default: medium }
+
+    QuestionGenerateRequest:
+      type: object
+      properties:
+        chapter: { type: string, maxLength: 64 }
+        topic: { type: string, maxLength: 64 }
+        type: { type: string, enum: [choice, blank, code] }
+        difficulty: { type: string, default: medium }
+        count: { type: integer, default: 5 }
+
+    QuestionVO:
+      type: object
+      properties:
+        id: { type: integer, format: int64 }
+        type: { type: string }
+        chapter: { type: string }
+        topic: { type: string }
+        content: { type: string }
+        options: { type: array, items: { type: string } }
+        answer: { type: string }
+        explanation: { type: string }
+        difficulty: { type: string }
+        creatorId: { type: integer, format: int64 }
+        createTime: { type: string, format: date-time }
+
+    ClassAnalyticsVO:
+      type: object
+      properties:
+        classId: { type: integer, format: int64 }
+        className: { type: string }
+        studentCount: { type: integer }
+        avgMastery: { type: number, format: double }
+        avgPathProgress: { type: number, format: double }
+        avgStudySec: { type: number, format: double }
+        masteryDist:
+          type: array
+          items:
+            type: object
+            properties:
+              level: { type: string }
+              count: { type: integer }
+        dimensionAvg:
+          type: object
+          additionalProperties: { type: number, format: double }
+        taskCompletion:
+          type: array
+          items:
+            type: object
+            properties:
+              studentId: { type: integer, format: int64 }
+              name: { type: string }
+              progress: { type: integer }
+              lastScore: { type: integer, nullable: true }
+        weakTopics:
+          type: array
+          items:
+            type: object
+            properties:
+              topic: { type: string }
+              count: { type: integer }
+        trend:
+          type: array
+          items:
+            type: object
+            properties:
+              day: { type: string }
+              activeStudents: { type: integer }
+
+    ClassOverviewVO:
+      type: object
+      properties:
+        classId: { type: integer, format: int64 }
+        className: { type: string }
+        studentCount: { type: integer }
+        avgMastery: { type: number, format: double }
+        completionRate: { type: number, format: double }
+        activeStudents: { type: integer }
+
+    AiAskRequest:
+      type: object
+      required: [message]
+      properties:
+        message: { type: string }
+        classId: { type: integer, format: int64 }
+        context: { type: object, additionalProperties: true }
+
+    AiExplainGradeRequest:
+      type: object
+      required: [studentId, assignmentId]
+      properties:
+        studentId: { type: integer, format: int64 }
+        assignmentId: { type: integer, format: int64 }
