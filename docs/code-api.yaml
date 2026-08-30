@@ -5,8 +5,9 @@ info:
     独立微服务 edu-agent-code（端口 8085，code_db）。提供代码判分受理口：
     编译 → 静态检查 → Docker 沙箱运行 → AI 纠错 → 判分全链路。
     判分为异步两段式（契约 C1）：POST /submit 返回 202 受理回执，结果经 GET /result/{id} 查询。
+    教师可对已出终态的提交触发重新判分（POST /submissions/{id}/regrade）。
     经网关完整路径前缀：/api/edu-agent-code。
-  version: 1.0.0
+  version: 1.1.0
 
 servers:
   - url: http://<网关>:8080/api/edu-agent-code
@@ -71,6 +72,49 @@ paths:
                 $ref: '#/components/schemas/ResultCodeSubmitResult'
         '404':
           description: submissionId 不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultVoid'
+
+  /submissions/{id}/regrade:
+    post:
+      tags: [判分受理]
+      summary: 教师重新判分（202 异步）
+      description: |
+        学生首次判分失败（超时/编译失败/判分失败）或结果有争议时，教师对已出终态的提交触发再判分：
+        重置状态与旧运行痕迹、删除旧报告行，Worker 全量重跑流水线并发新 assignment.graded 事件回填成绩。
+      operationId: regrade
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+            example: 1024
+          description: submissionId
+      responses:
+        '202':
+          description: 已受理（重新判分进行中）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultCodeSubmitReceipt'
+        '403':
+          description: 非教师角色（仅 ROLE_TEACHER 可触发）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultVoid'
+        '404':
+          description: submissionId 不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultVoid'
+        '409':
+          description: 首判进行中（PENDING/RUNNING），勿重复触发
           content:
             application/json:
               schema:

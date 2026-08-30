@@ -30,7 +30,7 @@
 ```
 
 - 成功：`code=0`；业务失败：`code` 非 0；校验失败 `code=400`；未捕获 `code=500`。
-- `GET /submit` 使用 HTTP 状态码 **202 Accepted** 表达"已受理异步判分"。
+- `POST /submit`、`POST /submissions/{id}/regrade` 使用 HTTP 状态码 **202 Accepted** 表达"已受理异步判分"。
 
 ### 1.4 数据模型要点
 
@@ -125,6 +125,28 @@
 
 > 内部 `scoreDetail` 权重明细不对前端暴露。
 
+### 2.3 `POST /api/edu-agent-code/submissions/{id}/regrade` — 教师重新判分（202 异步）
+
+学生首次自动判分失败（TIMEOUT / COMPILE_ERROR / FAILED）或结果有争议时，教师可对**已出终态**的提交触发再判分：系统重置状态与旧运行痕迹、删除旧报告行，随后 Worker 全量重跑流水线（编译 → 检查 → 沙箱 → AI → 判分），并发新 `assignment.graded` 事件回填 teacher 成绩（同作业同行更新，不产生新 Grade）。
+
+**路径参数**：`id`=submissionId。
+
+**成功响应（HTTP 202）**
+
+```json
+{ "code": 0, "message": "success", "data": { "submissionId": 1024, "status": 0 } }
+```
+
+**错误**
+
+| HTTP | code | 场景 |
+|---|---|---|
+| 403 | 403 | 非 `ROLE_TEACHER`（code 服务无班级归属数据，仅做角色门禁；作业归属校验由 teacher 侧消费事件时兜底） |
+| 404 | 404 | `submissionId` 不存在 |
+| 409 | 409 | 提交处于 `PENDING(0)` / `RUNNING(1)`，首判未完成，重复触发会并发双判 |
+
+> 再判分同样异步：回执仅表示"已受理重判"，结果仍走 `GET /result/{id}` 或事件推送。
+
 ---
 
 ## 3. 基础练习骨架
@@ -142,8 +164,8 @@
 
 ---
 
-## 4. 后续规划（Worker，未实现）
+## 4. 后续规划
 
 - `POST /run`：免作业快速运行（不调 AI、不写 report）。
 - `GET /submissions`：分页查提交。
-- 判分 Worker：编译 → Checkstyle/PMD → Docker 沙箱 → AI 纠错 → 综合判分 → 发 `assignment.graded` 事件。
+- ~~判分 Worker~~：**已实现**（feat/code）：编译 → Checkstyle/PMD → 本地/Docker 沙箱 → AI 纠错（fail-open）→ 综合判分 → 发 `assignment.graded` 事件；教师重判入口见 2.3。
