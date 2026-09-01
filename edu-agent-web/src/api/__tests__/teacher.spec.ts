@@ -529,6 +529,7 @@ describe('教师端班级接口契约', () => {
         itemId: 401,
         type: 'code',
         language: 'java',
+        submissionId: 1024,
         submission: 'class Main {}',
         score: 80,
         status: 1,
@@ -541,11 +542,12 @@ describe('教师端班级接口契约', () => {
       }
     })
 
-    await getTeacherGrade(301)
+    const result = await getTeacherGrade(301)
 
     expect(mock.history.get[0]?.url).toBe(
       gradePath
     )
+    expect(result.submissionId).toBe(1024)
   })
 
   it('应使用正式请求体复核成绩', async () => {

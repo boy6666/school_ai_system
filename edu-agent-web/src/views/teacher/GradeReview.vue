@@ -293,6 +293,19 @@
 
             <div class="review-actions">
               <el-button
+                v-if="gradeDetail.type === 'code'"
+                type="warning"
+                :disabled="
+                  gradeDetail.submissionId == null ||
+                  gradeDetail.status !== 1
+                "
+                :loading="regradeSubmitting"
+                @click="submitRegrade"
+              >
+                重新判分
+              </el-button>
+
+              <el-button
                 type="primary"
                 :loading="reviewSubmitting"
                 @click="submitReview"
@@ -318,7 +331,8 @@ import type {
   FormRules
 } from 'element-plus'
 import {
-  ElMessage
+  ElMessage,
+  ElMessageBox
 } from 'element-plus'
 import {
   getAssignmentGrades,
@@ -326,6 +340,9 @@ import {
   getTeacherGrade,
   updateTeacherGrade
 } from '@/api/teacher'
+import {
+  regradeCodeSubmission
+} from '@/api/code'
 import type {
   TeacherAssignment,
   TeacherGrade,
@@ -345,6 +362,7 @@ const detailLoading = ref(false)
 const detailError = ref(false)
 const reviewVisible = ref(false)
 const reviewSubmitting = ref(false)
+const regradeSubmitting = ref(false)
 
 const selectedAssignmentId = ref<number>()
 const studentIdFilter = ref<number>()
@@ -485,6 +503,47 @@ async function submitReview() {
     // 请求失败时不修改本地成绩或显示伪成功
   } finally {
     reviewSubmitting.value = false
+  }
+}
+
+async function submitRegrade() {
+  const detail = gradeDetail.value
+
+  if (
+    !detail ||
+    detail.type !== 'code' ||
+    detail.submissionId == null
+  ) {
+    ElMessage.warning('当前成绩没有可用的代码提交编号')
+    return
+  }
+
+  try {
+    await ElMessageBox.confirm(
+      '确定要重新运行该学生的代码判分吗？',
+      '重新判分确认',
+      {
+        confirmButtonText: '确认重新判分',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    )
+  } catch {
+    return
+  }
+
+  regradeSubmitting.value = true
+
+  try {
+    await regradeCodeSubmission(detail.submissionId)
+    ElMessage.success(
+      '重新判分请求已提交，请稍后刷新查看结果'
+    )
+    await loadGrades()
+  } catch {
+    // 公共请求层统一显示正式接口返回的错误
+  } finally {
+    regradeSubmitting.value = false
   }
 }
 

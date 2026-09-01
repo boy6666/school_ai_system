@@ -351,6 +351,7 @@ export interface TeacherGrade {
   itemId: number
   type: string
   language: string | null
+  submissionId?: number | null
   submission: string
   score: number
   status: 0 | 1
