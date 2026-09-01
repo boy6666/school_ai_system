@@ -8,7 +8,8 @@ import {
 import request from '@/utils/request'
 import {
   getMe,
-  login
+  login,
+  logout
 } from '@/api/auth'
 
 describe('认证服务接口契约', () => {
@@ -66,5 +67,20 @@ describe('认证服务接口契约', () => {
     expect(mock.history.get).toHaveLength(1)
     expect(mock.history.get[0]?.url).toBe(path)
     expect(result.roles).toEqual(['ROLE_ADMIN'])
+  })
+    it('应按正式路径退出登录', async () => {
+    const path = '/edu-agent-auth/logout'
+
+    mock.onPost(path).reply(200, {
+      code: 0,
+      message: 'success',
+      data: null
+    })
+
+    await logout()
+
+    expect(mock.history.post).toHaveLength(1)
+    expect(mock.history.post[0]?.url).toBe(path)
+    expect(mock.history.post[0]?.data).toBeUndefined()
   })
 })

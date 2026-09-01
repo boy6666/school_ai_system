@@ -79,17 +79,27 @@
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { ElMessage } from 'element-plus'
+import { logout as logoutRequest } from '@/api/auth'
 
 const router = useRouter()
 const userStore = useUserStore()
 
-const handleCommand = (command: string) => {
-  if (command === 'logout') {
-    userStore.logout()
-    router.push('/admin/login')
-    ElMessage.success('已退出登录')
+const handleCommand = async (command: string) => {
+  if (command !== 'logout') {
+    return
   }
+
+  try {
+    await logoutRequest()
+  } catch {
+    // 服务端退出失败时仍清理本地登录状态
+  }
+
+  userStore.logout()
+  await router.push('/admin/login')
+  ElMessage.success('已退出登录')
 }
+
 </script>
 
 <style scoped>
