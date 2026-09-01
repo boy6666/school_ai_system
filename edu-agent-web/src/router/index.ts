@@ -175,7 +175,7 @@ const routes: RouteRecordRaw[] = [
     ]
   },
 
-  // 管理端
+    // 管理端
   {
     path: '/admin',
     name: 'AdminLayout',
@@ -184,30 +184,61 @@ const routes: RouteRecordRaw[] = [
     children: [
       {
         path: 'dashboard',
-        component: () => import('@/views/admin/Dashboard.vue')
+        name: 'AdminDashboard',
+        component: () =>
+          import('@/views/admin/Dashboard.vue')
       },
       {
         path: 'users',
-        component: () => import('@/views/admin/UserManage.vue')
+        name: 'AdminUsers',
+        component: () =>
+          import('@/views/admin/UserManage.vue')
+      },
+      {
+        path: 'ai-govern',
+        name: 'AdminAiGovern',
+        component: () =>
+          import('@/views/admin/govern/AiAgent.vue')
       },
       {
         path: 'resources',
-        component: () => import('@/views/admin/ResourceManage.vue')
+        name: 'AdminResources',
+        component: () =>
+          import('@/views/admin/ResourceManage.vue')
       },
       {
         path: 'reviews',
-        component: () => import('@/views/admin/ContentReview.vue')
+        name: 'AdminReviews',
+        component: () =>
+          import('@/views/admin/ContentReview.vue')
       },
       {
         path: 'statistics',
-        component: () => import('@/views/admin/Statistics.vue')
+        name: 'AdminStatistics',
+        component: () =>
+          import('@/views/admin/Statistics.vue')
+      },
+      {
+        path: 'monitor',
+        name: 'AdminMonitor',
+        component: () =>
+          import('@/views/admin/govern/Monitor.vue')
+      },
+      {
+        path: 'audit',
+        name: 'AdminAudit',
+        component: () =>
+          import('@/views/admin/govern/Audit.vue')
       },
       {
         path: 'settings',
-        component: () => import('@/views/admin/Settings.vue')
+        name: 'AdminSettings',
+        component: () =>
+          import('@/views/admin/Settings.vue')
       }
     ]
   },
+
 
   // 默认入口
   {

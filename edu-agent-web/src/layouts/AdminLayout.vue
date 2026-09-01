@@ -2,42 +2,65 @@
   <el-container class="layout-container">
     <el-aside width="220px" class="aside">
       <div class="logo">EduAgent 管理后台</div>
-      <el-menu
-          router
-          :default-active="$route.path"
-        >
-          <el-menu-item index="/admin/dashboard">
-            <el-icon><DataAnalysis /></el-icon>
-            <span>控制台</span>
-          </el-menu-item>
-          <el-menu-item index="/admin/users">
-            <el-icon><User /></el-icon>
-            <span>用户管理</span>
-          </el-menu-item>
-          <el-menu-item index="/admin/resources">
-            <el-icon><FolderOpened /></el-icon>
-            <span>资源管理</span>
-          </el-menu-item>
-          <el-menu-item index="/admin/reviews">
-            <el-icon><DocumentChecked /></el-icon>
-            <span>内容审核</span>
-          </el-menu-item>
-          <el-menu-item index="/admin/statistics">
-            <el-icon><TrendCharts /></el-icon>
-            <span>数据统计</span>
-          </el-menu-item>
+            <el-menu
+        router
+        :default-active="$route.path"
+      >
+        <el-menu-item index="/admin/dashboard">
+          <el-icon><DataAnalysis /></el-icon>
+          <span>控制台</span>
+        </el-menu-item>
 
-          <el-menu-item index="/admin/settings">
-            <el-icon><Setting /></el-icon>
-            <span>系统设置</span>
-          </el-menu-item>
-        </el-menu>
+        <el-menu-item index="/admin/users">
+          <el-icon><User /></el-icon>
+          <span>用户管理</span>
+        </el-menu-item>
+
+        <el-menu-item index="/admin/ai-govern">
+          <el-icon><MagicStick /></el-icon>
+          <span>AI 治理</span>
+        </el-menu-item>
+
+        <el-menu-item index="/admin/resources">
+          <el-icon><FolderOpened /></el-icon>
+          <span>资源管理</span>
+        </el-menu-item>
+
+        <el-menu-item index="/admin/reviews">
+          <el-icon><DocumentChecked /></el-icon>
+          <span>内容审核</span>
+        </el-menu-item>
+
+        <el-menu-item index="/admin/statistics">
+          <el-icon><TrendCharts /></el-icon>
+          <span>数据统计</span>
+        </el-menu-item>
+
+        <el-menu-item index="/admin/monitor">
+          <el-icon><Monitor /></el-icon>
+          <span>系统监控</span>
+        </el-menu-item>
+
+        <el-menu-item index="/admin/audit">
+          <el-icon><Tickets /></el-icon>
+          <span>审计日志</span>
+        </el-menu-item>
+
+        <el-menu-item index="/admin/settings">
+          <el-icon><Setting /></el-icon>
+          <span>系统设置</span>
+        </el-menu-item>
+      </el-menu>
     </el-aside>
     <el-container>
       <el-header class="header">
         <el-dropdown @command="handleCommand">
           <div class="user-dropdown-trigger">
-            <span class="user-name">{{ userStore.userInfo?.name || '管理员' }}</span>
+            <span class="user-name">{{
+                userStore.userInfo?.realName ||
+                userStore.userInfo?.name ||
+                '管理员'
+              }}</span>
             <el-icon class="el-icon--right"><ArrowDown /></el-icon>
           </div>
           <template #dropdown>

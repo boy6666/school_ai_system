@@ -114,7 +114,7 @@ describe('Router authentication and role control', () => {
     expect(studentResult).toBe('/teacher/dashboard')
     expect(adminResult).toBe('/teacher/dashboard')
   })
-    it('registers student code practice route', () => {
+  it('registers student code practice route', () => {
     const codePracticeRoute = router
       .getRoutes()
       .find(
@@ -127,6 +127,25 @@ describe('Router authentication and role control', () => {
     )
   })
 
+  it('preserves core student routes', () => {
+    const routePaths = router
+      .getRoutes()
+      .map(route => route.path)
+
+    expect(routePaths).toEqual(
+      expect.arrayContaining([
+        '/student/dashboard',
+        '/student/courses',
+        '/student/resources',
+        '/student/path',
+        '/student/report',
+        '/student/tasks',
+        '/student/practice',
+        '/student/projects',
+        '/student/messages'
+      ])
+    )
+  })
     it('registers all teacher routes', () => {
     const routeNames = router
       .getRoutes()
@@ -142,6 +161,25 @@ describe('Router authentication and role control', () => {
         'TeacherAnalytics',
         'TeacherAiTutor',
         'TeacherResources'
+      ])
+    )
+  })
+    it('registers all admin routes', () => {
+    const routeNames = router
+      .getRoutes()
+      .map(route => route.name)
+
+    expect(routeNames).toEqual(
+      expect.arrayContaining([
+        'AdminDashboard',
+        'AdminUsers',
+        'AdminAiGovern',
+        'AdminResources',
+        'AdminReviews',
+        'AdminStatistics',
+        'AdminMonitor',
+        'AdminAudit',
+        'AdminSettings'
       ])
     )
   })
