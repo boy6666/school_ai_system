@@ -39,7 +39,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ClassUpsertRequest'
+              $ref: '#/components/schemas/CreateClassRequest'
       responses:
         '200':
           description: 成功
@@ -90,7 +90,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ClassUpsertRequest'
+              $ref: '#/components/schemas/UpdateClassRequest'
       responses:
         '200':
           description: 成功
@@ -356,7 +356,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/ResultGradeList'
         '403':
-          description: 需要教师权限
+          description: 需要教师权限，或非本人班级的作业
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultVoid'
+        '404':
+          description: 作业不存在
           content:
             application/json:
               schema:
@@ -540,17 +546,26 @@ paths:
               $ref: '#/components/schemas/QuestionGenerateRequest'
       responses:
         '200':
-          description: 成功（候选题目列表）
+          description: 成功（候选题目列表；草稿 id/creatorId/createTime 为 null；AI 解析异常时可能返回空数组）
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ResultQuestionList'
+        '500':
+          description: AI 出题服务暂不可用
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultVoid'
 
   /ai/ask:
     post:
       tags: [AI助教]
       summary: 教师向 AI 助教提问
       operationId: aiAsk
+      description: >
+        经 ai 服务 /chat 透传；返回 {answer, intent, references}。
+        ⚠ 当前无角色校验；且降级分支存在 NPE 缺陷——AI 服务异常时实际返回 500 而非友好提示（待修）。
       requestBody:
         required: true
         content:
@@ -559,17 +574,27 @@ paths:
               $ref: '#/components/schemas/AiAskRequest'
       responses:
         '200':
-          description: 成功
+          description: 成功（answer/intent/references）
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ResultAiChat'
+        '500':
+          description: AI 服务不可用（当前降级缺陷）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultVoid'
 
   /ai/explain-grade:
     post:
       tags: [AI助教]
       summary: AI 解读某学生某作业的成绩报告
       operationId: aiExplainGrade
+      description: >
+        teacher 以 mode=evaluation 调 ai /resource/generate（extra 携带 studentId/assignmentId），
+        返回 AI 分析结果 Map（含 analysis 等）。AI 服务不可用时 500。
+        ⚠ 当前无角色/属主校验——任何登录用户可解读任意学生数据（待修）。
       requestBody:
         required: true
         content:
@@ -583,6 +608,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ResultAiChat'
+        '500':
+          description: AI 解读服务不可用
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultVoid'
 
 components:
   parameters:
@@ -753,9 +784,23 @@ components:
               additionalProperties: true
               description: AI 返回（answer/intent/references 等）
 
-    ClassUpsertRequest:
+    CreateClassRequest:
       type: object
       required: [name]
+      properties:
+        name:
+          type: string
+          maxLength: 64
+        course:
+          type: string
+          maxLength: 64
+        semester:
+          type: string
+          maxLength: 32
+
+    UpdateClassRequest:
+      type: object
+      description: 部分更新，仅覆盖非空字段（name/course/semester 均可选）
       properties:
         name:
           type: string
@@ -956,49 +1001,57 @@ components:
 
     QuestionVO:
       type: object
+      description: AI 出题草稿（POST /questions/generate）中 id/creatorId/createTime 均为 null，answer/explanation 可能为 null；落库后（POST /questions）全字段有值
       properties:
-        id: { type: integer, format: int64 }
+        id: { type: integer, format: int64, nullable: true }
         type: { type: string }
         chapter: { type: string }
         topic: { type: string }
         content: { type: string }
         options: { type: array, items: { type: string } }
-        answer: { type: string }
-        explanation: { type: string }
+        answer: { type: string, nullable: true }
+        explanation: { type: string, nullable: true }
         difficulty: { type: string }
-        creatorId: { type: integer, format: int64 }
-        createTime: { type: string, format: date-time }
+        creatorId: { type: integer, format: int64, nullable: true }
+        createTime: { type: string, format: date-time, nullable: true }
 
     ClassAnalyticsVO:
       type: object
+      description: >
+        学情聚合（消费 learning /analytics/student/{id}/progress + study.progress 缓存）。
+        avgMastery/avgPathProgress/avgStudySec 均为 0-100 标度（保留 1 位小数，无数据为 0）。
       properties:
         classId: { type: integer, format: int64 }
         className: { type: string }
         studentCount: { type: integer }
-        avgMastery: { type: number, format: double }
-        avgPathProgress: { type: number, format: double }
-        avgStudySec: { type: number, format: double }
+        avgMastery: { type: number, format: double, description: 知识掌握均值 0-100 }
+        avgPathProgress: { type: number, format: double, description: 学习路径进度均值 0-100 }
+        avgStudySec: { type: number, format: double, description: 学习时长均值（秒） }
         masteryDist:
           type: array
+          description: 掌握度分布，恒返回 level_1/level_2/level_3 三档（<60 / 60-84 / ≥85）
           items:
             type: object
             properties:
-              level: { type: string }
+              level: { type: string, enum: [level_1, level_2, level_3] }
               count: { type: integer }
         dimensionAvg:
           type: object
+          description: 维度均值；当前仅 knowledge_mastery 一维（0-100）
           additionalProperties: { type: number, format: double }
         taskCompletion:
           type: array
+          description: 学生任务完成度；⚠ name 当前恒为空串（未接 user 服务）
           items:
             type: object
             properties:
               studentId: { type: integer, format: int64 }
-              name: { type: string }
-              progress: { type: integer }
+              name: { type: string, description: 恒为 "" }
+              progress: { type: integer, description: pathProgress，null 记 0 }
               lastScore: { type: integer, nullable: true }
         weakTopics:
           type: array
+          description: 薄弱知识点（各生 weakTopics 合并计数，按 count 降序）
           items:
             type: object
             properties:
@@ -1006,21 +1059,18 @@ components:
               count: { type: integer }
         trend:
           type: array
-          items:
-            type: object
-            properties:
-              day: { type: string }
-              activeStudents: { type: integer }
+          description: ⚠ 当前恒为空数组（按日活跃未实现）
 
     ClassOverviewVO:
       type: object
+      description: 班级概览卡片
       properties:
         classId: { type: integer, format: int64 }
         className: { type: string }
-        studentCount: { type: integer }
-        avgMastery: { type: number, format: double }
-        completionRate: { type: number, format: double }
-        activeStudents: { type: integer }
+        studentCount: { type: integer, description: 花名册人数 }
+        avgMastery: { type: number, format: double, description: 0-100 }
+        completionRate: { type: number, format: double, description: avgPathProgress/100，0-1 标度 }
+        activeStudents: { type: integer, description: ⚠ 当前恒等于 studentCount（活跃判定未生效） }
 
     AiAskRequest:
       type: object

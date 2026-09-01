@@ -54,9 +54,9 @@
 | GET | `/classes/{id}` | 班级详情 |
 | PUT | `/classes/{id}` | 更新班级 |
 | DELETE | `/classes/{id}` | 删除班级 |
-| POST | `/classes/{id}/students` | 添加学生（体：`{studentId}`） |
+| POST | `/classes/{id}/students` | 添加学生（体：`{studentId}`；已在班 `409`）；best-effort 回写 learning 侧 class_id |
 | DELETE | `/classes/{id}/students/{studentId}` | 移除学生 |
-| GET | `/classes/{id}/students` | 花名册（studentId/studentName/joinedAt） |
+| GET | `/classes/{id}/students` | 花名册；⚠ `studentName` 当前恒为 `null`（未接 user 服务），前端请自行按 studentId 换取姓名 |
 
 **创建/更新请求体**
 
@@ -79,13 +79,13 @@
 
 | 方法 | 路径 | 说明 |
 |---|---|---|
-| POST | `/assignments` | 创建作业（草稿，status=0） |
-| GET | `/assignments?classId=` | 作业列表（可按班级过滤） |
-| GET | `/assignments/{id}` | 作业详情（含题目项 + 题目 + 提交/批改计数） |
-| PUT | `/assignments/{id}` | 更新（title/deadline/status） |
-| DELETE | `/assignments/{id}` | 删除 |
-| POST | `/assignments/{id}/items` | 追加题目项 |
-| POST | `/assignments/{id}/publish` | **发布**（status→1，发 `assignment.published` 事件） |
+| POST | `/assignments` | 创建作业（草稿，status=0；需为本人班级） |
+| GET | `/assignments?classId=` | **仅本人创建**的作业列表（可按班级过滤） |
+| GET | `/assignments/{id}` | 作业详情（含题目项 + 题目 + 提交/批改计数；属主校验） |
+| PUT | `/assignments/{id}` | 更新（title/deadline/status 部分可选）。⚠ status 直改不发 `assignment.published` 事件，发布请走 `/publish` |
+| DELETE | `/assignments/{id}` | 删除（连题目项，不动 grades） |
+| POST | `/assignments/{id}/items` | 追加题目项（已发布作业亦可追加，注意学生已可见） |
+| POST | `/assignments/{id}/publish` | **发布**（status→1，发 `assignment.published` 事件，payload：assignmentId/classId/title/type/deadline） |
 
 **创建请求体**
 
@@ -134,7 +134,8 @@
 ```
 
 - `type`/`content` 必填；`chapter`/`topic` ≤64 字符；`difficulty` 默认 `medium`。
-- **AI 出题**请求体：`{chapter, topic, type, difficulty=medium, count=5}`；返回 `QuestionVO[]` 草稿（`answer`/`explanation` 为 AI 生成，教师确认后走 POST `/questions` 落库）。
+- **AI 出题**请求体：`{chapter, topic, type, difficulty=medium, count=5}`；返回 `QuestionVO[]` 草稿（`id`/`creatorId`/`createTime` 为 **null**，`answer`/`explanation` 为 AI 生成且可能为 null；教师确认后走 POST `/questions` 落库）。
+- AI 服务不可用时返回 `500`（"AI 出题服务暂不可用"）；AI 返回内容解析失败时返回空数组（不报错）。
 
 ---
 
@@ -154,7 +155,8 @@
 ```
 
 - `items` 必填非空；`items[].itemId`/`submission` 必填，`language` ≤16（code 题建议带，默认 java）。
-- code 题：teacher 经 Feign 向 code 服务 `/submit` 受理，**回执中的 `submissionId` 随成绩落库**（受理失败不阻断提交，成绩仍落库待批）。
+- code 题：teacher 经 Feign 向 code 服务 `/submit` 受理，**回执中的 `submissionId` 随成绩落库**（受理失败不阻断提交，成绩仍落库待批）；**重复提交**会受理新 submission，`submission_id` 被最新一次覆盖（重判分针对最新一次）。
+- ⚠ 当前**无截止时间校验**：deadline 已过仍可提交（待补）。
 - 返回 `GradeVO[]`（每题一条）。
 
 ### 5.2 `GET /api/edu-agent-teacher/assignments/{id}/grades?studentId=` — 成绩列表（教师复核）
@@ -201,11 +203,12 @@
 ```
 
 - 三字段均可选，仅传需要覆盖的项；覆盖后 `status=1`、`gradedAt` 刷新。
-- `comment` ≤2000 字符。非本人班级 `403`。
+- `comment` ≤2000 字符。非本人班级 `403`。⚠ `score` 无范围校验（可传负数/超题分，前端自控）。
 
 ### 5.5 `GET /api/edu-agent-teacher/students/{studentId}/assignments` — 学生作业汇总
 
-学生查自己（或教师查他人）：按班级过滤出的作业列表 + 我的得分/总分/最新提交时间（`StudentAssignmentVO[]`）。
+学生查自己（或教师查他人）：按班级过滤出的作业列表 + 我的得分/总分（`StudentAssignmentVO[]`）。
+注意 `submittedAt` 取的是**最近一次判分/回填时间**（grades.gradedAt 的最大值），并非提交动作时刻；一题都未判时为 `null`。
 
 ### 5.6 判分回填（内部，非接口）
 
@@ -222,21 +225,35 @@ code 服务判分完成后发 `assignment.graded` 事件（RabbitMQ），teacher
 | GET | `/classes/{id}/analytics` | 班级学情聚合（ECharts 直接消费） |
 | GET | `/classes/{id}/overview` | 班级概览卡片 |
 
-**analytics 响应 `ClassAnalyticsVO`（消费 study.progress 近实时）**
+**analytics 响应 `ClassAnalyticsVO`（learning 逐生拉取 + study.progress 缓存近实时覆盖）**
 
 ```json
 {
   "classId": 1, "className": "Java 提高班", "studentCount": 32,
-  "avgMastery": 0.72, "avgPathProgress": 0.65, "avgStudySec": 1840,
-  "masteryDist": [{ "level": "good", "count": 12 }],
-  "dimensionAvg": { "语法": 0.8, "循环": 0.6 },
-  "taskCompletion": [{ "studentId": 1001, "name": "张三", "progress": 80, "lastScore": 92 }],
+  "avgMastery": 72.5, "avgPathProgress": 65.0, "avgStudySec": 1840.0,
+  "masteryDist": [
+    { "level": "level_1", "count": 8 },
+    { "level": "level_2", "count": 12 },
+    { "level": "level_3", "count": 10 }
+  ],
+  "dimensionAvg": { "knowledge_mastery": 72.5 },
+  "taskCompletion": [{ "studentId": 1001, "name": "", "progress": 80, "lastScore": 92 }],
   "weakTopics": [{ "topic": "递归", "count": 7 }],
-  "trend": [{ "day": "2026-08-29", "activeStudents": 20 }]
+  "trend": []
 }
 ```
 
-`overview` 返回 `{classId, className, studentCount, avgMastery, completionRate, activeStudents}`。
+| 字段 | 实际语义 |
+|---|---|
+| `avgMastery` / `avgPathProgress` | **0-100 标度**（保留 1 位小数；全班无数据为 0） |
+| `masteryDist` | 恒三档：`level_1`(<60) / `level_2`(60-84) / `level_3`(≥85) |
+| `dimensionAvg` | 当前**仅 `knowledge_mastery` 一维** |
+| `taskCompletion[].name` | ⚠ 恒为空串（未接 user 服务），前端按 studentId 自行换取姓名 |
+| `taskCompletion[].progress` | pathProgress，null 记 0 |
+| `trend` | ⚠ 当前恒为空数组（按日活跃未实现） |
+
+`overview` 返回 `{classId, className, studentCount, avgMastery(0-100), completionRate(=avgPathProgress/100，0-1), activeStudents}`。
+⚠ `activeStudents` 当前恒等于 `studentCount`（只要 learning 返回了该生 VO 即计入，"活跃"判定未生效，待修）。
 
 ---
 
@@ -247,8 +264,10 @@ code 服务判分完成后发 `assignment.graded` 事件（RabbitMQ），teacher
 | POST | `/ai/ask` | 教师向 AI 助教提问 |
 | POST | `/ai/explain-grade` | AI 解读某学生某作业的成绩报告 |
 
-**ask 请求体**：`{message(必填), classId, context}`。
-**explain-grade 请求体**：`{studentId, assignmentId}`（均必填）——teacher 组装该生的成绩报告调 ai，返回 `{answer, ...}`。
+**ask 请求体**：`{message(必填), classId, context}`；teacher 透传调 ai `/chat`，返回 `{answer, intent, references}`。
+⚠ ask **不做降级**的部分失效：当前实现降级分支存在 NPE 缺陷——AI 服务异常时实际返回 `500` 而非友好提示（待修）。
+**explain-grade 请求体**：`{studentId, assignmentId}`（均必填）——teacher **只传两个 id**（`mode=evaluation`），由 ai 服务取数分析，返回 Map（含 `analysis` 等）；AI 服务不可用时 `500`。
+⚠ 两个接口**均无角色/属主校验**：任何登录用户可调用（可解读任意学生数据）——安全待修。
 
 ---
 
@@ -257,7 +276,10 @@ code 服务判分完成后发 `assignment.graded` 事件（RabbitMQ），teacher
 | 方向 | 通道 | 说明 |
 |---|---|---|
 | teacher → code | Feign `POST /api/edu-agent-code/submit` | code 题提交受理（202），回执 submissionId 落 grades |
-| code → teacher | MQ `assignment.graded` | 判分完成回填成绩（含 submission_id，幂等） |
+| code → teacher | MQ `assignment.graded` | 判分完成回填成绩（含 submission_id，幂等；重判分复用同一行） |
 | teacher → MQ | `assignment.published` | 作业发布事件（学习服务消费推学生） |
-| teacher → ai | HTTP | AI 出题草稿 / 助教问答 / 成绩解读 |
-| teacher → study | 数据聚合 | 学情看板消费 study.progress（近实时） |
+| teacher → ai | Feign `POST /chat` | AI 助教问答（ask） |
+| teacher → ai | Feign `POST /resource/generate` | AI 出题（mode=quiz）/ 成绩解读（mode=evaluation） |
+| teacher → learning | Feign `POST /profile/{id}/class` | 添加学生时 best-effort 绑定班级 |
+| teacher → learning | Feign `GET /analytics/student/{id}/progress` | 学情看板逐生拉取（Semaphore 限并发 8） |
+| learning → teacher | MQ `study.progress` | 消费到 `teacher.study.progress.queue` 入 DashboardCache，看板近实时覆盖 |
