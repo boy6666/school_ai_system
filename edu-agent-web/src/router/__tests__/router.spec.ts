@@ -114,6 +114,19 @@ describe('Router authentication and role control', () => {
     expect(studentResult).toBe('/teacher/dashboard')
     expect(adminResult).toBe('/teacher/dashboard')
   })
+    it('registers student code practice route', () => {
+    const codePracticeRoute = router
+      .getRoutes()
+      .find(
+        route =>
+          route.name === 'StudentCodePractice'
+      )
+
+    expect(codePracticeRoute?.path).toBe(
+      '/student/code-practice'
+    )
+  })
+
     it('registers all teacher routes', () => {
     const routeNames = router
       .getRoutes()

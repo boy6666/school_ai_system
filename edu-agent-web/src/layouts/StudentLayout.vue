@@ -25,6 +25,9 @@
         <el-menu-item index="/student/tutor">
           <el-icon><Service /></el-icon><span>智能辅导</span>
         </el-menu-item>
+                <el-menu-item index="/student/code-practice">
+          <el-icon><EditPen /></el-icon><span>代码练习</span>
+        </el-menu-item>
         <el-menu-item index="/student/profile">
           <el-icon><ChatDotRound /></el-icon><span>学习画像</span>
         </el-menu-item>
