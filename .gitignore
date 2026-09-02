@@ -36,6 +36,9 @@ other/
 # Temp workspace (临时文件，不提交到 git)
 tmp/
 
+# 本机私有 Maven 变通配置（绝不提交，见 docs/ISSUES_LOG.md 问题7）
+central-settings.xml
+
 # 个人素材 / 大体积文件（不入库，只保留项目相关文件）
 *.zip
 演示视频.mp4

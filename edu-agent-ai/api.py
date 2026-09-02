@@ -223,3 +223,21 @@ else:
             "resourceType": req.resourceType,
             "chapter": req.chapter,
         }
+
+    class CodeAnalyzeRequest(BaseModel):
+        language: str = "java"
+        sourceCode: str = ""
+        context: Optional[dict] = None
+
+    @app.post("/api/ai/code/analyze")
+    def code_analyze(req: CodeAnalyzeRequest):
+        """代码评审（内网，仅供 code-service Feign 调用；§1.3.4 / §2.4.5 / C4 camelCase）"""
+        from school_agent.services.code_review import analyze_code
+
+        _log(f"\n{'='*60}")
+        _log(f"[代码评审AI] ===== 收到 HTTP 请求 =====")
+        _log(f"[代码评审AI] language={req.language}, sourceCode 长度={len(req.sourceCode or '')}")
+        _log(f"[代码评审AI] context keys: {list(req.context.keys()) if req.context else 'none'}")
+        data = analyze_code(req.model_dump())
+        _log(f"[代码评审AI] ===== HTTP 请求结束 =====\n{'='*60}")
+        return {"code": 0, "message": "success", "data": data}
