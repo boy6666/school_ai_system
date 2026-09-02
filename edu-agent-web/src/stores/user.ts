@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 
 export interface UserInfo {
   id?: number
@@ -35,6 +35,7 @@ function readUserInfo(): UserInfo | null {
 export const useUserStore = defineStore('user', () => {
   const token = ref(localStorage.getItem('token') || '')
   const userInfo = ref<UserInfo | null>(readUserInfo())
+  const roles = computed(() => userInfo.value?.roles ?? [])
 
   function setToken(newToken: string): void {
     token.value = newToken
@@ -42,16 +43,26 @@ export const useUserStore = defineStore('user', () => {
   }
 
   function setUserInfo(info: Partial<UserInfo>): void {
-    const roles = Array.isArray(info.roles) ? info.roles : []
+    const normalizedRoles = Array.isArray(info.roles)
+      ? info.roles
+      : []
+
     const normalized: UserInfo = {
       ...info,
-      roles,
-      role: info.role || roles[0]
+      roles: normalizedRoles,
+      role: info.role || normalizedRoles[0]
     }
 
     userInfo.value = normalized
-    localStorage.setItem('roles', JSON.stringify(normalized.roles))
-    localStorage.setItem('userInfo', JSON.stringify(normalized))
+    localStorage.removeItem('role')
+    localStorage.setItem(
+      'roles',
+      JSON.stringify(normalized.roles)
+    )
+    localStorage.setItem(
+      'userInfo',
+      JSON.stringify(normalized)
+    )
   }
 
   function setOnboarded(onboarded: number): void {
@@ -65,11 +76,13 @@ export const useUserStore = defineStore('user', () => {
 
     localStorage.removeItem('token')
     localStorage.removeItem('roles')
+    localStorage.removeItem('role')
     localStorage.removeItem('userInfo')
   }
 
   return {
     token,
+    roles,
     userInfo,
     setToken,
     setUserInfo,
