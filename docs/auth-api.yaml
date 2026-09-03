@@ -1,0 +1,298 @@
+openapi: 3.0.3
+info:
+  title: EduAgent Auth 服务接口（鉴权）
+  description: |
+    独立微服务 edu-agent-auth（端口 8081，auth_db）。用户登录 / 注册 / 令牌轮换 / 登出 / 引导完成标记。
+
+    鉴权模型：网关 AuthGlobalFilter 是唯一 JWT 验签点（与 auth 共用 common JwtUtil / 同一 secret），
+    把 X-User-Id / X-User-Roles 注入下游；本服务签发 JWT 并读取 AuthContext。
+    login/register 在网关白名单（匿名可访问）；refresh/logout/onboard-done 需携带有效 token。
+    经网关完整路径前缀：/api/edu-agent-auth。
+  version: 1.0.0
+
+servers:
+  - url: http://<网关>:8080/api/edu-agent-auth
+    description: 经网关访问
+  - url: http://localhost:8081/api/edu-agent-auth
+    description: 服务直连（本机）
+
+tags:
+  - name: 认证
+    description: 登录 / 注册 / 令牌轮换（login/register 匿名，refresh 需带 token）
+  - name: 账户
+    description: 登出 / 引导完成标记（需登录，从 AuthContext 取当前用户）
+
+paths:
+  /login:
+    post:
+      tags: [认证]
+      summary: 登录（匿名）
+      operationId: login
+      description: |
+        校验用户名密码（BCrypt）→ 更新最后登录时间 → 签发 JWT（角色映射为 ROLE_* 写入令牌）。
+        失败返回 401「用户名或密码错误」。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: 登录成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultLogin'
+
+  /register:
+    post:
+      tags: [认证]
+      summary: 注册（匿名）
+      operationId: register
+      description: |
+        校验用户名唯一 → BCrypt 哈希密码 → 落库（status=active，onboarded=0，role 默认 student）
+        → 签发 JWT 自动登录。用户名已存在返回 409「用户名已存在」。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '200':
+          description: 注册成功（已自动签发令牌）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultLogin'
+
+  /refresh:
+    post:
+      tags: [认证]
+      summary: 令牌轮换（需带有效 token 通过网关验签）
+      operationId: refreshToken
+      description: |
+        用待轮换的 token（可带 "Bearer " 前缀）重新签发令牌。token 无效/过期返回 401。
+        注意：该端点不在网关白名单，需携带任一有效 token 才能访问（网关先验签）。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+      responses:
+        '200':
+          description: 轮换成功，返回新令牌
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultLogin'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /logout:
+    post:
+      tags: [账户]
+      summary: 登出（需登录）
+      operationId: logout
+      description: |
+        JWT 无状态，服务端仅记录日志；前端删除本地 token 即可。
+        当前用户从 AuthContext 取（网关注入 X-User-Id）。
+      responses:
+        '200':
+          $ref: '#/components/responses/ResultVoid'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /onboard-done:
+    post:
+      tags: [账户]
+      summary: 标记引导完成（需登录）
+      operationId: onboardDone
+      description: |
+        将当前用户 onboarded 置为 1（前端 OnboardOverlay 依赖）。用户不存在返回 404。
+      responses:
+        '200':
+          $ref: '#/components/responses/ResultVoid'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+components:
+  responses:
+    ResultVoid:
+      description: 成功（无 data）
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ResultVoid'
+    Unauthorized:
+      description: 未认证或令牌无效（网关 401 或业务 401）
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ResultError'
+
+  schemas:
+    LoginRequest:
+      type: object
+      required: [username, password]
+      properties:
+        username:
+          type: string
+          description: 登录用户名
+        password:
+          type: string
+          description: 明文密码（服务端 BCrypt 比对）
+      example:
+        username: student01
+        password: student123
+
+    RegisterRequest:
+      type: object
+      required: [username, password]
+      properties:
+        username:
+          type: string
+          minLength: 3
+          maxLength: 20
+          description: 登录用户名（3-20 字符）
+        password:
+          type: string
+          minLength: 6
+          maxLength: 30
+          description: 明文密码（6-30 字符，BCrypt 哈希落库）
+        nickname:
+          type: string
+          description: 昵称（可选）
+        email:
+          type: string
+          format: email
+          description: 邮箱（可选，格式校验）
+        role:
+          type: string
+          enum: [student, teacher, admin]
+          default: student
+          description: 角色，缺省 student
+      example:
+        username: student01
+        password: student123
+        nickname: 小明
+        email: xm@example.com
+        role: student
+
+    RefreshRequest:
+      type: object
+      required: [token]
+      properties:
+        token:
+          type: string
+          description: 待轮换的 JWT（可带 "Bearer " 前缀，服务端会剥掉）
+      example:
+        token: "eyJhbGciOiJIUzI1NiJ9..."
+
+    UserInfoVO:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: 用户 ID
+        username:
+          type: string
+        nickname:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        avatar:
+          type: string
+        role:
+          type: string
+          enum: [student, teacher, admin]
+        onboarded:
+          type: integer
+          description: 引导完成标记 0/1
+        status:
+          type: string
+          description: active/inactive
+        createTime:
+          type: string
+          format: date-time
+        lastLoginTime:
+          type: string
+          format: date-time
+          nullable: true
+      example:
+        id: 1
+        username: student01
+        nickname: 小明
+        email: xm@example.com
+        phone: null
+        avatar: null
+        role: student
+        onboarded: 0
+        status: active
+        createTime: "2026-09-03T21:00:00"
+
+    LoginVO:
+      type: object
+      properties:
+        token:
+          type: string
+          description: "JWT 访问令牌（网关验签、后续请求放入 Authorization: Bearer <token>）"
+        userInfo:
+          $ref: '#/components/schemas/UserInfoVO'
+      example:
+        token: "eyJhbGciOiJIUzI1NiJ9..."
+        userInfo:
+          id: 1
+          username: student01
+          role: student
+          onboarded: 0
+
+    Result:
+      type: object
+      properties:
+        code:
+          type: integer
+          description: 0=成功；非 0 为业务错误码（400/401/403/404/409/500）
+        message:
+          type: string
+        data:
+          nullable: true
+      example:
+        code: 0
+        message: success
+        data: {}
+
+    ResultVoid:
+      allOf:
+        - $ref: '#/components/schemas/Result'
+        - type: object
+          properties:
+            data:
+              type: object
+              nullable: true
+
+    ResultLogin:
+      allOf:
+        - $ref: '#/components/schemas/Result'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/LoginVO'
+
+    ResultError:
+      allOf:
+        - $ref: '#/components/schemas/Result'
+        - type: object
+          properties:
+            data:
+              type: object
+              nullable: true
+      example:
+        code: 401
+        message: 用户名或密码错误
+        data: null
