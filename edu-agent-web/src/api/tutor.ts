@@ -1,29 +1,42 @@
 import request from '@/utils/request'
 
-export interface ChatRequest {
-  message: string
-  sessionId?: string
-}
-
 export interface TutorReply {
-  answer: string
-  intent: string
-  routeReason: string
-  evaluation: string
-  resourceDir: string
+  intent?: string
+  final_answer?: string
+  profile?: Record<string, unknown>
+  resources?: unknown
+  learning_path?: unknown
+  safety_report?: unknown
+  evaluation_report?: unknown
+  resource_dir?: string
+  profile_complete?: boolean
 }
 
-export function sendTutorMessage(message: string, sessionId?: string, isOnboarding?: boolean, profile?: any) {
-  return request.post<unknown, TutorReply>('/tutor/chat', {
-    message,
-    sessionId,
-    isOnboarding: isOnboarding || false,
-    profile: profile || undefined
-  })
+export interface TutorHistoryItem {
+  role: 'user' | 'assistant'
+  content: string
+  time?: number | string
+}
+
+export function sendTutorMessage(
+  message: string,
+  studentId: string,
+  sessionId?: string,
+  profile?: Record<string, unknown>
+): Promise<TutorReply> {
+  return request.post<unknown, TutorReply>(
+    '/edu-agent-ai/chat',
+    {
+      user_input: message,
+      student_id: studentId,
+      session_id: sessionId,
+      profile
+    }
+  )
 }
 
 export function getTutorHistory(sessionId?: string) {
-  return request.get<unknown, any[]>('/tutor/history', {
+  return request.get<unknown, TutorHistoryItem[]>('/edu-agent-learning/conversations', {
     params: { sessionId }
   })
 }
@@ -35,10 +48,9 @@ export interface TutorSession {
 }
 
 export function getSessions() {
-  return request.get<unknown, TutorSession[]>('/tutor/sessions')
+  return request.get<unknown, TutorSession[]>('/edu-agent-learning/conversations/sessions')
 }
 
-/** 提交答案并获取 AI 讲解 */
 export interface ExplainRequest {
   resourceId?: number
   question: string
@@ -54,10 +66,9 @@ export interface ExplainResult {
 }
 
 export function getExplain(params: ExplainRequest) {
-  return request.post<unknown, ExplainResult>('/tutor/explain', params)
+  return request.post<unknown, ExplainResult>('/edu-agent-ai/explain', params)
 }
 
-/** 获取已作答的题目列表 */
 export interface AnsweredItem {
   question: string
   userAnswer: string
@@ -67,12 +78,11 @@ export interface AnsweredItem {
 }
 
 export function getAnsweredQuestions(resourceId: number) {
-  return request.get<unknown, AnsweredItem[]>('/quiz/answered', {
+  return request.get<unknown, AnsweredItem[]>('/edu-agent-learning/quiz/answered', {
     params: { resourceId }
   })
 }
 
-/** 错题条目 */
 export interface WrongQuestionItem {
   id: number
   question: string
@@ -83,12 +93,12 @@ export interface WrongQuestionItem {
   createTime: string
 }
 
-/** 获取学生所有历史错题 */
 export function getWrongQuestions() {
-  return request.get<unknown, WrongQuestionItem[]>('/quiz/wrong-questions')
+  return request.get<unknown, WrongQuestionItem[]>('/edu-agent-learning/quiz/wrong-questions')
 }
 
-/** 获取单道历史错题详情 */
 export function getWrongQuestionById(id: number) {
-  return request.get<unknown, WrongQuestionItem>(`/quiz/wrong-questions/${id}`)
+  return request.get<unknown, WrongQuestionItem>(
+    `/edu-agent-learning/quiz/wrong-questions/${id}`
+  )
 }

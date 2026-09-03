@@ -12,16 +12,6 @@
             </div>
             <h3>{{ userInfo?.name }}</h3>
             <p class="user-email">{{ userInfo?.email }}</p>
-            <div class="user-stats">
-              <div class="stat-item">
-                <span class="stat-label">学习时长</span>
-                <span class="stat-value">120h</span>
-              </div>
-              <div class="stat-item">
-                <span class="stat-label">完成练习</span>
-                <span class="stat-value">{{ quizCount }}题</span>
-              </div>
-            </div>
           </div>
 
           <el-divider />
@@ -205,17 +195,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ref, reactive, computed } from 'vue'
+import { ElMessage } from 'element-plus'
 import {
   User, Lock, Cellphone, Message, Key
 } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
-import { getProfile } from '@/api/profile'
 const userStore = useUserStore()
 const userInfo = computed(() => userStore.userInfo)
 
-const quizCount = ref(0)
 const activeMenu = ref('info')
 const twoFactorAuth = ref(false)
 const passwordDialogVisible = ref(false)
@@ -263,22 +251,12 @@ const cityOptions = [
   }
 ]
 
-onMounted(async () => {
-  try {
-    const uid = userStore.userInfo?.id
-    if (uid) {
-      const res = await getProfile(uid)
-      if (res?.quizCount) quizCount.value = res.quizCount
-    }
-  } catch {}
-})
-
 const changeAvatar = () => {
   ElMessage.info('头像上传功能开发中...')
 }
 
 const saveProfile = () => {
-  ElMessage.success('基本信息保存成功！')
+  ElMessage.info('基本信息修改接口暂未开放')
 }
 
 const resetProfile = () => {
@@ -300,25 +278,7 @@ const showPasswordDialog = () => {
 }
 
 const changePassword = () => {
-  if (!passwordForm.oldPassword) {
-    ElMessage.warning('请输入原密码')
-    return
-  }
-  if (!passwordForm.newPassword) {
-    ElMessage.warning('请输入新密码')
-    return
-  }
-  if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-    ElMessage.warning('两次输入的密码不一致')
-    return
-  }
-  if (passwordForm.newPassword.length < 6) {
-    ElMessage.warning('新密码长度不能少于6位')
-    return
-  }
-
-  ElMessage.success('密码修改成功！')
-  passwordDialogVisible.value = false
+  ElMessage.info('修改密码接口暂未开放')
 }
 
 const showPhoneDialog = () => {
@@ -330,7 +290,8 @@ const showEmailDialog = () => {
 }
 
 const handleTwoFactorChange = (value: boolean) => {
-  ElMessage.success(value ? '两步验证已开启' : '两步验证已关闭')
+  twoFactorAuth.value = !value
+  ElMessage.info('两步验证接口暂未开放')
 }
 
 const showDeleteDialog = () => {
@@ -340,26 +301,7 @@ const showDeleteDialog = () => {
 }
 
 const deleteAccount = () => {
-  if (!deleteForm.password) {
-    ElMessage.warning('请输入密码')
-    return
-  }
-
-  ElMessageBox.confirm(
-    '这是最后确认！注销后您的所有数据将被永久删除，无法恢复！',
-    '确认注销',
-    {
-      confirmButtonText: '确认注销',
-      cancelButtonText: '取消',
-      type: 'error'
-    }
-  ).then(() => {
-    ElMessage.success('账户已注销，即将跳转到首页...')
-    setTimeout(() => {
-      userStore.logout()
-      window.location.href = '/login'
-    }, 2000)
-  }).catch(() => {})
+  ElMessage.info('账户注销接口暂未开放')
 }
 
 

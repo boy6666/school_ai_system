@@ -1,31 +1,27 @@
-/// <reference types="vitest" />
-import { defineConfig } from 'vite'
+import { defineConfig } from 'vitest/config'
 import vue from '@vitejs/plugin-vue'
 import { resolve } from 'path'
 
-// https://vite.dev/config/
 export default defineConfig({
   plugins: [vue()],
+
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src')
     }
   },
+
   server: {
     port: 5173,
+
     proxy: {
-      '/ai': {
-        target: 'http://localhost:8000',
-        changeOrigin: true,
-        rewrite: (path: string) => path.replace(/^\/ai/, '')
-      },
       '/api': {
         target: 'http://localhost:8080',
-        changeOrigin: true,
-        rewrite: (path: string) => path.replace(/^\/api/, '')
+        changeOrigin: true
       }
     }
   },
+
   test: {
     environment: 'jsdom',
     globals: true

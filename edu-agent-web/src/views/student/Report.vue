@@ -1,5 +1,5 @@
 <template>
-  <div class="report-page">
+  <div class="report-page" v-loading="loading">
     <el-row :gutter="20" class="stats-row">
       <el-col :span="8">
         <el-card class="stat-card stat-time">
@@ -34,13 +34,13 @@
       <el-col :span="16">
         <el-card class="chart-card">
           <template #header><span>学习时长趋势</span></template>
-          <div ref="trendChart" class="chart-container"></div>
+          <BaseChart :option="trendOption" height="300px" />
         </el-card>
       </el-col>
       <el-col :span="8">
         <el-card class="chart-card">
           <template #header><span>各模块学习时长</span></template>
-          <div ref="moduleChart" class="chart-container"></div>
+          <BaseChart :option="moduleOption" height="300px" />
         </el-card>
       </el-col>
     </el-row>
@@ -73,48 +73,47 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, nextTick } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import * as echarts from 'echarts'
-import request from '@/utils/request'
-
-const trendChart = ref<HTMLElement>()
-const moduleChart = ref<HTMLElement>()
+import { ElMessage } from 'element-plus'
+import BaseChart from '@/components/BaseChart.vue'
+import {
+  getLearningReport,
+  type ReportModuleDuration,
+  type ReportTrendItem
+} from '@/api/report'
 
 const totalHours = ref(0)
 const progress = ref(0)
 const score = ref(0)
-const modules = ref<any[]>([])
-const trend = ref<any[]>([])
+const modules = ref<ReportModuleDuration[]>([])
+const trend = ref<ReportTrendItem[]>([])
 const weaknesses = ref<string[]>([])
 const suggestionList = ref<string[]>([])
-const profileData = ref<any>(null)
+const loading = ref(false)
 
 const labelMap: Record<string, string> = { mindmap: '思维导图', quiz: '练习题目', reading: '拓展阅读', code: '代码案例' }
 
-const initTrend = () => {
-  if (!trendChart.value || !trend.value.length) return
-  const chart = echarts.init(trendChart.value)
-  const days = [...new Set(trend.value.map((t: any) => t.day))].sort()
+const trendOption = computed<echarts.EChartsOption>(() => {
+  const days = [...new Set(trend.value.map((item) => item.day))].sort()
   const data = days.map(d => {
-    const vals = trend.value.filter((t: any) => t.day === d)
-    return vals.reduce((sum: number, v: any) => sum + Math.round((v.total || 0) / 60), 0)
+    const values = trend.value.filter((item) => item.day === d)
+    return values.reduce((sum, item) => sum + Math.round(item.total / 60), 0)
   })
-  chart.setOption({
+  return {
     tooltip: { trigger: 'axis' },
-    xAxis: { type: 'category', data: days.map((d: string) => d.slice(5)) },
+    xAxis: { type: 'category', data: days.map((day) => day.slice(5)) },
     yAxis: { type: 'value', name: '分钟' },
     series: [{ type: 'line', data, smooth: true, areaStyle: { color: 'rgba(64,158,255,0.2)' }, itemStyle: { color: '#409eff' } }]
-  })
-}
+  }
+})
 
-const initModuleChart = () => {
-  if (!moduleChart.value || !modules.value.length) return
-  const chart = echarts.init(moduleChart.value)
+const moduleOption = computed<echarts.EChartsOption>(() => {
   const sorted = [...modules.value].sort((a, b) => b.total - a.total)
-  chart.setOption({
+  return {
     tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
     grid: { left: '3%', right: '10%', top: '8%', bottom: '8%', containLabel: true },
-    xAxis: { type: 'value', name: '分钟', axisLabel: { formatter: (v: number) => Math.round(v / 60) } },
+    xAxis: { type: 'value', name: '分钟' },
     yAxis: {
       type: 'category',
       data: sorted.map(m => labelMap[m.module] || m.module),
@@ -136,33 +135,33 @@ const initModuleChart = () => {
       label: {
         show: true,
         position: 'right',
-        formatter: (p: any) => p.value + '分钟',
+        formatter: '{c}分钟',
         fontSize: 12,
         color: '#666',
       },
     }],
-  })
-}
+  }
+})
 
 onMounted(async () => {
+  loading.value = true
   try {
-    const res: any = await request.get('/dashboard/report')
-    if (res) {
-      const sec = res.totalSec || 0
-      totalHours.value = Math.round(sec / 3600 * 10) / 10
-      progress.value = res.progress || 0
-      score.value = res.score || 0
-      modules.value = Array.isArray(res.modules) ? res.modules : []
-      trend.value = Array.isArray(res.trend) ? res.trend : []
-      const suggs = res.profile_suggestions
-      suggestionList.value = typeof suggs === 'string' ? suggs.split('\n').filter(Boolean) : Array.isArray(suggs) ? suggs : []
-      weaknesses.value = Array.isArray(res.weaknesses) ? res.weaknesses : []
-      if (res.profile_data) profileData.value = res.profile_data
-    }
-  } catch {}
-  await nextTick()
-  initTrend()
-  initModuleChart()
+    const report = await getLearningReport()
+    totalHours.value = Math.round(report.totalSec / 3600 * 10) / 10
+    progress.value = report.progress
+    score.value = report.score
+    modules.value = report.modules
+    trend.value = report.trend
+    const suggestions = report.profile_suggestions
+    suggestionList.value = typeof suggestions === 'string'
+      ? suggestions.split('\n').filter(Boolean)
+      : suggestions || []
+    weaknesses.value = report.weaknesses || []
+  } catch {
+    ElMessage.error('学习报告加载失败，请稍后重试')
+  } finally {
+    loading.value = false
+  }
 })
 </script>
 

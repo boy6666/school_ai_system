@@ -87,13 +87,13 @@ export interface CourseDetail {
 }
 
 export function getCourseList(params: CourseListQuery) {
-  return request.get<unknown, CourseListResponse>('/courses', {
+  return request.get<unknown, CourseListResponse>('/edu-agent-learning/courses', {
     params
   })
 }
 
 export function getCourseDetail(id: string) {
-  return request.get<unknown, CourseDetail>(`/courses/${id}`)
+  return request.get<unknown, CourseDetail>(`/edu-agent-learning/courses/${id}`)
 }
 
 export function updateChapterProgress(
@@ -102,7 +102,7 @@ export function updateChapterProgress(
   progress: number
 ) {
   return request.post<unknown, { success: boolean }>(
-    `/courses/${courseId}/chapters/${chapterId}/progress`,
+    `/edu-agent-learning/courses/${courseId}/chapters/${chapterId}/progress`,
     { progress }
   )
 }
@@ -113,7 +113,7 @@ export function saveCourseNote(
   content: string
 ) {
   return request.post<unknown, { success: boolean }>(
-    `/courses/${courseId}/chapters/${chapterId}/note`,
+    `/edu-agent-learning/courses/${courseId}/chapters/${chapterId}/note`,
     { content }
   )
 }

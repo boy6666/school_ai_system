@@ -9,8 +9,8 @@
         <el-form-item prop="password">
           <el-input v-model="form.password" type="password" placeholder="密码" prefix-icon="Lock" show-password size="large" />
         </el-form-item>
-        <el-form-item prop="email">
-          <el-input v-model="form.email" placeholder="邮箱" prefix-icon="Message" size="large" />
+        <el-form-item prop="realName">
+          <el-input v-model="form.realName" placeholder="真实姓名" prefix-icon="UserFilled" size="large" />
         </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="handleRegister" :loading="loading" class="register-btn">注册</el-button>
@@ -21,42 +21,43 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useRouter } from 'vue-router'
-import request from '@/utils/request'
+import type { FormInstance, FormRules } from 'element-plus'
+import { register, type RegisterParams } from '@/api/auth'
 
 const router = useRouter()
-const formRef = ref()
+const formRef = ref<FormInstance>()
 const loading = ref(false)
 
-const form = reactive({
+const form = reactive<RegisterParams>({
   username: '',
   password: '',
-  email: ''
+  realName: '',
+  role: 'ROLE_STUDENT'
 })
 
-const rules = {
+const rules: FormRules<RegisterParams> = {
   username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
   password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
-  email: [{ required: true, message: '请输入邮箱', trigger: 'blur' }, { type: 'email', message: '邮箱格式不正确', trigger: 'blur' }]
+  realName: [{ required: true, message: '请输入真实姓名', trigger: 'blur' }]
 }
 
 const handleRegister = async () => {
   try {
-    await formRef.value.validate()
+    await formRef.value?.validate()
   } catch {
     return
   }
   loading.value = true
   try {
-    await request.post('/auth/register', form)
+    await register({ ...form })
     ElMessage.success('注册成功，请登录')
     router.push('/login')
-  } catch (error) {
-    const msg = error?.response?.data?.message || error?.message || '注册失败，请重试'
-    ElMessage.error(msg)
+  } catch {
+    ElMessage.error('注册失败，请检查填写信息或稍后重试')
   } finally {
     loading.value = false
   }

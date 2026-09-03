@@ -1,79 +1,161 @@
 <template>
-  <div class="admin-dashboard">
-    <section class="page-header" style="margin-bottom:24px">
+  <div class="page-container">
+    <header class="page-header">
       <div>
-        <p class="eyebrow">管理后台</p>
-        <h1>控制台</h1>
+        <p class="eyebrow">ADMIN WORKSPACE</p>
+        <h1>管理控制台</h1>
+        <p class="description">
+          进入用户、资源、内容、AI治理及系统运维模块。
+        </p>
       </div>
+    </header>
+
+    <el-alert
+      title="运营统计正式接口尚未提供"
+      description="当前控制台不展示占位数字，统计数据以后端正式服务返回结果为准。"
+      type="info"
+      :closable="false"
+      show-icon
+      class="status-alert"
+    />
+
+    <section class="module-grid">
+      <button
+        v-for="module in modules"
+        :key="module.path"
+        class="module-card"
+        type="button"
+        @click="router.push(module.path)"
+      >
+        <h2>{{ module.title }}</h2>
+        <p>{{ module.description }}</p>
+        <span>进入模块 →</span>
+      </button>
     </section>
-    <section class="stat-row">
-      <div class="stat-card"><div class="stat-value">{{ stats.totalUsers }}</div><div class="stat-label">注册用户</div></div>
-      <div class="stat-card"><div class="stat-value">{{ stats.activeUsers }}</div><div class="stat-label">活跃用户</div></div>
-      <div class="stat-card"><div class="stat-value">{{ stats.totalConversations }}</div><div class="stat-label">总对话数</div></div>
-      <div class="stat-card"><div class="stat-value">{{ stats.todayConversations }}</div><div class="stat-label">今日对话</div></div>
-    </section>
-    <el-row :gutter="20">
-      <el-col :span="16">
-        <div class="card-flat">
-          <h4 style="margin-bottom:16px">快捷入口</h4>
-          <div class="quick-links">
-            <div v-for="item in quickLinks" :key="item.name" class="quick-item" @click="goTo(item.path)">
-              <el-icon :size="24"><component :is="item.icon" /></el-icon>
-              <span>{{ item.name }}</span>
-            </div>
-          </div>
-        </div>
-      </el-col>
-      <el-col :span="8">
-        <div class="card-flat">
-          <h4 style="margin-bottom:16px">系统公告</h4>
-          <div class="notice-list">
-            <div v-for="notice in notices" :key="notice.id" class="notice-item">
-              <div class="notice-title">{{ notice.title }}</div>
-              <div class="notice-time">{{ notice.time }}</div>
-            </div>
-            <div v-if="!notices.length" style="color:var(--muted);font:var(--text-sm);padding:12px 0">暂无公告</div>
-          </div>
-        </div>
-      </el-col>
-    </el-row>
   </div>
 </template>
+
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import request from '@/utils/request'
-import { User, Monitor, Upload, DataAnalysis, Checked, Setting, Tickets } from '@element-plus/icons-vue'
+
+interface AdminModule {
+  title: string
+  description: string
+  path: string
+}
+
 const router = useRouter()
-const stats = ref({ totalUsers: 0, activeUsers: 0, totalConversations: 0, todayConversations: 0 })
-const quickLinks = [
-  { name: '用户管理', path: '/admin/users', icon: User },
-  { name: '资源管理', path: '/admin/resources', icon: Upload },
-  { name: '内容审核', path: '/admin/reviews', icon: Checked },
-  { name: '数据统计', path: '/admin/statistics', icon: DataAnalysis },
-  { name: '系统设置', path: '/admin/settings', icon: Setting },
+
+const modules: AdminModule[] = [
+  {
+    title: '用户管理',
+    description: '管理平台用户、角色和账号状态。',
+    path: '/admin/users'
+  },
+  {
+    title: 'AI 与 Agent 治理',
+    description: '管理智能体、模型配置和知识库。',
+    path: '/admin/ai-govern'
+  },
+  {
+    title: '资源管理',
+    description: '查看和治理平台教学资源。',
+    path: '/admin/resources'
+  },
+  {
+    title: '内容审核',
+    description: '处理需要审核的学习与对话内容。',
+    path: '/admin/reviews'
+  },
+  {
+    title: '数据统计',
+    description: '查看平台运营与资源统计。',
+    path: '/admin/statistics'
+  },
+  {
+    title: '系统监控',
+    description: '查看服务健康和基础设施指标。',
+    path: '/admin/monitor'
+  },
+  {
+    title: '审计日志',
+    description: '查询平台关键治理操作记录。',
+    path: '/admin/audit'
+  }
 ]
-const notices = ref<any[]>([])
-const goTo = (path: string) => router.push(path)
-onMounted(async () => {
-  try {
-    const s: any = await request.get('/admin/stats')
-    if (s) stats.value = { totalUsers: s.totalUsers||0, activeUsers: s.activeUsers||0, totalConversations: s.totalConversations||0, todayConversations: s.todayConversations||0 }
-  } catch {}
-})
 </script>
+
 <style scoped>
-.admin-dashboard { padding: var(--space-xl); background: var(--surface); min-height: 100vh; }
-.page-header { padding: 24px 28px; border-radius: var(--radius-xl); background: linear-gradient(135deg,var(--canvas) 0%,var(--tint-lavender) 100%); box-shadow: var(--shadow-subtle); }
-.eyebrow { margin:0 0 4px; color:var(--primary); font-weight:700; font-size:12px; letter-spacing:1px; text-transform:uppercase; }
-.page-header h1 { margin:0; font:var(--text-h2); color:var(--ink); }
-.quick-links { display:flex; flex-wrap:wrap; gap:16px; }
-.quick-item { width:80px; text-align:center; cursor:pointer; transition:transform .2s; color:var(--steel); font:var(--text-sm); }
-.quick-item:hover { transform:translateY(-4px); color:var(--primary); }
-.quick-item span { display:block; margin-top:6px; }
-.notice-list { max-height:300px; overflow-y:auto; }
-.notice-item { padding:12px 0; border-bottom:1px solid var(--hairline-soft); cursor:pointer; }
-.notice-item:hover { background:var(--surface); }
-.notice-title { font:var(--text-sm-medium); color:var(--charcoal); margin-bottom:4px; }
-.notice-time { font:var(--text-micro); color:var(--muted); }
+.page-container {
+  min-height: 100%;
+  padding: var(--space-xxl);
+}
+
+.page-header {
+  margin-bottom: var(--space-xl);
+}
+
+.eyebrow {
+  margin: 0 0 var(--space-xs);
+  color: var(--primary);
+  font: var(--text-caption);
+  letter-spacing: 0.08em;
+}
+
+.page-header h1 {
+  margin-bottom: var(--space-xs);
+}
+
+.description {
+  margin: 0;
+  color: var(--muted);
+  font: var(--text-body);
+}
+
+.status-alert {
+  margin-bottom: var(--space-xl);
+}
+
+.module-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-lg);
+}
+
+.module-card {
+  padding: var(--space-xl);
+  text-align: left;
+  cursor: pointer;
+  background: var(--canvas);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-lg);
+}
+
+.module-card:hover {
+  border-color: var(--primary);
+}
+
+.module-card h2 {
+  margin: 0 0 var(--space-sm);
+}
+
+.module-card p {
+  margin: 0 0 var(--space-lg);
+  color: var(--muted);
+}
+
+.module-card span {
+  color: var(--primary);
+  font: var(--text-sm-medium);
+}
+
+@media (max-width: 900px) {
+  .page-container {
+    padding: var(--space-lg);
+  }
+
+  .module-grid {
+    grid-template-columns: 1fr;
+  }
+}
 </style>

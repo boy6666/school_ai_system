@@ -15,7 +15,7 @@
         <div class="msg-bubble">{{ msg.content }}</div>
       </div>
 
-      <!-- 生成阶段进度列表（每个步骤真实等待接口返回） -->
+      <!-- 初始化阶段进度列表（仅展示已有正式接口） -->
       <div v-if="stage === 'generating'" class="gen-progress">
         <div v-for="(step, i) in genSteps" :key="i" class="gen-step" :class="step.status">
           <span class="gen-step-icon">
@@ -62,9 +62,6 @@
 <script setup lang="ts">
 import { ref, onMounted, nextTick, reactive } from 'vue'
 import request from '@/utils/request'
-import { useUserStore } from '@/stores/user'
-
-const userStore = useUserStore()
 const emit = defineEmits(['done'])
 
 const input = ref('')
@@ -74,15 +71,11 @@ const stage = ref('init')           // init | collecting | generating | done
 const messages = ref<{ role: string; content: string }[]>([])
 const chatBox = ref<HTMLElement>()
 const sessionId = ref('onboard_' + Date.now())
-const onboardProfile = ref<any>({})
+const onboardProfile = ref<Record<string, unknown>>({})
 
 const genSteps = reactive([
   { label: '保存学习画像',        status: 'pending', time: '' },
-  { label: '生成学习路径',        status: 'pending', time: '' },
-  { label: '生成思维导图',        status: 'pending', time: '' },
-  { label: '生成练习题',          status: 'pending', time: '' },
-  { label: '生成拓展阅读',        status: 'pending', time: '' },
-  { label: '生成代码案例',        status: 'pending', time: '' }
+  { label: '生成学习路径',        status: 'pending', time: '' }
 ])
 
 const scrollToBottom = async () => {
@@ -104,14 +97,23 @@ function timestamp() {
   return Date.now()
 }
 
+interface OnboardChatResponse {
+  final_answer?: string
+  profile?: Record<string, unknown>
+  profile_complete?: boolean
+}
+
 // 聊天 — 全走 Java 后端 /api/onboard/chat
-async function onboardChat(message: string, sessionId: string, profile: any) {
-  const res = await request.post('/onboard/chat', {
+async function onboardChat(
+  message: string,
+  sessionId: string,
+  profile: Record<string, unknown>
+): Promise<OnboardChatResponse> {
+  return request.post<unknown, OnboardChatResponse>('/onboard/chat', {
     message,
     session_id: sessionId,
-    profile: profile
+    profile
   })
-  return res
 }
 
 const send = async () => {
@@ -142,21 +144,17 @@ const send = async () => {
   await scrollToBottom()
 }
 
-// 生成阶段 — 逐步调 6 个独立接口，每步真实等待
+// 初始化阶段：仅调用当前已有正式依据的画像与学习路径接口
 async function startGeneration() {
   stage.value = 'generating'
   loading.value = true
   const tStart = timestamp()
   const profile = onboardProfile.value
-  const course = profile.course || ''
-  const topic = profile.topic || course || '编程学习'
-  const difficulty = { '零基础': 'easy', '了解概念': 'easy', '有一定基础': 'medium', '熟练': 'hard' }[profile.knowledge_base] || 'medium'
-
   // ---- Step 1: 保存画像到 student_profiles ----
   genSteps[0].status = 'active'
   await scrollToBottom()
   try {
-    await request.post('/profile/save', {
+    await request.post('/edu-agent-learning/profile', {
       course: profile.course,
       topic: profile.topic,
       learning_goal: profile.learning_goal,
@@ -181,6 +179,15 @@ async function startGeneration() {
     genSteps[0].status = 'done'
   } catch {
     genSteps[0].status = 'error'
+    genSteps[0].time = formatTime(timestamp() - tStart)
+    loading.value = false
+    stage.value = 'collecting'
+    messages.value.push({
+      role: 'assistant',
+      content: '学习画像保存失败，请稍后重试。'
+    })
+    await scrollToBottom()
+    return
   }
   genSteps[0].time = formatTime(timestamp() - tStart)
   await sleep(300)
@@ -189,55 +196,43 @@ async function startGeneration() {
   genSteps[1].status = 'active'
   await scrollToBottom()
   try {
-    await request.post('/student/learning-path/generate')
+    await request.post('/edu-agent-learning/learning-path/generate')
     genSteps[1].status = 'done'
   } catch {
     genSteps[1].status = 'error'
+    genSteps[1].time = formatTime(timestamp() - tStart)
+    loading.value = false
+    stage.value = 'collecting'
+    messages.value.push({
+      role: 'assistant',
+      content: '学习路径生成失败，请稍后重试。'
+    })
+    await scrollToBottom()
+    return
   }
   genSteps[1].time = formatTime(timestamp() - tStart)
   await sleep(300)
 
-  // ---- Step 3-6: 生成资源 → resources 表 ----
-  const resourceTypes = [
-    { type: 'mindmap', label: '思维导图', stepIdx: 2 },
-    { type: 'quiz',    label: '练习题',   stepIdx: 3 },
-    { type: 'reading', label: '拓展阅读', stepIdx: 4 },
-    { type: 'code',    label: '代码案例', stepIdx: 5 }
-  ]
-
-  for (const rt of resourceTypes) {
-    genSteps[rt.stepIdx].status = 'active'
-    await scrollToBottom()
-    try {
-      await request.post('/resources/generate', {
-        chapterName: course,
-        topic: topic,
-        type: rt.type,
-        difficulty: difficulty,
-        source: 'onboarding'
-      })
-      genSteps[rt.stepIdx].status = 'done'
-    } catch {
-      genSteps[rt.stepIdx].status = 'error'
-    }
-    genSteps[rt.stepIdx].time = formatTime(timestamp() - tStart)
-    await sleep(300)
-  }
-
-  // ---- 标记引导完成 ----
+  // 完成状态必须由后端确认，不能使用本地业务标记伪装成功。
   try {
-    await request.post('/auth/onboard-done')
-  } catch {
-    console.warn('[Onboard] /auth/onboard-done 失败，本地标记仍然写入')
+    await request.post('/edu-agent-auth/onboard-done')
+  } catch (error) {
+    console.error('保存引导完成状态失败：', error)
+    loading.value = false
+    stage.value = 'collecting'
+    messages.value.push({
+      role: 'assistant',
+      content: '学习方案已生成，但完成状态保存失败，请稍后重试。'
+    })
+    await scrollToBottom()
+    return
   }
-  // 无论后端是否成功，都写入本地标记，防止用户重复走引导
-  localStorage.setItem('tutor_init_done', '1')
 
   loading.value = false
   stage.value = 'done'
   messages.value.push({
     role: 'assistant',
-    content: '🎉 全部完成！你的个性化学习方案已就绪，点击下方按钮开始学习吧！'
+    content: '🎉 全部完成！你的学习画像和学习路径已就绪，点击下方按钮开始学习吧！'
   })
   await scrollToBottom()
 }

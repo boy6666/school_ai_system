@@ -67,49 +67,39 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { getWrongQuestions } from '@/api/tutor'
+import { ElMessage } from 'element-plus'
+import { getWrongQuestions, type WrongQuestionItem } from '@/api/tutor'
 
 const router = useRouter()
 const loading = ref(true)
-const questions = ref<any[]>([])
+const questions = ref<WrongQuestionItem[]>([])
 
 onMounted(async () => {
   try {
     const data = await getWrongQuestions()
-    questions.value = data || []
+    questions.value = data
   } catch {
-    // 静默失败
+    questions.value = []
+    ElMessage.error('错题记录加载失败，请稍后重试')
   } finally {
     loading.value = false
   }
 })
 
-const goToDetail = (q: any) => {
+const goToDetail = (q: WrongQuestionItem) => {
   router.push(`/student/wrong-questions/${q.id}`)
 }
 
 /** 继续提问 → 跳转智能辅导（同 quiz 页逻辑） */
-const continueToTutor = (q: any) => {
+const continueToTutor = (q: WrongQuestionItem) => {
   const question = q.question || ''
   const userAns = q.userAnswer || ''
   const correctAns = q.correctAnswer || ''
-  const explainText = q.explanation || ''
-
-  const messages = [
-    {
-      role: 'user',
-      content: `我遇到一道题：${question}\n我的答案：${userAns}\n正确答案：${correctAns}\n请帮我深入讲解一下。`,
-      time: Date.now(),
-    },
-    {
-      role: 'assistant',
-      content: explainText,
-      time: Date.now(),
-    },
-  ]
-  localStorage.setItem('tutor_current_messages', JSON.stringify(messages))
-  localStorage.removeItem('tutor_current_session')
-  window.open('/student/tutor', '_self')
+  const prompt = `我遇到一道题：${question}\n我的答案：${userAns || '未作答'}\n正确答案：${correctAns}\n请帮我深入讲解一下。`
+  router.push({
+    path: '/student/tutor',
+    query: { prompt }
+  })
 }
 </script>
 

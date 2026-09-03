@@ -1,53 +1,77 @@
 <template>
   <div class="resource-page">
     <main class="main-area">
-      <div class="page-title" v-if="!curCat">
-        <h2>📚 Java 程序设计</h2>
-        <p>选择章节，点击右侧卡片开始学习</p>
-      </div>
-
-      <!-- 章节列表 -->
-      <div class="chapter-list" v-if="!curCat">
-        <div v-for="cat in cats" :key="cat.category" class="chapter-card" @click="enterCat(cat)">
-          <div class="ch-left">
-            <div class="ch-num">{{ cats.indexOf(cat) + 1 }}</div>
-          </div>
-          <div class="ch-body">
-            <h3>{{ cat.label }}</h3>
-            <p>{{ cat.count }} 个小节</p>
-          </div>
-          <div class="ch-arrow">→</div>
-        </div>
-      </div>
-
-      <!-- 小节列表 -->
-      <div class="chapter-list" v-if="curCat && !curNote">
-        <div class="back" @click="curCat=null">← 返回</div>
+      <div>
         <div class="page-title">
-          <h2>{{ curCat.label }}</h2>
+          <h2>学习资源中心</h2>
+          <p>查看思维导图、练习题、拓展阅读和代码案例</p>
         </div>
-        <div v-for="n in notes" :key="n.id" class="chapter-card" @click="enterNote(n)">
-          <div class="ch-left" style="background:#5b8def">
-            <span>📄</span>
+
+        <div v-if="loading" class="content-area">
+          正在加载资源……
+        </div>
+
+        <div v-else-if="errorMessage" class="content-area">
+          <p>{{ errorMessage }}</p>
+          <button type="button" @click="loadResources">
+            重新加载
+          </button>
+        </div>
+
+        <div v-else-if="filteredResources.length === 0" class="content-area">
+          暂无符合条件的学习资源
+        </div>
+
+        <div v-else class="chapter-list">
+          <div
+            v-for="resource in filteredResources"
+            :key="resource.id"
+            class="chapter-card"
+            @click="openResource(resource.id)"
+          >
+            <div class="ch-left">
+              {{ getTypeIcon(resource.type) }}
+            </div>
+
+            <div class="ch-body">
+              <h3>{{ resource.title }}</h3>
+              <p>
+                {{ getTypeLabel(resource.type) }}
+                · {{ getDifficultyLabel(resource.difficulty) }}
+                <template v-if="resource.chapter">
+                  · {{ resource.chapter }}
+                </template>
+              </p>
+            </div>
+
+            <button
+              type="button"
+              :disabled="favoriteLoadingId === resource.id"
+              style="margin-right: 12px"
+              @click.stop="toggleFavorite(resource)"
+            >
+              {{ resource.favorites ? '取消收藏' : '收藏' }}
+            </button>
+
+            <div class="ch-arrow">→</div>
           </div>
-          <div class="ch-body">
-            <h3>{{ n.title }}</h3>
-          </div>
-          <div class="ch-arrow">→</div>
         </div>
       </div>
 
-      <!-- 文章内容 -->
-      <div v-if="curNote" class="content-area">
-        <div class="back" @click="curNote=null">← 小节</div>
-        <h2>{{ curNote.title }}</h2>
-        <div class="md" v-html="html"></div>
-      </div>
     </main>
 
     <aside class="side-cards">
-      <div class="side-title">学习资源</div>
-      <div v-for="card in resourceCards" :key="card.key" class="mini-card" @click="goResource(card.key)">
+      <div class="side-title">资源类型</div>
+
+      <div
+        v-for="card in resourceCards"
+        :key="card.key"
+        class="mini-card"
+        :style="selectedType === card.key
+          ? 'border-color:#4f8cff;background:#f5f8ff'
+          : ''"
+        @click="selectResourceFilter(card.key)"
+      >
         <div class="mini-icon">{{ card.icon }}</div>
         <div class="mini-label">{{ card.label }}</div>
       </div>
@@ -56,72 +80,137 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { marked } from 'marked'
-import { markedHighlight } from 'marked-highlight'
-import hljs from 'highlight.js'
-import 'highlight.js/styles/atom-one-dark.css'
-import { getCategories, getNotes, getNoteDetail } from '@/api/notes'
 
-marked.use(markedHighlight({
-  langPrefix: 'hljs language-',
-  highlight(code: string, lang: string) {
-    if (lang && hljs.getLanguage(lang)) {
-      return hljs.highlight(code, { language: lang }).value
-    }
-    return hljs.highlightAuto(code).value
-  }
-}))
-marked.setOptions({ breaks: true, gfm: true })
+import {
+  getFavoriteResources,
+  getResourceList,
+  setResourceFavorite,
+  type ResourceVO
+} from '@/api/resource'
+
+type ResourceFilter =
+  | 'all'
+  | 'favorite'
+  | 'mindmap'
+  | 'quiz'
+  | 'reading'
+  | 'code'
 
 const router = useRouter()
+const resources = ref<ResourceVO[]>([])
+const selectedType = ref<ResourceFilter>('all')
+const loading = ref(false)
+const errorMessage = ref('')
+const favoriteLoadingId = ref<number | null>(null)
 
-const cats = ref<any[]>([])
-const curCat = ref<any>(null)
-const notes = ref<any[]>([])
-const curNote = ref<any>(null)
-
-const resourceCards = [
+const resourceCards: Array<{
+  key: ResourceFilter
+  label: string
+  icon: string
+}> = [
+  { key: 'all', label: '全部资源', icon: '📚' },
+  { key: 'favorite', label: '我的收藏', icon: '⭐' },
   { key: 'mindmap', label: '思维导图', icon: '🧠' },
   { key: 'quiz', label: '练习题目', icon: '📝' },
   { key: 'reading', label: '拓展阅读', icon: '📖' },
-  { key: 'code', label: '代码案例', icon: '💻' },
+  { key: 'code', label: '代码案例', icon: '💻' }
 ]
 
-const html = computed(() => curNote.value?.content ? marked.parse(curNote.value.content) : '')
+const filteredResources = computed(() => {
+  if (
+    selectedType.value === 'all' ||
+    selectedType.value === 'favorite'
+  ) {
+    return resources.value
+  }
 
-const enterCat = async (cat: any) => {
-  curCat.value = cat
-  try {
-    const n = await getNotes(cat.category)
-    notes.value = Array.isArray(n) ? n : []
-  } catch { notes.value = [] }
+  return resources.value.filter(
+    resource => resource.type === selectedType.value
+  )
+})
+
+function getTypeLabel(type: string): string {
+  const labels: Record<string, string> = {
+    mindmap: '思维导图',
+    quiz: '练习题目',
+    reading: '拓展阅读',
+    code: '代码案例'
+  }
+
+  return labels[type] ?? type ?? '其他资源'
 }
 
-const enterNote = async (item: any) => {
-  curNote.value = item
-  if (!item.content && item.id) {
+function getTypeIcon(type: string): string {
+  const icons: Record<string, string> = {
+    mindmap: '🧠',
+    quiz: '📝',
+    reading: '📖',
+    code: '💻'
+  }
+
+  return icons[type] ?? '📚'
+}
+
+function getDifficultyLabel(difficulty: string): string {
+  const labels: Record<string, string> = {
+    easy: '简单',
+    medium: '中等',
+    hard: '困难'
+  }
+
+  return labels[difficulty] ?? difficulty ?? '未设置难度'
+}
+
+async function loadResources(): Promise<void> {
+  loading.value = true
+  errorMessage.value = ''
+
     try {
-      const d = await getNoteDetail(item.id)
-      if (d) curNote.value = d
-    } catch {}
+    const data =
+      selectedType.value === 'favorite'
+        ? await getFavoriteResources()
+        : await getResourceList()
+
+    resources.value = Array.isArray(data) ? data : []
+  } catch (error) {
+    console.error('加载资源列表失败：', error)
+    resources.value = []
+    errorMessage.value = '资源加载失败，请稍后重试'
+  } finally {
+    loading.value = false
   }
 }
 
-const goResource = (key: string) => {
-  // 如果已选中章节，把 category 作为 chapterId 传过去，让生成页优先查DB缓存
-  const chapterId = curCat.value?.category
-  const query = chapterId ? `?chapterId=${chapterId}` : ''
-  router.push(`/student/resources/generate/${key}${query}`)
+async function selectResourceFilter(
+  filter: ResourceFilter
+): Promise<void> {
+  selectedType.value = filter
+  await loadResources()
 }
 
-onMounted(async () => {
+function openResource(id: number): void {
+  router.push(`/student/resources/${id}`)
+}
+
+async function toggleFavorite(resource: ResourceVO): Promise<void> {
+  favoriteLoadingId.value = resource.id
+
+  const nextFavorite = !Boolean(resource.favorites)
+
   try {
-    const c = await getCategories()
-    if (Array.isArray(c)) cats.value = c
-  } catch {}
-})
+    await setResourceFavorite(resource.id, nextFavorite)
+    resource.favorites = nextFavorite ? 1 : 0
+  } catch (error) {
+    console.error('更新资源收藏状态失败：', error)
+    errorMessage.value = '收藏状态更新失败，请稍后重试'
+  } finally {
+    favoriteLoadingId.value = null
+  }
+}
+
+onMounted(loadResources)
 </script>
 
 <style scoped>

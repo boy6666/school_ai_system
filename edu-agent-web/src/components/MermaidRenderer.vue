@@ -20,6 +20,7 @@
       @mouseleave="onDragEnd"
     >
       <div v-if="loading" class="mermaid-loading">渲染中...</div>
+      <div v-else-if="errorMsg" class="mermaid-error">{{ errorMsg }}</div>
       <div
         v-show="!loading && svg"
         class="mermaid-svg"
@@ -44,11 +45,16 @@ const loading = ref(true)
 const errorMsg = ref('')
 const zoom = ref(1)
 const dragging = ref(false)
-const dragStart = ref({ x: 0, y: 0, sx: 0, sy: 0 })
+const dragStart = ref({ x: 0, y: 0 })
 const scrollPos = ref({ x: 0, y: 0 })
 
 const render = async () => {
-  if (!props.code) return
+  if (!props.code.trim()) {
+    loading.value = false
+    errorMsg.value = ''
+    svg.value = ''
+    return
+  }
   loading.value = true
   errorMsg.value = ''
   svg.value = ''
@@ -58,16 +64,17 @@ const render = async () => {
     mermaid.default.initialize({
       startOnLoad: false,
       theme: 'default',
-      securityLevel: 'loose',
+      securityLevel: 'strict',
       fontFamily: '"PingFang SC", "Microsoft YaHei", sans-serif',
     })
     const id = 'mermaid-' + Date.now()
     const { svg: result } = await mermaid.default.render(id, props.code)
     svg.value = result
-  } catch (e: any) {
-    errorMsg.value = String(e)
+  } catch (error: unknown) {
+    errorMsg.value = error instanceof Error ? error.message : '图表渲染失败'
+  } finally {
+    loading.value = false
   }
-  loading.value = false
   await nextTick()
   // 渲染完后自适应
   setTimeout(autoFit, 100)
@@ -131,9 +138,11 @@ const downloadPng = async () => {
     canvas.toBlob((b) => {
       if (!b) return
       const a = document.createElement('a')
-      a.href = URL.createObjectURL(b)
+      const downloadUrl = URL.createObjectURL(b)
+      a.href = downloadUrl
       a.download = 'mindmap.png'
       a.click()
+      URL.revokeObjectURL(downloadUrl)
     })
   }
   img.src = url
@@ -181,6 +190,12 @@ onMounted(render)
   padding: 64px 16px;
   color: #909399;
   font-size: 16px;
+}
+.mermaid-error {
+  padding: 24px 16px;
+  color: #f56c6c;
+  font-size: 14px;
+  text-align: center;
 }
 .mermaid-svg {
   transition: transform 0.1s ease;

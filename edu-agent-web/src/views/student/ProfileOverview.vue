@@ -12,7 +12,7 @@
           <template #header>
             <span>六维学习画像</span>
             <el-tag v-if="profileExists" type="success" size="small">AI 分析</el-tag>
-            <el-tag v-else type="info" size="small">示例数据</el-tag>
+            <el-tag v-else type="info" size="small">暂无真实数据</el-tag>
           </template>
           <div v-if="loading" class="chart-placeholder">
             <el-icon class="is-loading" :size="32"><Loading /></el-icon>
@@ -64,7 +64,6 @@ import * as echarts from 'echarts'
 import { Loading } from '@element-plus/icons-vue'
 import { getProfile, type ProfileData } from '@/api/profile'
 import { useUserStore } from '@/stores/user'
-import request from '@/utils/request'
 
 const userStore = useUserStore()
 const radarChartRef = ref<HTMLElement>()
@@ -73,7 +72,7 @@ const profileExists = ref(false)
 const profileData = ref<ProfileData>({})
 
 const sixAxes = ['基础扎实度', '目标明确度', '知识掌握度', '方法适配度', '错误规避力', '学习自主性']
-const radarValues = ref<number[]>([50, 50, 50, 50, 50, 50])
+const radarValues = ref<number[]>([0, 0, 0, 0, 0, 0])
 
 const typeClass = computed(() => {
   if (profileData.value.overall_type === '进阶拓展型') return 'type-advanced'
@@ -95,8 +94,6 @@ const typeDescription = computed(() => {
 
 /** 维度详情：使用真实分数 + 对应描述文本 */
 const dimLabels = ['知识掌握度', '目标清晰度', '认知适配', '错误规避', '学习自主', '综合能力']
-const dimKeys = ['knowledge_mastery', 'learning_goal_clarity', 'cognitive_adaptation',
-                 'mistake_avoidance', 'learning_autonomy', 'overall_level']
 const dimColors = ['#409EFF', '#67C23A', '#E6A23C', '#F56C6C', '#9C27B0', '#303133']
 const dimDescKeys = ['knowledge_base', 'learning_goal', 'cognitive_style', 'mistake_patterns', 'pace', 'last_score']
 
@@ -109,10 +106,14 @@ const dimensionDetails = computed(() =>
   }))
 )
 
-function formatDimText(key: string, p: any): string {
+function formatDimText(key: string, p: ProfileData): string {
   if (key === 'last_score') return p.last_score != null ? p.last_score + '分' : '-'
   if (key === 'mistake_patterns') return p.mistake_patterns?.join('、') || '-'
-  return p[key] || '-'
+  if (key === 'knowledge_base') return p.knowledge_base || '-'
+  if (key === 'learning_goal') return p.learning_goal || '-'
+  if (key === 'cognitive_style') return p.cognitive_style || '-'
+  if (key === 'pace') return p.pace || '-'
+  return '-'
 }
 
 // suggestions 已移至学习报告页
@@ -120,26 +121,30 @@ function formatDimText(key: string, p: any): string {
 // calcRadar 已替换为 readRealScores（从 profile_data 取真实分数）
 
 /** 从 profile_data 读取六维真实分数 */
-function readRealScores(res: any): number[] {
+function readRealScores(res: ProfileData): number[] {
   const pd = res?.profile_data || {}
   const keys = ['knowledge_mastery', 'learning_goal_clarity', 'cognitive_adaptation',
                 'mistake_avoidance', 'learning_autonomy', 'overall_level']
-  return keys.map(k => pd[k]?.score ?? 50)
+  return keys.map(k => pd[k]?.score ?? 0)
 }
 
 async function loadProfile() {
   loading.value = true
-  const userId = userStore.userInfo?.id
+  const userId = userStore.userInfo?.id ?? userStore.userInfo?.userId
 
   try {
-    const res = userId ? await getProfile(userId) as ProfileData : null
+    const res = userId ? await getProfile(userId) : null
     if (res && res.exists) {
       profileExists.value = true
       profileData.value = res
       radarValues.value = readRealScores(res)  // 用真实分数替换启发式估算
       return
     }
-  } catch { /* not found */ }
+  } catch {
+    profileExists.value = false
+    profileData.value = {}
+    radarValues.value = [0, 0, 0, 0, 0, 0]
+  }
   loading.value = false
   await nextTick()
   initRadarChart()
@@ -165,7 +170,7 @@ function initRadarChart() {
       type: 'radar',
       data: [{
         value: radarValues.value,
-        name: profileExists.value ? '当前水平' : '示例',
+        name: profileExists.value ? '当前水平' : '暂无数据',
         areaStyle: { color: 'rgba(64, 158, 255, 0.2)' },
         lineStyle: { color: '#409EFF', width: 2 },
         itemStyle: { color: '#409EFF' },

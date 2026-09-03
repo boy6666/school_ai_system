@@ -1,10 +1,8 @@
-import axios from 'axios'
 import request from '@/utils/request'
 
-const aiClient = axios.create({
-  baseURL: '/ai',
-  timeout: 60000,
-})
+export interface ProfileScore {
+  score?: number
+}
 
 export interface ProfileData {
   major?: string
@@ -26,6 +24,7 @@ export interface ProfileData {
   last_suggestion?: string
   last_updated?: string
   exists?: boolean
+  profile_data?: Record<string, ProfileScore>
 }
 
 export interface ProfileBuildParams {
@@ -39,21 +38,27 @@ export interface ProfileBuildParams {
   daily_hours: number
 }
 
-export const buildProfile = async (params: ProfileBuildParams): Promise<{ student_id: string; profile: ProfileData }> => {
-  const res = await aiClient.post('/profile/build', params)
-  return res.data
+export interface ProfileBuildResult {
+  student_id: string
+  profile: ProfileData
 }
 
-export const getProfileFromAI = async (studentId: string): Promise<{ student_id: string; profile: ProfileData; exists: boolean }> => {
-  const res = await aiClient.get(`/profile/${studentId}`)
-  return res.data
+export interface AiProfileResult extends ProfileBuildResult {
+  exists: boolean
 }
 
-export const getProfile = (id: number): Promise<any> => {
-  console.log('[DEBUG] getProfile called with id =', id, '(type:', typeof id, ')')
-  return request.get(`/profile/${id}`)
+export const buildProfile = (params: ProfileBuildParams) => {
+  return request.post<unknown, ProfileBuildResult>('/edu-agent-ai/profile/build', params)
 }
 
-export const saveProfile = (data: Record<string, any>): Promise<any> => {
-  return request.post('/profile', data)
+export const getProfileFromAI = (studentId: string) => {
+  return request.get<unknown, AiProfileResult>(`/edu-agent-ai/profile/${studentId}`)
+}
+
+export const getProfile = (id: number) => {
+  return request.get<unknown, ProfileData>(`/edu-agent-learning/profile/${id}`)
+}
+
+export const saveProfile = (data: Record<string, unknown>) => {
+  return request.post<unknown, ProfileData>('/edu-agent-learning/profile', data)
 }

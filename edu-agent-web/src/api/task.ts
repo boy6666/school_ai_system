@@ -34,14 +34,14 @@ export interface LearningTaskQuery {
 }
 
 export function getLearningTasks(params: LearningTaskQuery) {
-  return request.get<unknown, LearningTaskResponse>('/student/tasks', {
+  return request.get<unknown, LearningTaskResponse>('/edu-agent-learning/tasks', {
     params
   })
 }
 
 export function updateLearningTaskStatus(id: number, status: TaskStatus) {
   return request.post<unknown, { success: boolean }>(
-    `/student/tasks/${id}/status`,
+    `/edu-agent-learning/tasks/${id}/status`,
     { status }
   )
 }

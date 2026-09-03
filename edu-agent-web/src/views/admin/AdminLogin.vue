@@ -27,36 +27,98 @@
 <script setup lang="ts">
 import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import {
+  ElMessage,
+  type FormInstance,
+  type FormRules
+} from 'element-plus'
+import {
+  getMe,
+  login,
+  type LoginParams
+} from '@/api/auth'
 import { useUserStore } from '@/stores/user'
-import request from '@/utils/request'
+import { ROLE } from '@/utils/constants'
 
 const router = useRouter()
 const userStore = useUserStore()
-const formRef = ref()
+const formRef = ref<FormInstance>()
 const loading = ref(false)
 
-const form = reactive({ username: '', password: '' })
-const rules = {
-  username: [{ required: true, message: '请输入管理员账号', trigger: 'blur' }],
-  password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
+const form = reactive<LoginParams>({
+  username: '',
+  password: ''
+})
+
+const rules: FormRules<LoginParams> = {
+  username: [
+    {
+      required: true,
+      message: '请输入管理员账号',
+      trigger: 'blur'
+    }
+  ],
+  password: [
+    {
+      required: true,
+      message: '请输入密码',
+      trigger: 'blur'
+    }
+  ]
 }
 
 const handleLogin = async () => {
-  await formRef.value.validate()
+  if (loading.value) {
+    return
+  }
+
+  const valid = await formRef.value
+    ?.validate()
+    .catch(() => false)
+
+  if (!valid) {
+    return
+  }
+
   loading.value = true
+
   try {
-    const res = await request.post('/auth/login', form)
-    if (res.token) {
-      userStore.setToken(res.token)
-      userStore.setUserInfo(res.userInfo || {})
-      ElMessage.success('登录成功')
-      router.push('/admin/dashboard')
-    } else {
-      ElMessage.error('账号或密码错误')
+    const result = await login({ ...form })
+
+    if (!result.token) {
+      throw new Error('登录响应中缺少 token')
     }
-  } catch (error) {
-    ElMessage.error('登录失败')
+
+    userStore.setToken(result.token)
+
+    const me = await getMe()
+    const roles = me.roles?.length
+      ? me.roles
+      : result.roles
+
+    if (!roles.includes(ROLE.ADMIN)) {
+      throw new Error('该账号没有管理员权限')
+    }
+
+    userStore.setUserInfo({
+      ...me,
+      userId: me.userId ?? result.userId,
+      realName: me.realName || result.realName,
+      roles,
+      onboarded: me.onboarded ?? result.onboarded
+    })
+
+    ElMessage.success('登录成功')
+    await router.push('/admin/dashboard')
+  } catch (error: unknown) {
+    userStore.logout()
+
+    const message =
+      error instanceof Error
+        ? error.message
+        : '登录失败，请检查网络'
+
+    ElMessage.error(message)
   } finally {
     loading.value = false
   }
