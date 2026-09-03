@@ -1,0 +1,54 @@
+server:
+  port: 8888
+
+spring:
+  application:
+    name: resource-service
+  datasource:
+    url: jdbc:mysql://127.0.0.1:3306/resource_db?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    username: root
+    password: 123456
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  rabbitmq:
+    host: 127.0.0.1
+    port: 5672
+    username: admin
+    password: admin
+  data:
+    redis:
+      host: 127.0.0.1
+      port: 6379
+      timeout: 3000ms
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
+  cloud:
+    compatibility-verifier:
+      enabled: false
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+ai:
+  service:
+    url: http://localhost:8001
+
+learning:
+  service:
+    url: http://localhost:8082
+
+feign:
+  client:
+    config:
+      default:
+        connectTimeout: 3000
+        readTimeout: 30000
+
+logging:
+  level:
+    com.eduagent: DEBUG
+    org.springframework.jdbc: DEBUG

@@ -1,0 +1,5 @@
+{
+  "items": [
+    {"content": "测试导入内容", "source": "test.txt", "type": "note"}
+  ]
+}

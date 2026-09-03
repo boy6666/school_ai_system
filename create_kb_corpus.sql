@@ -1,0 +1,12 @@
+CREATE TABLE IF NOT EXISTS kb_corpus (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    content LONGTEXT NOT NULL,
+    source VARCHAR(255) NOT NULL,
+    type VARCHAR(50) NOT NULL DEFAULT 'java_note',
+    status VARCHAR(20) NOT NULL DEFAULT 'raw',
+    metadata JSON,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_status (status),
+    INDEX idx_source (source)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

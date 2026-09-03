@@ -1,0 +1,4 @@
+Java 是一种面向对象的编程语言，由 Sun Microsystems 于 1995 年发布。
+主要特性：平台无关性（JVM）、自动内存管理（垃圾回收）、多线程支持。
+基本数据类型：int, double, boolean, char 等。
+控制流程：if-else, switch, for, while, do-while。
