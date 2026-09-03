@@ -51,6 +51,22 @@ export interface CreateResourceRequest {
   favorites?: number
 }
 
+export interface ResourceGenerateRequest {
+  userId?: number
+  chapter?: string
+  chapterName?: string
+  topic?: string
+  type?: ResourceType | string
+  difficulty?: ResourceDifficulty | string
+  force?: boolean
+  chapterId?: string
+}
+
+export interface ResourceFeedbackRequest {
+  liked?: boolean
+  difficultyFeedback?: string
+}
+
 /** 查询资源列表 */
 export function getResourceList(): Promise<ResourceVO[]> {
   return request.get<unknown, ResourceVO[]>(
@@ -97,5 +113,61 @@ export function setResourceFavorite(
     {
       params: { favorite }
     }
+  )
+}
+
+/** 根据正式契约生成学习资源 */
+export function generateResource(
+  data: ResourceGenerateRequest
+): Promise<ResourceVO> {
+  return request.post<unknown, ResourceVO>(
+    '/edu-agent-resource/generate',
+    data
+  )
+}
+
+/** 重新生成指定资源 */
+export function regenerateResource(
+  id: number
+): Promise<ResourceVO> {
+  return request.post<unknown, ResourceVO>(
+    `/edu-agent-resource/${id}/regenerate`
+  )
+}
+
+/** 提交资源使用反馈 */
+export function submitResourceFeedback(
+  id: number,
+  data: ResourceFeedbackRequest
+): Promise<void> {
+  return request.post<unknown, void>(
+    `/edu-agent-resource/${id}/feedback`,
+    data
+  )
+}
+
+/** 查询当前用户收藏的资源 */
+export function getFavoriteResources(): Promise<ResourceVO[]> {
+  return request.get<unknown, ResourceVO[]>(
+    '/edu-agent-resource/favorites/mine'
+  )
+}
+
+/** 查询指定章节的资源 */
+export function getChapterResources(
+  chapterId: string
+): Promise<ResourceVO[]> {
+  return request.get<unknown, ResourceVO[]>(
+    `/edu-agent-resource/chapter/${chapterId}`
+  )
+}
+
+/** 按章节和类型查询资源 */
+export function getChapterResourcesByType(
+  chapterId: string,
+  type: ResourceType | string
+): Promise<ResourceVO[]> {
+  return request.get<unknown, ResourceVO[]>(
+    `/edu-agent-resource/chapter/${chapterId}/${type}`
   )
 }

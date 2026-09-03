@@ -30,7 +30,38 @@
           </span>
         </div>
       </header>
+      <div class="resource-actions">
+        <el-button
+          type="primary"
+          plain
+          :loading="regenerating"
+          @click="handleRegenerate"
+        >
+          重新生成
+        </el-button>
+      </div>
+      <div class="feedback-panel">
+        <span class="feedback-label">使用反馈</span>
 
+        <el-radio-group v-model="liked">
+          <el-radio :value="true">喜欢</el-radio>
+          <el-radio :value="false">不喜欢</el-radio>
+        </el-radio-group>
+
+        <el-input
+          v-model="difficultyFeedback"
+          maxlength="100"
+          placeholder="请输入难度反馈（可选）"
+        />
+
+        <el-button
+          type="primary"
+          :loading="feedbackSubmitting"
+          @click="handleSubmitFeedback"
+        >
+          提交反馈
+        </el-button>
+      </div>
       <div
         v-if="resource.content"
         class="markdown-body"
@@ -46,6 +77,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
+import { ElMessage } from 'element-plus'
 import { useRoute, useRouter } from 'vue-router'
 import { marked } from 'marked'
 import { markedHighlight } from 'marked-highlight'
@@ -54,6 +86,8 @@ import 'highlight.js/styles/atom-one-dark.css'
 
 import {
   getResource,
+  regenerateResource,
+  submitResourceFeedback,
   type ResourceVO
 } from '@/api/resource'
 
@@ -80,6 +114,10 @@ const router = useRouter()
 
 const resource = ref<ResourceVO | null>(null)
 const loading = ref(false)
+const regenerating = ref(false)
+const feedbackSubmitting = ref(false)
+const liked = ref<boolean>()
+const difficultyFeedback = ref('')
 const errorMessage = ref('')
 
 const resourceId = computed(() => {
@@ -130,12 +168,65 @@ async function loadResource(): Promise<void> {
 
   try {
     resource.value = await getResource(resourceId.value)
-  } catch (error) {
+    } catch (error) {
     console.error('加载资源详情失败：', error)
     resource.value = null
     errorMessage.value = '资源详情加载失败，请稍后重试'
   } finally {
     loading.value = false
+  }
+}
+
+async function handleRegenerate(): Promise<void> {
+  if (resourceId.value === null) {
+    ElMessage.error('资源编号无效')
+    return
+  }
+
+  regenerating.value = true
+
+  try {
+    resource.value = await regenerateResource(
+      resourceId.value
+    )
+    ElMessage.success('资源重新生成成功')
+  } catch {
+    ElMessage.error('资源重新生成失败，请稍后重试')
+  } finally {
+    regenerating.value = false
+  }
+}
+
+async function handleSubmitFeedback(): Promise<void> {
+  if (resourceId.value === null) {
+    ElMessage.error('资源编号无效')
+    return
+  }
+
+  if (
+    liked.value === undefined &&
+    !difficultyFeedback.value.trim()
+  ) {
+    ElMessage.warning('请选择使用感受或填写难度反馈')
+    return
+  }
+
+  feedbackSubmitting.value = true
+
+  try {
+    await submitResourceFeedback(resourceId.value, {
+      liked: liked.value,
+      difficultyFeedback:
+        difficultyFeedback.value.trim() || undefined
+    })
+
+    ElMessage.success('反馈提交成功')
+    liked.value = undefined
+    difficultyFeedback.value = ''
+  } catch {
+    ElMessage.error('反馈提交失败，请稍后重试')
+  } finally {
+    feedbackSubmitting.value = false
   }
 }
 
@@ -183,6 +274,33 @@ onMounted(loadResource)
 
 .state-box.error {
   color: #d93025;
+}
+
+.resource-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 20px;
+}
+
+.feedback-panel {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  margin-bottom: 24px;
+  background: #f7f9fc;
+  border: 1px solid #ebeef5;
+  border-radius: 10px;
+}
+
+.feedback-label {
+  flex-shrink: 0;
+  color: #303133;
+  font-weight: 600;
+}
+
+.feedback-panel :deep(.el-input) {
+  flex: 1;
 }
 
 .resource-header {

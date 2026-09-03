@@ -70,7 +70,7 @@
         :style="selectedType === card.key
           ? 'border-color:#4f8cff;background:#f5f8ff'
           : ''"
-        @click="selectedType = card.key"
+        @click="selectResourceFilter(card.key)"
       >
         <div class="mini-icon">{{ card.icon }}</div>
         <div class="mini-label">{{ card.label }}</div>
@@ -84,6 +84,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 import {
+  getFavoriteResources,
   getResourceList,
   setResourceFavorite,
   type ResourceVO
@@ -91,6 +92,7 @@ import {
 
 type ResourceFilter =
   | 'all'
+  | 'favorite'
   | 'mindmap'
   | 'quiz'
   | 'reading'
@@ -109,6 +111,7 @@ const resourceCards: Array<{
   icon: string
 }> = [
   { key: 'all', label: '全部资源', icon: '📚' },
+  { key: 'favorite', label: '我的收藏', icon: '⭐' },
   { key: 'mindmap', label: '思维导图', icon: '🧠' },
   { key: 'quiz', label: '练习题目', icon: '📝' },
   { key: 'reading', label: '拓展阅读', icon: '📖' },
@@ -116,7 +119,10 @@ const resourceCards: Array<{
 ]
 
 const filteredResources = computed(() => {
-  if (selectedType.value === 'all') {
+  if (
+    selectedType.value === 'all' ||
+    selectedType.value === 'favorite'
+  ) {
     return resources.value
   }
 
@@ -161,8 +167,12 @@ async function loadResources(): Promise<void> {
   loading.value = true
   errorMessage.value = ''
 
-  try {
-    const data = await getResourceList()
+    try {
+    const data =
+      selectedType.value === 'favorite'
+        ? await getFavoriteResources()
+        : await getResourceList()
+
     resources.value = Array.isArray(data) ? data : []
   } catch (error) {
     console.error('加载资源列表失败：', error)
@@ -171,6 +181,13 @@ async function loadResources(): Promise<void> {
   } finally {
     loading.value = false
   }
+}
+
+async function selectResourceFilter(
+  filter: ResourceFilter
+): Promise<void> {
+  selectedType.value = filter
+  await loadResources()
 }
 
 function openResource(id: number): void {
