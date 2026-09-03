@@ -160,11 +160,20 @@ const resourceTypes: Array<{
 ]
 
 function queryText(
-  value: string | string[] | null | undefined
+  value:
+    | string
+    | Array<string | null>
+    | null
+    | undefined
 ): string {
-  return Array.isArray(value)
-    ? value[0] || ''
-    : value || ''
+  if (Array.isArray(value)) {
+    return value.find(
+      (item): item is string =>
+        typeof item === 'string'
+    ) ?? ''
+  }
+
+  return value ?? ''
 }
 
 function initialType(): ResourceType {

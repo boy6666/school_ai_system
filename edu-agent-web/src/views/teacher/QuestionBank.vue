@@ -91,7 +91,7 @@
         <el-table-column label="题型" width="100">
           <template #default="{ row }">
             <el-tag>
-              {{ typeLabels[row.type] || row.type }}
+              {{ getQuestionTypeLabel(row.type) }}
             </el-tag>
           </template>
         </el-table-column>
@@ -102,7 +102,11 @@
           </template>
         </el-table-column>
 
-        <el-table-column prop="topic" label="知识点" min-width="130">
+        <el-table-column
+          prop="topic"
+          label="知识点"
+          min-width="130"
+        >
           <template #default="{ row }">
             {{ row.topic || '—' }}
           </template>
@@ -110,8 +114,18 @@
 
         <el-table-column label="难度" width="100">
           <template #default="{ row }">
-            <el-tag :type="difficultyTagTypes[row.difficulty]">
-              {{ difficultyLabels[row.difficulty] || row.difficulty }}
+            <el-tag
+              :type="
+                getQuestionDifficultyTagType(
+                  row.difficulty
+                )
+              "
+            >
+              {{
+                getQuestionDifficultyLabel(
+                  row.difficulty
+                )
+              }}
             </el-tag>
           </template>
         </el-table-column>
@@ -447,6 +461,39 @@ const difficultyTagTypes: Record<
   easy: 'success',
   medium: 'warning',
   hard: 'danger'
+}
+
+function getQuestionTypeLabel(value: unknown): string {
+  if (typeof value !== 'string') {
+    return '未知题型'
+  }
+
+  return typeLabels[value as QuestionType] ?? value
+}
+
+function getQuestionDifficultyLabel(
+  value: unknown
+): string {
+  if (typeof value !== 'string') {
+    return '未知难度'
+  }
+
+  return (
+    difficultyLabels[value as QuestionDifficulty] ??
+    value
+  )
+}
+
+function getQuestionDifficultyTagType(
+  value: unknown
+) {
+  if (typeof value !== 'string') {
+    return undefined
+  }
+
+  return difficultyTagTypes[
+    value as QuestionDifficulty
+  ]
 }
 
 const questions = ref<TeacherQuestion[]>([])

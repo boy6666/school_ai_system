@@ -13,10 +13,14 @@ export type ResourceDifficulty =
 
 export interface ResourceVO {
   id: number
+  userId?: number
   title: string
   type: ResourceType | string
   difficulty: ResourceDifficulty | string
   chapter: string
+  chapterId?: string
+  courseName?: string
+  description?: string
   content: string
   status: string
   errorMsg?: string
@@ -27,10 +31,6 @@ export interface ResourceVO {
 }
 export interface ResourceEntity
   extends ResourceVO {
-  userId?: number
-  chapterId?: string
-  courseName?: string
-  description?: string
   updateTime?: string
 }
 

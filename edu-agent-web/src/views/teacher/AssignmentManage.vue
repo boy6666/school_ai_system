@@ -73,7 +73,7 @@
           <el-table-column label="类型" width="110">
             <template #default="{ row }">
               <el-tag>
-                {{ assignmentTypeText[row.type] }}
+                {{ getAssignmentTypeText(row.type) }}
               </el-tag>
             </template>
           </el-table-column>
@@ -247,7 +247,7 @@
 
               <el-table-column label="题型" width="100">
                 <template #default="{ row }">
-                  {{ questionTypeText[row.type] }}
+                  {{ getQuestionTypeText(row.type) }}
                 </template>
               </el-table-column>
 
@@ -642,6 +642,14 @@ const questionTypeText = {
   blank: '填空题',
   code: '代码题'
 } as const
+
+function getQuestionTypeText(type: unknown): string {
+  return typeof type === 'string'
+    ? questionTypeText[
+        type as keyof typeof questionTypeText
+      ] ?? type
+    : '未知类型'
+}
 
 const createForm = reactive<CreateFormModel>({
   classId: undefined,
@@ -1046,16 +1054,15 @@ async function handleDelete(
     // 后端失败时不删除本地列表，不显示伪成功
   }
 }
-function getAssignmentTypeText(value?: string) {
-  if (value === 'homework') {
-    return '普通作业'
+function getAssignmentTypeText(value: unknown): string {
+  if (typeof value !== 'string') {
+    return '未提供'
   }
 
-  if (value === 'code') {
-    return '代码作业'
-  }
-
-  return value || '未提供'
+  return (
+    assignmentTypeText[value as AssignmentType] ??
+    value
+  )
 }
 function getClassName(classId: number) {
   return (
