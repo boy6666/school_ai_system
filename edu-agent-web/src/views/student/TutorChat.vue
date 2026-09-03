@@ -126,6 +126,7 @@ import {
   type TutorSession
 } from '@/api/tutor'
 import { ElMessage } from 'element-plus'
+import { useUserStore } from '@/stores/user'
 
 interface ChatMessage {
   role: 'user' | 'assistant'
@@ -160,6 +161,7 @@ interface StructuredMessage {
 }
 
 const route = useRoute()
+const userStore = useUserStore()
 const input = ref('')
 const loading = ref(false)
 const messages = ref<ChatMessage[]>([])
@@ -221,6 +223,15 @@ const send = async () => {
   const text = input.value.trim()
   if (!text || loading.value) return
 
+  const studentId =
+    userStore.userInfo?.userId ??
+    userStore.userInfo?.id
+
+  if (studentId === undefined) {
+    ElMessage.error('无法获取当前用户信息，请重新登录')
+    return
+  }
+
   // 如果没有当前会话，先创建
   if (!currentSessionId.value) {
     currentSessionId.value = 'session_' + Date.now()
@@ -232,12 +243,20 @@ const send = async () => {
   await scrollBottom()
 
   try {
-    const result = await sendTutorMessage(text, currentSessionId.value)
-    const answer = result?.answer || result?.finalAnswer || ''
+    const result = await sendTutorMessage(
+      text,
+      String(studentId),
+      currentSessionId.value
+    )
+    const answer = result?.final_answer || ''
+
     if (answer) {
-      messages.value.push({ role: 'assistant', content: answer })
+      messages.value.push({
+        role: 'assistant',
+        content: answer
+      })
     }
-    
+
     // 刷新会话列表
     await loadSessions()
   } catch {

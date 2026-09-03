@@ -1,13 +1,15 @@
 import request from '@/utils/request'
 
 export interface TutorReply {
-  answer?: string
-  finalAnswer?: string
   intent?: string
-  routeReason?: string
-  evaluation?: string
-  resourceDir?: string
-  sessionId?: string
+  final_answer?: string
+  profile?: Record<string, unknown>
+  resources?: unknown
+  learning_path?: unknown
+  safety_report?: unknown
+  evaluation_report?: unknown
+  resource_dir?: string
+  profile_complete?: boolean
 }
 
 export interface TutorHistoryItem {
@@ -18,16 +20,19 @@ export interface TutorHistoryItem {
 
 export function sendTutorMessage(
   message: string,
+  studentId: string,
   sessionId?: string,
-  isOnboarding?: boolean,
   profile?: Record<string, unknown>
-) {
-  return request.post<unknown, TutorReply>('/edu-agent-ai/chat', {
-    message,
-    sessionId,
-    isOnboarding: isOnboarding || false,
-    profile
-  })
+): Promise<TutorReply> {
+  return request.post<unknown, TutorReply>(
+    '/edu-agent-ai/chat',
+    {
+      user_input: message,
+      student_id: studentId,
+      session_id: sessionId,
+      profile
+    }
+  )
 }
 
 export function getTutorHistory(sessionId?: string) {
