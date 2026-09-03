@@ -77,8 +77,8 @@ export function getResourceList(): Promise<ResourceVO[]> {
 /** 新增资源 */
 export function createResource(
   data: CreateResourceRequest
-): Promise<ResourceEntity> {
-  return request.post<unknown, ResourceEntity>(
+): Promise<void> {
+  return request.post<unknown, void>(
     '/edu-agent-resource',
     data
   )

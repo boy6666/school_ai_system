@@ -85,24 +85,13 @@ describe('资源服务接口契约', () => {
       status: 'completed'
     }
 
-    const createdResource = {
-      id: 102,
-      userId: 8,
-      ...createData,
-      rating: 0,
-      views: 0,
-      favorites: 0,
-      createTime: '2026-08-29T12:30:00',
-      updateTime: '2026-08-29T12:30:00'
-    }
-
     mock.onPost(resourcePath).reply(200, {
       code: 0,
       message: 'success',
-      data: createdResource
+      data: null
     })
 
-    const result = await createResource(createData)
+    await createResource(createData)
 
     expect(mock.history.post[0]?.url).toBe(
       resourcePath
@@ -110,7 +99,6 @@ describe('资源服务接口契约', () => {
     expect(
       JSON.parse(mock.history.post[0]?.data)
     ).toEqual(createData)
-    expect(result).toEqual(createdResource)
   })
 
   it('应按正式路径查询资源详情', async () => {
