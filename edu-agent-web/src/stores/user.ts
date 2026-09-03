@@ -9,6 +9,7 @@ export interface UserInfo {
   name?: string
   roles: string[]
   role?: string
+  status?: number
   onboarded?: number
   avatar?: string
   email?: string

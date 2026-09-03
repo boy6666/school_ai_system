@@ -17,11 +17,13 @@ export interface LoginResult {
 export interface RegisterParams {
   username: string
   password: string
-  realName: string
-  role: string
+  realName?: string
+  email?: string
+  phone?: string
+  role?: string
 }
 
-export interface RefreshResult {
+export interface RefreshParams {
   token: string
 }
 
@@ -34,17 +36,19 @@ export const login = (params: LoginParams) => {
 }
 
 export const register = (params: RegisterParams) => {
-  return request.post<unknown, void>('/edu-agent-auth/register', params)
+  return request.post<unknown, LoginResult>(
+    '/edu-agent-auth/register',
+    params
+  )
 }
 
 export const getMe = () => {
   return request.get<unknown, UserInfo>('/edu-agent-auth/me')
 }
 
-export const logout = () => {
-  return request.post<unknown, void>('/edu-agent-auth/logout')
-}
-
-export const refresh = () => {
-  return request.post<unknown, RefreshResult>('/edu-agent-auth/refresh')
+export const refresh = (params: RefreshParams) => {
+  return request.post<unknown, LoginResult>(
+    '/edu-agent-auth/refresh',
+    params
+  )
 }

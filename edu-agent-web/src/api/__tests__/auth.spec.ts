@@ -9,7 +9,8 @@ import request from '@/utils/request'
 import {
   getMe,
   login,
-  logout
+  refresh,
+  register
 } from '@/api/auth'
 
 describe('认证服务接口契约', () => {
@@ -58,7 +59,9 @@ describe('认证服务接口契约', () => {
         username: 'admin',
         realName: '管理员',
         roles: ['ROLE_ADMIN'],
-        onboarded: 1
+        status: 1,
+        email: 'admin@example.com',
+        phone: '13800000000'
       }
     })
 
@@ -67,20 +70,66 @@ describe('认证服务接口契约', () => {
     expect(mock.history.get).toHaveLength(1)
     expect(mock.history.get[0]?.url).toBe(path)
     expect(result.roles).toEqual(['ROLE_ADMIN'])
+    expect(result.status).toBe(1)
   })
-    it('应按正式路径退出登录', async () => {
-    const path = '/edu-agent-auth/logout'
+
+  it('应按正式契约提交注册请求', async () => {
+    const path = '/edu-agent-auth/register'
+    const payload = {
+      username: 'teacher01',
+      password: 'teacher123',
+      realName: '测试教师',
+      email: 'teacher01@example.com',
+      phone: '13800000000',
+      role: 'teacher'
+    }
 
     mock.onPost(path).reply(200, {
       code: 0,
       message: 'success',
-      data: null
+      data: {
+        token: 'register-token',
+        userId: 3,
+        roles: ['ROLE_TEACHER'],
+        realName: '测试教师'
+      }
     })
 
-    await logout()
+    const result = await register(payload)
 
     expect(mock.history.post).toHaveLength(1)
     expect(mock.history.post[0]?.url).toBe(path)
-    expect(mock.history.post[0]?.data).toBeUndefined()
+    expect(
+      JSON.parse(mock.history.post[0]?.data)
+    ).toEqual(payload)
+    expect(result.roles).toEqual(['ROLE_TEACHER'])
+  })
+
+  it('应携带Token刷新认证信息', async () => {
+    const path = '/edu-agent-auth/refresh'
+    const payload = {
+      token: 'expired-token'
+    }
+
+    mock.onPost(path).reply(200, {
+      code: 0,
+      message: 'success',
+      data: {
+        token: 'refreshed-token',
+        userId: 1,
+        roles: ['ROLE_ADMIN'],
+        realName: '管理员'
+      }
+    })
+
+    const result = await refresh(payload)
+
+    expect(mock.history.post).toHaveLength(1)
+    expect(mock.history.post[0]?.url).toBe(path)
+    expect(
+      JSON.parse(mock.history.post[0]?.data)
+    ).toEqual(payload)
+    expect(result.token).toBe('refreshed-token')
+    expect(result.roles).toEqual(['ROLE_ADMIN'])
   })
 })
