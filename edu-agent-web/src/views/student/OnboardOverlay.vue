@@ -62,6 +62,7 @@
 <script setup lang="ts">
 import { ref, onMounted, nextTick, reactive } from 'vue'
 import request from '@/utils/request'
+import { markOnboardDone } from '@/api/auth'
 const emit = defineEmits(['done'])
 
 const input = ref('')
@@ -215,7 +216,7 @@ async function startGeneration() {
 
   // 完成状态必须由后端确认，不能使用本地业务标记伪装成功。
   try {
-    await request.post('/edu-agent-auth/onboard-done')
+    await markOnboardDone()
   } catch (error) {
     console.error('保存引导完成状态失败：', error)
     loading.value = false

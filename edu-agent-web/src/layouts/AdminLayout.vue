@@ -79,13 +79,22 @@
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { ElMessage } from 'element-plus'
+import { logout as logoutRequest } from '@/api/auth'
 
 const router = useRouter()
 const userStore = useUserStore()
 
-const handleCommand = async (command: string) => {
+const handleCommand = async (
+  command: string
+) => {
   if (command !== 'logout') {
     return
+  }
+
+  try {
+    await logoutRequest()
+  } catch {
+    // 服务端退出失败时仍清理本地状态
   }
 
   userStore.logout()

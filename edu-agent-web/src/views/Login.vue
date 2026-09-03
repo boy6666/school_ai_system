@@ -48,7 +48,11 @@
 import { reactive, ref } from 'vue'
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
 import { useRouter } from 'vue-router'
-import { getMe, login, type LoginParams } from '@/api/auth'
+import {
+  login,
+  normalizeAuthUser,
+  type LoginParams
+} from '@/api/auth'
 import { useUserStore } from '@/stores/user'
 
 const ROLE_ADMIN = 'ROLE_ADMIN'
@@ -86,35 +90,43 @@ const routeByRoles = async (roles: string[]) => {
 const handleLogin = async () => {
   if (loading.value) return
 
-  const valid = await formRef.value?.validate().catch(() => false)
+  const valid = await formRef.value
+    ?.validate()
+    .catch(() => false)
+
   if (!valid) return
 
   loading.value = true
+
   try {
-    // request.ts 已完成 Result.data 解包，这里拿到的就是 LoginResult。
+    // request.ts 已完成 Result.data 解包。
     const result = await login({ ...form })
-    if (!result.token) throw new Error('登录响应中缺少 token')
 
-    // 先保存 token，后续 getMe 请求才能自动携带 Bearer token。
+    if (!result.token) {
+      throw new Error('登录响应中缺少 token')
+    }
+
+    if (!result.userInfo) {
+      throw new Error('登录响应中缺少用户信息')
+    }
+
+    const normalizedUser = normalizeAuthUser(
+      result.userInfo
+    )
+
     userStore.setToken(result.token)
-
-    const me = await getMe()
-    const roles = me.roles?.length ? me.roles : result.roles
-
-    userStore.setUserInfo({
-      ...me,
-      userId: me.userId ?? result.userId,
-      realName: me.realName || result.realName,
-      roles,
-      onboarded: me.onboarded ?? result.onboarded
-    })
+    userStore.setUserInfo(normalizedUser)
 
     ElMessage.success('登录成功')
-    await routeByRoles(roles)
+    await routeByRoles(normalizedUser.roles)
   } catch (error: unknown) {
-    // 防止 login 成功而 getMe 失败时留下不完整的登录状态。
     userStore.logout()
-    const message = error instanceof Error ? error.message : '登录失败，请检查网络'
+
+    const message =
+      error instanceof Error
+        ? error.message
+        : '登录失败，请检查网络'
+
     ElMessage.error(message)
   } finally {
     loading.value = false

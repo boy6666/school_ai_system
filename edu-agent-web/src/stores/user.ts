@@ -5,15 +5,18 @@ export interface UserInfo {
   id?: number
   userId?: number
   username?: string
+  nickname?: string
   realName?: string
   name?: string
   roles: string[]
   role?: string
-  status?: number
+  status?: string
   onboarded?: number
   avatar?: string
   email?: string
   phone?: string
+  createTime?: string
+  lastLoginTime?: string | null
 }
 
 function readUserInfo(): UserInfo | null {
@@ -21,11 +24,25 @@ function readUserInfo(): UserInfo | null {
   if (!saved) return null
 
   try {
-    const parsed = JSON.parse(saved) as Partial<UserInfo>
+    const parsed = JSON.parse(
+      saved
+    ) as Partial<UserInfo>
+
+    const normalizedRoles = Array.isArray(
+      parsed.roles
+    )
+      ? parsed.roles
+      : []
+
     return {
       ...parsed,
-      roles: Array.isArray(parsed.roles) ? parsed.roles : [],
-      role: parsed.role || parsed.roles?.[0]
+      roles: normalizedRoles,
+      role: parsed.role || normalizedRoles[0],
+      name:
+        parsed.name ||
+        parsed.nickname ||
+        parsed.realName ||
+        parsed.username
     }
   } catch {
     localStorage.removeItem('userInfo')
@@ -33,61 +50,90 @@ function readUserInfo(): UserInfo | null {
   }
 }
 
-export const useUserStore = defineStore('user', () => {
-  const token = ref(localStorage.getItem('token') || '')
-  const userInfo = ref<UserInfo | null>(readUserInfo())
-  const roles = computed(() => userInfo.value?.roles ?? [])
+export const useUserStore = defineStore(
+  'user',
+  () => {
+    const token = ref(
+      localStorage.getItem('token') || ''
+    )
 
-  function setToken(newToken: string): void {
-    token.value = newToken
-    localStorage.setItem('token', newToken)
-  }
+    const userInfo = ref<UserInfo | null>(
+      readUserInfo()
+    )
 
-  function setUserInfo(info: Partial<UserInfo>): void {
-    const normalizedRoles = Array.isArray(info.roles)
-      ? info.roles
-      : []
+    const roles = computed(
+      () => userInfo.value?.roles ?? []
+    )
 
-    const normalized: UserInfo = {
-      ...info,
-      roles: normalizedRoles,
-      role: info.role || normalizedRoles[0]
+    function setToken(
+      newToken: string
+    ): void {
+      token.value = newToken
+      localStorage.setItem('token', newToken)
     }
 
-    userInfo.value = normalized
-    localStorage.removeItem('role')
-    localStorage.setItem(
-      'roles',
-      JSON.stringify(normalized.roles)
-    )
-    localStorage.setItem(
-      'userInfo',
-      JSON.stringify(normalized)
-    )
-  }
+    function setUserInfo(
+      info: Partial<UserInfo>
+    ): void {
+      const normalizedRoles = Array.isArray(
+        info.roles
+      )
+        ? info.roles
+        : []
 
-  function setOnboarded(onboarded: number): void {
-    if (!userInfo.value) return
-    setUserInfo({ ...userInfo.value, onboarded })
-  }
+      const normalized: UserInfo = {
+        ...info,
+        roles: normalizedRoles,
+        role: info.role || normalizedRoles[0],
+        name:
+          info.name ||
+          info.nickname ||
+          info.realName ||
+          info.username
+      }
 
-  function logout(): void {
-    token.value = ''
-    userInfo.value = null
+      userInfo.value = normalized
 
-    localStorage.removeItem('token')
-    localStorage.removeItem('roles')
-    localStorage.removeItem('role')
-    localStorage.removeItem('userInfo')
-  }
+      localStorage.removeItem('role')
+      localStorage.setItem(
+        'roles',
+        JSON.stringify(normalized.roles)
+      )
+      localStorage.setItem(
+        'userInfo',
+        JSON.stringify(normalized)
+      )
+    }
 
-  return {
-    token,
-    roles,
-    userInfo,
-    setToken,
-    setUserInfo,
-    setOnboarded,
-    logout
+    function setOnboarded(
+      onboarded: number
+    ): void {
+      if (!userInfo.value) return
+
+      setUserInfo({
+        ...userInfo.value,
+        onboarded
+      })
+    }
+
+    function logout(): void {
+      token.value = ''
+      userInfo.value = null
+
+      localStorage.removeItem('token')
+      localStorage.removeItem('roles')
+      localStorage.removeItem('role')
+      localStorage.removeItem('userInfo')
+    }
+
+    return {
+      token,
+      roles,
+      userInfo,
+      setToken,
+      setUserInfo,
+      setOnboarded,
+      logout
+    }
   }
-})
+)

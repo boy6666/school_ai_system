@@ -33,8 +33,8 @@ import {
   type FormRules
 } from 'element-plus'
 import {
-  getMe,
   login,
+  normalizeAuthUser,
   type LoginParams
 } from '@/api/auth'
 import { useUserStore } from '@/stores/user'
@@ -89,24 +89,20 @@ const handleLogin = async () => {
       throw new Error('登录响应中缺少 token')
     }
 
-    userStore.setToken(result.token)
+    if (!result.userInfo) {
+      throw new Error('登录响应中缺少用户信息')
+    }
 
-    const me = await getMe()
-    const roles = me.roles?.length
-      ? me.roles
-      : result.roles
+    const normalizedUser = normalizeAuthUser(
+      result.userInfo
+    )
 
-    if (!roles.includes(ROLE.ADMIN)) {
+    if (!normalizedUser.roles.includes(ROLE.ADMIN)) {
       throw new Error('该账号没有管理员权限')
     }
 
-    userStore.setUserInfo({
-      ...me,
-      userId: me.userId ?? result.userId,
-      realName: me.realName || result.realName,
-      roles,
-      onboarded: me.onboarded ?? result.onboarded
-    })
+    userStore.setToken(result.token)
+    userStore.setUserInfo(normalizedUser)
 
     ElMessage.success('登录成功')
     await router.push('/admin/dashboard')

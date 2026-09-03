@@ -1,4 +1,4 @@
-# edu-agent-web 前端模块实现说明（微服务整合版）
+# edu-agent-web 前端模块实现说明
 
 > 负责模块：Edu Agent Web 前端
 > 整合目标分支：`feature/microservice`
@@ -91,48 +91,53 @@ docs/superpowers/specs/2026-09-03-web-modules-refined.md
 
 ## 4. 认证模块
 
-### 4.1 已处理功能
+### 4.1 正式契约依据
 
-* 用户登录
-* 用户注册
-* 获取当前用户信息
-* 刷新认证信息
-* 本地退出登录
-* 登录用户信息及角色保存
-* 不同角色登录后的页面跳转
+认证模块已依据 Auth 服务正式接口文档及 OpenAPI 文件完成调整。
 
-### 4.2 接口契约处理
+Auth 服务经网关访问的统一前缀为 `/api/edu-agent-auth`。公共请求层已经配置 `baseURL=/api`，因此业务 API 文件使用 `/edu-agent-auth/**`，最终请求会组合为完整网关地址。
+
+### 4.2 已对齐接口
+
+| 功能 | 方法 | 接口 |
+|---|---|---|
+| 登录 | POST | `/api/edu-agent-auth/login` |
+| 注册 | POST | `/api/edu-agent-auth/register` |
+| 刷新令牌 | POST | `/api/edu-agent-auth/refresh` |
+| 退出登录 | POST | `/api/edu-agent-auth/logout` |
+| 标记引导完成 | POST | `/api/edu-agent-auth/onboard-done` |
+
+正式契约中没有单独的 `/me` 接口。登录、注册和刷新接口直接返回 `{ token, userInfo }`，前端直接读取 `userInfo`，不再在登录后额外请求 `/me`。
+
+### 4.3 注册请求
 
 注册请求支持：
 
 * `username`
 * `password`
-* `realName`
+* `nickname`
 * `email`
-* `phone`
 * `role`
 
-刷新认证信息时提交 Token，并按照登录结果结构接收刷新后的认证信息。
+用户名长度为 3–20 个字符，密码长度为 6–30 个字符。`role` 使用 `student`、`teacher` 或 `admin`，学生注册页面固定提交 `student`。
 
-当前用户信息模型支持：
+注册成功后，前端使用接口返回的 Token 和用户信息直接建立登录状态，不再提交旧字段 `realName` 和 `phone`。
 
-* 用户编号
-* 用户名
-* 真实姓名
-* 角色列表
-* 用户状态
-* 邮箱
-* 手机号
-* 引导完成状态等前端已有字段
+### 4.4 用户信息兼容
 
-由于当前已确认的认证服务没有提供服务端退出端点，前端不发送不存在的退出请求。退出操作负责清理本地 Token、角色及用户信息，并跳转至登录页。
+Auth 服务返回单个小写角色 `student`、`teacher` 或 `admin`，前端路由使用 `ROLE_STUDENT`、`ROLE_TEACHER` 或 `ROLE_ADMIN`。认证 API 层负责完成角色转换。
 
-### 4.3 待确认内容
+为兼容现有页面，统一用户结构支持 `id`、`userId`、`nickname`、`name`、`realName`、`role`、`roles`、`onboarded`、`status`、`email`、`phone`、`avatar`、`createTime` 和 `lastLoginTime`。用户状态 `status` 按正式契约使用字符串，例如 `active` 或 `inactive`。
 
-* Onboard 完成状态接口
-* 正式刷新 Token 策略
-* 用户状态和引导状态的最终字段定义
-* 管理员登录是否继续复用统一认证服务
+### 4.5 退出与引导完成
+
+学生、教师和管理员退出时均调用正式 `/logout` 接口。即使服务端退出失败，前端仍会清理本地 Token、角色及用户信息。
+
+首次使用引导完成时，通过统一认证 API 调用 `/onboard-done`，不再由页面直接拼接 Auth 接口路径。
+
+### 4.6 验证结果
+
+认证专项测试覆盖登录、注册、刷新、退出、引导完成和用户信息转换。认证、Store 与路由专项共 23 项测试通过，TypeScript 类型检查通过。
 
 ---
 

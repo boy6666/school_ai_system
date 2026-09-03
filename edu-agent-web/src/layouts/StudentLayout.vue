@@ -62,6 +62,7 @@ import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { ElMessage } from 'element-plus'
 import OnboardOverlay from '@/views/student/OnboardOverlay.vue'
+import { logout as logoutRequest } from '@/api/auth'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -74,14 +75,27 @@ const onOnboardDone = () => {
   userStore.setOnboarded(1)
 }
 
-const handleCommand = (command: string) => {
+const handleCommand = async (
+  command: string
+) => {
   if (command === 'profile') {
-    router.push('/student/profile/settings')
-  } else if (command === 'logout') {
-    userStore.logout()
-    router.push('/login')
-    ElMessage.success('已退出登录')
+    await router.push('/student/profile/settings')
+    return
   }
+
+  if (command !== 'logout') {
+    return
+  }
+
+  try {
+    await logoutRequest()
+  } catch {
+    // 服务端退出失败时仍清理本地状态
+  }
+
+  userStore.logout()
+  await router.push('/login')
+  ElMessage.success('已退出登录')
 }
 </script>
 

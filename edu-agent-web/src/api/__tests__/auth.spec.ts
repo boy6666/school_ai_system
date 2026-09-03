@@ -7,8 +7,10 @@ import {
 } from 'vitest'
 import request from '@/utils/request'
 import {
-  getMe,
   login,
+  logout,
+  markOnboardDone,
+  normalizeAuthUser,
   refresh,
   register
 } from '@/api/auth'
@@ -20,21 +22,30 @@ describe('认证服务接口契约', () => {
     mock.reset()
   })
 
-  it('应按正式路径提交登录请求', async () => {
+  it('应按正式契约提交登录请求并读取用户信息', async () => {
     const path = '/edu-agent-auth/login'
     const payload = {
-      username: 'admin',
-      password: 'test-password'
+      username: 'student01',
+      password: 'student123'
     }
 
     mock.onPost(path).reply(200, {
       code: 0,
       message: 'success',
       data: {
-        token: 'test-token',
-        userId: 1,
-        roles: ['ROLE_ADMIN'],
-        realName: '管理员'
+        token: 'login-token',
+        userInfo: {
+          id: 1,
+          username: 'student01',
+          nickname: '小明',
+          email: 'xm@example.com',
+          phone: null,
+          avatar: null,
+          role: 'student',
+          onboarded: 0,
+          status: 'active',
+          createTime: '2026-09-03T21:00:00'
+        }
       }
     })
 
@@ -45,43 +56,43 @@ describe('认证服务接口契约', () => {
     expect(
       JSON.parse(mock.history.post[0]?.data)
     ).toEqual(payload)
-    expect(result.roles).toContain('ROLE_ADMIN')
+    expect(result.token).toBe('login-token')
+    expect(result.userInfo.id).toBe(1)
+    expect(result.userInfo.role).toBe('student')
+    expect(result.userInfo.status).toBe('active')
   })
 
-  it('应携带正式路径查询当前用户信息', async () => {
-    const path = '/edu-agent-auth/me'
-
-    mock.onGet(path).reply(200, {
-      code: 0,
-      message: 'success',
-      data: {
-        userId: 1,
-        username: 'admin',
-        realName: '管理员',
-        roles: ['ROLE_ADMIN'],
-        status: 1,
-        email: 'admin@example.com',
-        phone: '13800000000'
-      }
+  it('应将正式用户信息转换为前端角色结构', () => {
+    const result = normalizeAuthUser({
+      id: 2,
+      username: 'teacher01',
+      nickname: '测试教师',
+      email: 'teacher@example.com',
+      phone: null,
+      avatar: null,
+      role: 'teacher',
+      onboarded: 1,
+      status: 'active'
     })
 
-    const result = await getMe()
-
-    expect(mock.history.get).toHaveLength(1)
-    expect(mock.history.get[0]?.url).toBe(path)
-    expect(result.roles).toEqual(['ROLE_ADMIN'])
-    expect(result.status).toBe(1)
+    expect(result.id).toBe(2)
+    expect(result.userId).toBe(2)
+    expect(result.nickname).toBe('测试教师')
+    expect(result.realName).toBe('测试教师')
+    expect(result.name).toBe('测试教师')
+    expect(result.roles).toEqual(['ROLE_TEACHER'])
+    expect(result.role).toBe('ROLE_TEACHER')
+    expect(result.status).toBe('active')
   })
 
-  it('应按正式契约提交注册请求', async () => {
+  it('应按正式契约提交注册请求并接收登录信息', async () => {
     const path = '/edu-agent-auth/register'
     const payload = {
       username: 'teacher01',
       password: 'teacher123',
-      realName: '测试教师',
+      nickname: '测试教师',
       email: 'teacher01@example.com',
-      phone: '13800000000',
-      role: 'teacher'
+      role: 'teacher' as const
     }
 
     mock.onPost(path).reply(200, {
@@ -89,9 +100,17 @@ describe('认证服务接口契约', () => {
       message: 'success',
       data: {
         token: 'register-token',
-        userId: 3,
-        roles: ['ROLE_TEACHER'],
-        realName: '测试教师'
+        userInfo: {
+          id: 3,
+          username: 'teacher01',
+          nickname: '测试教师',
+          email: 'teacher01@example.com',
+          phone: null,
+          avatar: null,
+          role: 'teacher',
+          onboarded: 0,
+          status: 'active'
+        }
       }
     })
 
@@ -102,13 +121,14 @@ describe('认证服务接口契约', () => {
     expect(
       JSON.parse(mock.history.post[0]?.data)
     ).toEqual(payload)
-    expect(result.roles).toEqual(['ROLE_TEACHER'])
+    expect(result.token).toBe('register-token')
+    expect(result.userInfo.role).toBe('teacher')
   })
 
   it('应携带Token刷新认证信息', async () => {
     const path = '/edu-agent-auth/refresh'
     const payload = {
-      token: 'expired-token'
+      token: 'old-token'
     }
 
     mock.onPost(path).reply(200, {
@@ -116,9 +136,17 @@ describe('认证服务接口契约', () => {
       message: 'success',
       data: {
         token: 'refreshed-token',
-        userId: 1,
-        roles: ['ROLE_ADMIN'],
-        realName: '管理员'
+        userInfo: {
+          id: 1,
+          username: 'student01',
+          nickname: '小明',
+          email: 'xm@example.com',
+          phone: null,
+          avatar: null,
+          role: 'student',
+          onboarded: 1,
+          status: 'active'
+        }
       }
     })
 
@@ -130,6 +158,38 @@ describe('认证服务接口契约', () => {
       JSON.parse(mock.history.post[0]?.data)
     ).toEqual(payload)
     expect(result.token).toBe('refreshed-token')
-    expect(result.roles).toEqual(['ROLE_ADMIN'])
+    expect(result.userInfo.id).toBe(1)
+  })
+
+  it('应调用正式退出接口且不发送请求体', async () => {
+    const path = '/edu-agent-auth/logout'
+
+    mock.onPost(path).reply(200, {
+      code: 0,
+      message: 'success',
+      data: null
+    })
+
+    await logout()
+
+    expect(mock.history.post).toHaveLength(1)
+    expect(mock.history.post[0]?.url).toBe(path)
+    expect(mock.history.post[0]?.data).toBeUndefined()
+  })
+
+  it('应调用正式引导完成接口', async () => {
+    const path = '/edu-agent-auth/onboard-done'
+
+    mock.onPost(path).reply(200, {
+      code: 0,
+      message: 'success',
+      data: null
+    })
+
+    await markOnboardDone()
+
+    expect(mock.history.post).toHaveLength(1)
+    expect(mock.history.post[0]?.url).toBe(path)
+    expect(mock.history.post[0]?.data).toBeUndefined()
   })
 })
