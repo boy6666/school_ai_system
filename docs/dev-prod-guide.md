@@ -19,7 +19,7 @@
 | 内网 | 所有服务注册进同一 `edu-agent-local` 命名空间即视为同一内网 |
 | 密钥 | 本地默认值即可（同一份 `JWT_SECRET` 全网共享） |
 | 对外入口 | 网关 `http://localhost:8080` |
-| AI 服务 | Docker 内 FastAPI `:8001`（默认 mock LLM，无需 API key） |
+| AI 服务 | Docker 内 FastAPI `:8001`，注册名 `edu-agent-ai`（网关按 `lb://edu-agent-ai` 转发，不再写死 IP）。**没有 mock 分支**，会真的调 OpenAI 兼容接口，联调须在配置中心 `edu-agent-ai.yaml` 填真实 `OPENAI_API_KEY`；key 缺失时接口返回错误文本而非降级假数据。 |
 
 **核心原则**：代码一份，环境唯一。`application.yml` 已默认 `namespace=edu-agent-local` / `profile=local`，IDE 直跑即可，一般不设环境变量。
 
@@ -60,8 +60,9 @@ mvn -Dmaven.repo.local=D:/software/apache-maven-3.9.4/mvn_repo ^
 set NACOS_ADDR=127.0.0.1:8848
 set DB_HOST=127.0.0.1
 set MQ_HOST=127.0.0.1
-set AI_HOST=127.0.0.1
 ```
+
+> AI 不再需要 `AI_HOST`：网关路由用 `lb://edu-agent-ai` 走服务发现（见网关 `application.yml` 的 `routes`），AI 容器注册进同一个 `edu-agent-local` 命名空间即可。Java 侧 `@FeignClient(name = "edu-agent-ai", url = "${ai.base-url:}")` 的 `url` 默认空值即为「走 Nacos 负载均衡」；微服务模块的 yml 里没有定义 `ai.base-url`，排障要绕过 Nacos 直连某台 AI 时用环境变量 `AI_BASE_URL=http://<host>:8001` 临时覆盖。
 
 联调入口统一走网关：`http://localhost:8080/api/<服务>/...`。
 
@@ -77,7 +78,7 @@ set AI_HOST=127.0.0.1
 | namespace 错了 | 连到 `public` / 其它 → 显式 `NACOS_NAMESPACE=edu-agent-local` |
 | 8080 被占用 | 网关起不来 → 关占用程序或改 `server.port` |
 | JWT 报 401 / 验签失败 | 各服务 JWT_SECRET 不一致 → 全网同一份 |
-| AI 接口 502 | `/api/edu-agent-ai/**` 须 AI 容器在（`:8001`）；没起不报错于 Java 服务 |
+| AI 接口 502 | 网关按 `lb://edu-agent-ai` 找实例：① AI 容器在不在（`:8001`）；② 它在 Nacos 控制台 `edu-agent-local` 里有没有实例（没注册就是注册失败，看 AI 容器日志的 `[Nacos]` 行）；③ 实例 IP 是不是容器的可回连地址。AI 没起不影响 Java 服务自身启动。 |
 | 测试账号丢失 | `teststudent` 必须保留，DataInitializer 会重建 |
 
 ---

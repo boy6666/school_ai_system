@@ -80,10 +80,21 @@ services:
     ports:
       - "8001:8001"
     environment:
-      USE_MOCK_LLM: "1"
+      # 服务发现：注册名 edu-agent-ai，与网关 lb://edu-agent-ai、
+      # Java 侧 @FeignClient(name = "edu-agent-ai") 三处必须一致。
+      # 注册 IP 由 nacos_registry.detect_ip() 自动探测容器出网网卡。
+      NACOS_ADDR: nacos:8848
+      NACOS_NAMESPACE: edu-agent-local
+      NACOS_GROUP: edu-agent
       CHROMA_HOST: chroma
       CHROMA_PORT: "8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
     depends_on:
       - chroma
+      - nacos
     restart: unless-stopped
     networks: [edu-agent-net]

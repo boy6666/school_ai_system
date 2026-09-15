@@ -73,7 +73,7 @@
 | Nacos 服务名 | `edu-agent-<svc>`（如 `edu-agent-auth`）。`ServiceConstants.SVC_*` 已定义，引用它别硬编码。 |
 | 网关路由前缀 | `/api/<svc>/**`（如 `/api/learning/**`）。网关**不 StripPrefix**，下游 Controller 的 `@RequestMapping` 要带完整 `/api/<svc>`。 |
 | Feign 目标名 | 与 Nacos 服务名一致（`@FeignClient("edu-agent-auth")`）。 |
-| 跨服务路径 | Java 侧调 ai-service 的路径**必须带 `/api/ai` 前缀**（与网关转发一致，网关不 StripPrefix）；否则直连 404。 |
+| 跨服务路径 | Java 侧调 ai-service 的路径**必须带 `/api/edu-agent-ai` 前缀**（与网关转发一致，网关不 StripPrefix）；否则直连 404。Python 侧 `api.py` 的 `API_PREFIX`、网关断言的 `Path=`、Feign 的 `path=` 三处必须同步改。 |
 
 > 看 `edu-agent-code/.../controller/CodeController.java` 的 `@RequestMapping("/api/code")` 与 `edu-agent-auth/.../controller/AuthController.java` 的 `/api/edu-agent-auth` 作为对照。
 
@@ -253,7 +253,7 @@ public interface CodeExerciseMapper extends BaseMapper<CodeExercise> { }
 要点：
 - **OPTIONS 预检**在网关被放行（不进 JWT 校验），CORS 由网关 `globalcors` 统一处理。
 - 下游**永远只信网关注入的头**，绝不在业务里解析 JWT 或信任客户端带来的 `X-User-*`。
-- 内网专用端点（如 `ai-service` 的 `/api/ai/code/analyze`）**不进网关路由表**，仅 Java 服务经 Feign 直连。
+- 内网专用端点（如 `ai-service` 的 `/api/edu-agent-ai/code/analyze`）**不进网关路由表**，仅 Java 服务经 Feign 直连。因此 AI 路由的 `Path=` 断言**逐条枚举、不写通配**：通配会把这类端点一并放给任何已登录用户。
 
 ---
 

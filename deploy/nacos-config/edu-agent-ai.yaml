@@ -1,0 +1,21 @@
+# AI 服务（Python/FastAPI）运行时配置
+# ------------------------------------------------------------
+# 由 edu-agent-ai/nacos_registry.py:apply_config_to_env() 在进程启动时拉取，
+# 在 import school_agent.config 之前写入 os.environ，因此这里会对同名环境变量生效（配置中心优先）。
+#
+# 约定：只写 env 段，键名与 Python 侧环境变量一一对应，不再发明第二套命名。
+#   本机不开 Nacos 时 AI 服务照常启动，只是沿用 .env / compose 注入的值。
+#
+# 注意：以下键名以 school_agent/config.py 实际读取的为准；ai-service 侧的
+# .env.example（USE_MOCK_LLM / BASE_URL / MODEL_NAME…）与代码不一致，属遗留，勿照抄。
+env:
+  # 日志级别：INFO / DEBUG
+  LOG_LEVEL: INFO
+
+  # LLM 接入（OpenAI 兼容接口）。留空 API_KEY 时调用会失败并在响应里回带错误文本，
+  # 目前 Python 侧没有 mock 分支，联调请填真实 key（见 ISSUES_LOG / 交接说明）。
+  OPENAI_BASE_URL: https://api.openai.com/v1
+  OPENAI_API_KEY: ""
+  LLM_MODEL: gpt-4o-mini
+  LLM_TEMPERATURE: "0.7"
+  LLM_MAX_TOKENS: "2048"
