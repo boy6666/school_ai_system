@@ -20,7 +20,16 @@ cp .env.example .env
 python run_demo.py
 ```
 
-没有模型 Key 时，系统默认使用 `USE_MOCK_LLM=1` 的本地模拟输出，保证总控流程可以跑通。
+没有模型 Key 时**没有** mock 兜底：`llm_client.call_llm` 会返回 `"LLM 调用失败: …"` 文本
+（不抛异常），接口把这段文本原样带回，流程能跑完但内容是错误信息。
+
+模型配置读的是 `school_agent/config.py` 里的这几个环境变量（`.env.example` 是遗留的，键名对不上）：
+
+```
+OPENAI_API_KEY / OPENAI_BASE_URL / LLM_MODEL / LLM_TEMPERATURE / LLM_MAX_TOKENS / LOG_LEVEL
+```
+
+Java 侧调用契约（入参形态、Result 信封、错误码、字段映射）见 `docs/java-python-contract.md`。
 
 ## 组内开发约定
 

@@ -63,7 +63,7 @@ python deploy/push-nacos-config.py
 | Redis | 6379 |
 | RabbitMQ | 5672（控制台 15672，账号 guest/guest） |
 | Chroma | 8000 |
-| AI（FastAPI，默认 mock LLM） | 8001 |
+| AI（FastAPI，注册名 `edu-agent-ai`） | 8001 |
 
 > 顺序很关键：5 库必须先建好，配置必须先推到 Nacos，Java 服务启动时才拿得到 datasource / JWT 等配置。
 

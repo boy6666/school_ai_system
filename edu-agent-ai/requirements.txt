@@ -6,3 +6,5 @@ pydantic
 fastapi
 uvicorn
 pytest
+# Nacos 配置中心下发（nacos_registry.apply_config_to_env 解析 edu-agent-ai.yaml）
+pyyaml
