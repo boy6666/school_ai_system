@@ -1,0 +1,56 @@
+# edu-agent-learning 本地联调基础设施（可选，有 Docker 时使用）
+# 用法：docker compose -f docker-compose.dev.yml up -d
+#   MySQL: 127.0.0.1:3306 root/root（learning_db 建库见 database/learning/init.sql）
+#   RabbitMQ: 127.0.0.1:5672 guest/guest，控制台 15672
+#   Nacos: 127.0.0.1:8848/nacos（控制台账号默认 nacos/nacos）
+# 无 Docker 时可本机安装同版本组件，用环境变量覆盖连接信息：
+#   DB_HOST/DB_PORT/DB_USER/DB_PASSWORD、RABBIT_HOST/PORT/USER/PASS、NACOS_ADDR
+version: "3.8"
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: edu-learning-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      TZ: Asia/Shanghai
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    ports:
+      - "3306:3306"
+    volumes:
+      - edu-mysql-data:/var/lib/mysql
+      - ./database/learning/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+      - ./database/learning/seed.sql:/docker-entrypoint-initdb.d/02-seed.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-uroot", "-proot"]
+      interval: 10s
+      retries: 10
+
+  rabbitmq:
+    image: rabbitmq:3.12-management
+    container_name: edu-learning-rabbit
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      retries: 10
+
+  nacos:
+    image: nacos/nacos-server:v2.3.2
+    container_name: edu-learning-nacos
+    environment:
+      MODE: standalone
+      NACOS_AUTH_ENABLE: "false"
+      JVM_XMS: 256m
+      JVM_XMX: 512m
+    ports:
+      - "8848:8848"
+      - "9848:9848"
+
+volumes:
+  edu-mysql-data:

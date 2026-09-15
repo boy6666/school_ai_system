@@ -7,32 +7,55 @@ spring:
   cloud:
     nacos:
       discovery:
-        server-addr: 127.0.0.1:8848
+        server-addr: ${NACOS_ADDR:127.0.0.1:8848}
         namespace: edu-agent-dev
         group: edu-agent
       config:
-        server-addr: 127.0.0.1:8848
+        server-addr: ${NACOS_ADDR:127.0.0.1:8848}
         namespace: edu-agent-dev
         group: edu-agent
         file-extension: yaml
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://127.0.0.1:3306/learning_db?useSSL=false&serverTimezone=Asia/Shanghai
+    url: jdbc:mysql://${DB_HOST:127.0.0.1}:${DB_PORT:3306}/learning_db?useSSL=false&serverTimezone=Asia/Shanghai
     username: ${DB_USER:root}
     password: ${DB_PASSWORD:root}
+  rabbitmq:
+    host: ${RABBIT_HOST:127.0.0.1}
+    port: ${RABBIT_PORT:5672}
+    username: ${RABBIT_USER:guest}
+    password: ${RABBIT_PASS:guest}
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: Asia/Shanghai
+    default-property-inclusion: non_null
+    deserialization:
+      fail-on-unknown-properties: false
 
 mybatis-plus:
   mapper-locations: classpath*:/mapper/**/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
   global-config:
     db-config:
+      id-type: auto
       logic-delete-field: deleted
       logic-delete-value: 1
       logic-not-delete-value: 0
+
+# edu-agent-ai（Python）地址：默认走 Nacos 服务发现；配置后为兜底直连。
+# 注意 Feign 路径统一带 /api/edu-agent-ai 前缀（与网关一致，网关不 StripPrefix）。
+ai:
+  base-url: ${AI_BASE_URL:}
 
 management:
   endpoints:
     web:
       exposure:
         include: health,info
+
+logging:
+  pattern:
+    console: "%d{HH:mm:ss} %-5level %logger{36} - %msg%n"
 
 # SkyWalking：运行时追加 -javaagent:/opt/skywalking/agent/skywalking-agent.jar -Dskywalking.agent.service_name=edu-agent-learning
