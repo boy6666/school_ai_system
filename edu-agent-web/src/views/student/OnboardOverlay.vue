@@ -63,7 +63,9 @@
 import { ref, onMounted, nextTick, reactive } from 'vue'
 import request from '@/utils/request'
 import { markOnboardDone } from '@/api/auth'
+import { useUserStore } from '@/stores/user'
 const emit = defineEmits(['done'])
+const userStore = useUserStore()
 
 const input = ref('')
 const loading = ref(false)
@@ -104,17 +106,29 @@ interface OnboardChatResponse {
   profile_complete?: boolean
 }
 
-// 聊天 — 全走 Java 后端 /api/onboard/chat
+// 引导聊天直接调用微服务网关后的 AI 正式接口
 async function onboardChat(
   message: string,
   sessionId: string,
   profile: Record<string, unknown>
 ): Promise<OnboardChatResponse> {
-  return request.post<unknown, OnboardChatResponse>('/onboard/chat', {
-    message,
-    session_id: sessionId,
-    profile
-  })
+  const studentId =
+    userStore.userInfo?.userId ??
+    userStore.userInfo?.id
+
+  if (studentId === undefined) {
+    throw new Error('无法获取当前用户信息，请重新登录')
+  }
+
+  return request.post<unknown, OnboardChatResponse>(
+    '/edu-agent-ai/chat',
+    {
+      user_input: message,
+      student_id: String(studentId),
+      session_id: sessionId,
+      profile
+    }
+  )
 }
 
 const send = async () => {

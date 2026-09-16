@@ -27,19 +27,15 @@ describe('AI助教接口契约', () => {
     }
 
     mock.onPost(path).reply(200, {
-      code: 0,
-      message: 'success',
-      data: {
-        intent: 'explain',
-        final_answer: '多态是面向对象的重要特性。',
-        profile,
-        resources: [],
-        learning_path: null,
-        safety_report: null,
-        evaluation_report: null,
-        resource_dir: null,
-        profile_complete: false
-      }
+      intent: 'explain',
+      final_answer: '多态是面向对象的重要特性。',
+      profile,
+      resources: [],
+      learning_path: null,
+      safety_report: null,
+      evaluation_report: null,
+      resource_dir: null,
+      profile_complete: false
     })
 
     const result = await sendTutorMessage(
