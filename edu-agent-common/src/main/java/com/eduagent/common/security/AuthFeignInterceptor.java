@@ -1,5 +1,6 @@
 package com.eduagent.common.security;
 
+import com.eduagent.common.constant.ServiceConstants;
 import feign.RequestInterceptor;
 import feign.RequestTemplate;
 import org.springframework.stereotype.Component;
