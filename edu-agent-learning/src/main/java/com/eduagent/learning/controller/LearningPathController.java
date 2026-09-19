@@ -6,6 +6,7 @@ import com.eduagent.learning.dto.UpdateTaskRequest;
 import com.eduagent.learning.service.LearningPathService;
 import com.eduagent.learning.vo.LearningPathVO;
 import com.eduagent.learning.vo.PathHistoryVO;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -28,27 +29,27 @@ public class LearningPathController {
 
     @GetMapping("/current")
     public Result<LearningPathVO> current() {
-        Long studentId = RoleGuard.currentUserId();
+        Long studentId = RoleGuard.currentStudentId();
         return Result.success(learningPathService.getCurrentPath(studentId));
     }
 
     @PostMapping("/generate")
     public Result<LearningPathVO> generate() {
-        Long studentId = RoleGuard.currentUserId();
+        Long studentId = RoleGuard.currentStudentId();
         return Result.success(learningPathService.generatePath(studentId));
     }
 
     @PutMapping("/task")
-    public Result<LearningPathVO> updateTask(@RequestBody UpdateTaskRequest request) {
-        Long studentId = RoleGuard.currentUserId();
-        boolean completed = Boolean.TRUE.equals(request.getCompleted());
+    public Result<LearningPathVO> updateTask(@Valid @RequestBody UpdateTaskRequest request) {
+        Long studentId = RoleGuard.currentStudentId();
+        boolean completed = request.getCompleted();
         return Result.success(learningPathService.updateTaskStatus(
-                studentId, request.getStageName(), request.getTaskTitle(), completed));
+                studentId, request.getTaskId(), request.getStageName(), request.getTaskTitle(), completed));
     }
 
     @GetMapping("/history")
     public Result<List<PathHistoryVO>> history() {
-        Long studentId = RoleGuard.currentUserId();
+        Long studentId = RoleGuard.currentStudentId();
         return Result.success(learningPathService.getHistory(studentId));
     }
 }

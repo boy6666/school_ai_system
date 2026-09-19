@@ -16,8 +16,11 @@ public class AiChatResult {
 
     private String intent;
 
-    @JsonAlias("final_answer")
+    @JsonAlias({"answer", "final_answer"})
     private String finalAnswer;
+
+    /** 统一 Java 契约中的附加结果；Learning 会从中提取画像等扩展字段。 */
+    private Map<String, Object> references;
 
     @JsonAlias("intent_confidence")
     private Object intentConfidence;

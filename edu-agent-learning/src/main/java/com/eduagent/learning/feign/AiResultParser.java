@@ -33,6 +33,11 @@ public class AiResultParser {
         try {
             JsonNode root = objectMapper.readTree(stripFences(raw));
             if (root.isObject() && root.has("code") && root.has("data")) {
+                if (root.path("code").asInt() != 0) {
+                    log.warn("[AI] 业务调用失败: code={}, message={}",
+                            root.path("code").asInt(), root.path("message").asText());
+                    return null;
+                }
                 JsonNode data = root.get("data");
                 return data == null || data.isNull() || data.isMissingNode() ? null : data;
             }
@@ -56,16 +61,42 @@ public class AiResultParser {
     }
 
     public AiChatResult parseChatResult(String raw) {
-        return toObject(parseData(raw), AiChatResult.class);
+        JsonNode data = parseData(raw);
+        AiChatResult result = toObject(data, AiChatResult.class);
+        if (result == null || data == null) {
+            return result;
+        }
+        JsonNode references = data.get("references");
+        if (references != null && references.isObject()) {
+            if (result.getProfile() == null) {
+                result.setProfile(toMap(references.get("profile")));
+            }
+            if (result.getProfileComplete() == null) {
+                result.setProfileComplete(booleanValue(references, "profileComplete", "profile_complete"));
+            }
+            if (result.getResourceDir() == null) {
+                result.setResourceDir(textValue(references, "resourceDir", "resource_dir"));
+            }
+            if (result.getEvaluationReport() == null) {
+                result.setEvaluationReport(toMap(first(references, "evaluationReport", "evaluation_report")));
+            }
+            if (result.getLearningPath() == null) {
+                result.setLearningPath(first(references, "learningPath", "learning_path"));
+            }
+            if (result.getResources() == null) {
+                result.setResources(references.get("resources"));
+            }
+        }
+        return result;
     }
 
     /** data.suggestions 数组（mode=suggestion），容忍直接顶层的 suggestions 字段 */
     public List<String> parseSuggestions(String raw) {
-        JsonNode data = parseData(raw);
+        JsonNode data = structuredContent(parseData(raw));
         if (data == null) {
             return List.of();
         }
-        JsonNode arr = data.has("suggestions") ? data.get("suggestions") : null;
+        JsonNode arr = data.isArray() ? data : data.get("suggestions");
         List<String> out = new ArrayList<>();
         if (arr != null && arr.isArray()) {
             arr.forEach(n -> out.add(n.asText()));
@@ -77,7 +108,7 @@ public class AiResultParser {
 
     /** mode=judge → {score(0|1), correct, comment, explanation?} */
     public JudgeOutcome parseJudge(String raw) {
-        JsonNode data = parseData(raw);
+        JsonNode data = structuredContent(parseData(raw));
         if (data == null) {
             return null;
         }
@@ -149,6 +180,68 @@ public class AiResultParser {
 
     private String stripFences(String text) {
         return text.replaceAll("```json\\s*", "").replaceAll("```\\s*", "").trim();
+    }
+
+    /** AI 过渡实现会把结构化 JSON 放进 data.content 字符串，统一展开后再解析。 */
+    private JsonNode structuredContent(JsonNode data) {
+        if (data == null) {
+            return null;
+        }
+        if (data.isObject() && data.path("content").isTextual()) {
+            JsonNode parsed = parseJsonText(data.path("content").asText());
+            return parsed != null ? parsed : data;
+        }
+        if (data.isTextual()) {
+            JsonNode parsed = parseJsonText(data.asText());
+            return parsed != null ? parsed : data;
+        }
+        return data;
+    }
+
+    private JsonNode parseJsonText(String text) {
+        if (text == null || text.isBlank()) {
+            return null;
+        }
+        String cleaned = stripFences(text);
+        try {
+            return objectMapper.readTree(cleaned);
+        } catch (Exception ignored) {
+            int objectStart = cleaned.indexOf('{');
+            int arrayStart = cleaned.indexOf('[');
+            int start = objectStart < 0 ? arrayStart
+                    : arrayStart < 0 ? objectStart : Math.min(objectStart, arrayStart);
+            int end = Math.max(cleaned.lastIndexOf('}'), cleaned.lastIndexOf(']'));
+            if (start >= 0 && end > start) {
+                try {
+                    return objectMapper.readTree(cleaned.substring(start, end + 1));
+                } catch (Exception e) {
+                    log.warn("[AI] content JSON 解析失败: {}", e.getMessage());
+                }
+            }
+            return null;
+        }
+    }
+
+    private JsonNode first(JsonNode node, String camelCase, String snakeCase) {
+        JsonNode value = node.get(camelCase);
+        return value != null ? value : node.get(snakeCase);
+    }
+
+    private String textValue(JsonNode node, String camelCase, String snakeCase) {
+        JsonNode value = first(node, camelCase, snakeCase);
+        return value == null || value.isNull() ? null : value.asText();
+    }
+
+    private Boolean booleanValue(JsonNode node, String camelCase, String snakeCase) {
+        JsonNode value = first(node, camelCase, snakeCase);
+        return value == null || value.isNull() ? null : value.asBoolean();
+    }
+
+    private Map<String, Object> toMap(JsonNode node) {
+        if (node == null || !node.isObject()) {
+            return null;
+        }
+        return objectMapper.convertValue(node, new TypeReference<Map<String, Object>>() { });
     }
 
     @lombok.Data

@@ -56,6 +56,26 @@ class RoleGuardTest {
     }
 
     @Test
+    void requireTeacherOrAdmin_rejectsRoleWithoutUserId() {
+        AuthContext.set(null, ServiceConstants.ROLE_TEACHER);
+        ApiException e = assertThrows(ApiException.class, RoleGuard::requireTeacherOrAdmin);
+        assertEquals(401, e.getCode());
+    }
+
+    @Test
+    void currentStudentId_acceptsStudent() {
+        AuthContext.set("1001", ServiceConstants.ROLE_STUDENT);
+        assertEquals(1001L, RoleGuard.currentStudentId());
+    }
+
+    @Test
+    void currentStudentId_rejectsTeacher() {
+        AuthContext.set("9", ServiceConstants.ROLE_TEACHER);
+        ApiException e = assertThrows(ApiException.class, RoleGuard::currentStudentId);
+        assertEquals(403, e.getCode());
+    }
+
+    @Test
     void currentUserIdOrNull_returnsNullInsteadOfThrowing() {
         assertEquals(null, RoleGuard.currentUserIdOrNull());
     }

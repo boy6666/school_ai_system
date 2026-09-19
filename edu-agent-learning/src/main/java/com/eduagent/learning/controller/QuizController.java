@@ -4,6 +4,7 @@ import com.eduagent.common.result.Result;
 import com.eduagent.learning.common.RoleGuard;
 import com.eduagent.learning.dto.JudgeRequest;
 import com.eduagent.learning.service.QuizService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -27,26 +28,27 @@ public class QuizController {
     private final QuizService quizService;
 
     @GetMapping("/answered")
-    public Result<List<Map<String, Object>>> answered(@RequestParam(required = false) Long resourceId) {
-        Long studentId = RoleGuard.currentUserId();
+    public Result<List<Map<String, Object>>> answered(
+            @RequestParam(name = "resourceId", required = false) Long resourceId) {
+        Long studentId = RoleGuard.currentStudentId();
         return Result.success(quizService.answered(studentId, resourceId));
     }
 
     @GetMapping("/wrong-questions")
     public Result<List<Map<String, Object>>> wrongQuestions() {
-        Long studentId = RoleGuard.currentUserId();
+        Long studentId = RoleGuard.currentStudentId();
         return Result.success(quizService.wrongQuestions(studentId));
     }
 
     @GetMapping("/wrong-questions/{id}")
-    public Result<Map<String, Object>> wrongQuestionDetail(@PathVariable Long id) {
-        Long studentId = RoleGuard.currentUserId();
+    public Result<Map<String, Object>> wrongQuestionDetail(@PathVariable("id") Long id) {
+        Long studentId = RoleGuard.currentStudentId();
         return Result.success(quizService.wrongQuestionDetail(studentId, id));
     }
 
     @PostMapping("/judge")
-    public Result<Map<String, Object>> judge(@RequestBody JudgeRequest request) {
-        Long studentId = RoleGuard.currentUserId();
+    public Result<Map<String, Object>> judge(@Valid @RequestBody JudgeRequest request) {
+        Long studentId = RoleGuard.currentStudentId();
         return Result.success(quizService.judge(studentId, request));
     }
 }

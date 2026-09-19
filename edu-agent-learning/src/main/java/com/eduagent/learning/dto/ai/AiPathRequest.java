@@ -23,4 +23,12 @@ public class AiPathRequest {
 
     @JsonProperty("profile")
     private Map<String, Object> profile;
+
+    /**
+     * AI feat/ai 的 path 模型仍读取 snake_case；标准 studentId 保留，合并提供方修复后可移除此别名。
+     */
+    @JsonProperty("student_id")
+    public String getLegacyStudentId() {
+        return studentId;
+    }
 }

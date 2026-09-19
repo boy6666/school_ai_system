@@ -145,11 +145,8 @@ public class DashboardServiceImpl implements DashboardService {
     /** AI /chat → finalAnswer 中提取 JSON（宽容解析，失败返回空 Map） */
     private Map<String, Object> callAiForJson(Long studentId, String prompt) {
         try {
-            AiChatRequest req = AiChatRequest.builder()
-                    .userInput(prompt)
-                    .studentId(String.valueOf(studentId))
-                    .sessionId("dashboard_" + studentId + "_" + System.currentTimeMillis())
-                    .build();
+            AiChatRequest req = AiChatRequest.of(prompt, studentId,
+                    "dashboard_" + studentId + "_" + System.currentTimeMillis(), null);
             var result = aiResultParser.parseChatResult(aiServiceClient.chat(req));
             if (result != null && result.getFinalAnswer() != null) {
                 Map<String, Object> json = aiResultParser.parseEmbeddedJson(result.getFinalAnswer());

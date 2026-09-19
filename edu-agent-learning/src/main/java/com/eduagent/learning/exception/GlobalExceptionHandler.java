@@ -3,8 +3,12 @@ package com.eduagent.learning.exception;
 import com.eduagent.common.result.ApiException;
 import com.eduagent.common.result.ErrorCode;
 import com.eduagent.common.result.Result;
+import org.springframework.context.support.DefaultMessageSourceResolvable;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+import java.util.stream.Collectors;
 
 /**
  * 统一异常处理：业务异常 → 对应 code；未捕获异常 → 500。响应体统一为 Result。
@@ -15,6 +19,15 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ApiException.class)
     public Result<Void> handleApiException(ApiException e) {
         return Result.fail(e.getCode(), e.getMessage());
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public Result<Void> handleValidation(MethodArgumentNotValidException e) {
+        String message = e.getBindingResult().getFieldErrors().stream()
+                .map(DefaultMessageSourceResolvable::getDefaultMessage)
+                .distinct()
+                .collect(Collectors.joining("; "));
+        return Result.fail(ErrorCode.BAD_REQUEST.getCode(), message);
     }
 
     @ExceptionHandler(Exception.class)

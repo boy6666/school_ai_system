@@ -44,11 +44,8 @@ public class ReportServiceImpl implements ReportService {
 
         String content;
         try {
-            AiChatRequest aiReq = AiChatRequest.builder()
-                    .userInput(prompt)
-                    .studentId(String.valueOf(studentId))
-                    .sessionId("report_" + System.currentTimeMillis())
-                    .build();
+            AiChatRequest aiReq = AiChatRequest.of(prompt, studentId,
+                    "report_" + System.currentTimeMillis(), null);
             var result = aiResultParser.parseChatResult(aiServiceClient.chat(aiReq));
             content = result != null ? result.getFinalAnswer() : null;
         } catch (Exception e) {

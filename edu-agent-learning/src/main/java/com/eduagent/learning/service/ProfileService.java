@@ -12,6 +12,8 @@ public interface ProfileService {
 
     ProfileVO getProfileForTeacher(Long targetStudentId);
 
+    void bindClass(Long studentId, Long classId);
+
     Map<String, Object> saveProfile(Long studentId, SaveProfileRequest request);
 
     Map<String, Object> generateSuggestions(Long studentId);

@@ -1,6 +1,5 @@
 package com.eduagent.learning.dto.ai;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -9,8 +8,8 @@ import lombok.NoArgsConstructor;
 import java.util.Map;
 
 /**
- * edu-agent-ai /resource/generate 请求体（§1.3.2 + 决议 C3）。
- * mode 取值：resource（默认）/ judge / suggestion；响应结构随 mode 不同。
+ * edu-agent-ai /resource/generate 的统一 Java Feign 请求。
+ * 与 teacher 服务共用 {mode, chapter, topic, type, difficulty, count, extra} 形态。
  */
 @Data
 @Builder
@@ -18,28 +17,20 @@ import java.util.Map;
 @AllArgsConstructor
 public class AiResourceRequest {
 
-    @JsonProperty("studentId")
-    private String studentId;
-
-    @JsonProperty("chapter")
-    private String chapter;
-
-    @JsonProperty("topic")
-    private String topic;
-
-    @JsonProperty("resourceType")
-    private String resourceType;
-
-    /** basic / intermediate / advanced（映射原 difficulty） */
-    @JsonProperty("level")
-    private String level;
-
-    @JsonProperty("mode")
+    /** quiz / evaluation / resource / judge / suggestion。 */
     private String mode;
 
-    @JsonProperty("prompt")
-    private String prompt;
+    private String chapter;
 
-    @JsonProperty("profile")
-    private Map<String, Object> profile;
+    private String topic;
+
+    /** 具体资源或题型；judge/suggestion 等模式也用它选择 AI 角色。 */
+    private String type;
+
+    private String difficulty;
+
+    private Integer count;
+
+    /** prompt、studentId、profile 等扩展信息。 */
+    private Map<String, Object> extra;
 }

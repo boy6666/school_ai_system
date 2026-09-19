@@ -60,12 +60,7 @@ public class TutorServiceImpl implements TutorService {
 
         AiChatResult ai;
         try {
-            AiChatRequest req = AiChatRequest.builder()
-                    .userInput(message)
-                    .studentId(String.valueOf(studentId))
-                    .sessionId(sessionId)
-                    .profile(profileMap)
-                    .build();
+            AiChatRequest req = AiChatRequest.of(message, studentId, sessionId, profileMap);
             ai = aiResultParser.parseChatResult(aiServiceClient.chat(req));
         } catch (Exception e) {
             log.error("[Tutor] AI 调用失败: {}", e.getMessage());
@@ -106,12 +101,7 @@ public class TutorServiceImpl implements TutorService {
 
         AiChatResult ai;
         try {
-            AiChatRequest req = AiChatRequest.builder()
-                    .userInput(message)
-                    .studentId(String.valueOf(studentId))
-                    .sessionId(sessionId)
-                    .profile(profileMap)
-                    .build();
+            AiChatRequest req = AiChatRequest.of(message, studentId, sessionId, profileMap);
             ai = aiResultParser.parseChatResult(aiServiceClient.chat(req));
         } catch (Exception e) {
             log.error("[Onboard] AI 调用失败: {}", e.getMessage());

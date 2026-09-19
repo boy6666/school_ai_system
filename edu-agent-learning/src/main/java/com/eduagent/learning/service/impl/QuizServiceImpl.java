@@ -157,11 +157,12 @@ public class QuizServiceImpl implements QuizService {
                 .append("\n\n评分要点：语义正确、要点覆盖即可给分，不要求逐字一致。纯 JSON 输出。");
 
         return AiResourceRequest.builder()
-                .studentId(String.valueOf(studentId))
                 .topic("测验判分")
-                .resourceType("judge")
                 .mode("judge")
-                .prompt(prompt.toString())
+                .type("judge")
+                .extra(Map.of(
+                        "studentId", String.valueOf(studentId),
+                        "prompt", prompt.toString()))
                 .build();
     }
 

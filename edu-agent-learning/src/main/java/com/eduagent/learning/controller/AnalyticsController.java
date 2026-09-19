@@ -23,13 +23,13 @@ public class AnalyticsController {
     private final AnalyticsService analyticsService;
 
     @GetMapping("/{studentId}")
-    public Result<StudentAnalyticsVO> student(@PathVariable Long studentId) {
+    public Result<StudentAnalyticsVO> student(@PathVariable("studentId") Long studentId) {
         RoleGuard.requireTeacherOrAdmin();
         return Result.success(analyticsService.studentAnalytics(studentId));
     }
 
     @GetMapping("/{studentId}/progress")
-    public Result<Map<String, Object>> progress(@PathVariable Long studentId) {
+    public Result<Map<String, Object>> progress(@PathVariable("studentId") Long studentId) {
         RoleGuard.requireTeacherOrAdmin();
         return Result.success(analyticsService.studentProgress(studentId));
     }

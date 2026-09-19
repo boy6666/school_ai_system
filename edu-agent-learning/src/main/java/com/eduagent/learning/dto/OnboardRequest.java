@@ -1,5 +1,6 @@
 package com.eduagent.learning.dto;
 
+import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 import java.util.Map;
@@ -8,6 +9,7 @@ import java.util.Map;
 @Data
 public class OnboardRequest {
 
+    @NotBlank(message = "消息内容不能为空")
     private String message;
     /** 不传默认 onboard_ + 时间戳 */
     private String sessionId;

@@ -115,4 +115,29 @@ class ProfileServiceImplMergeTest {
         assertEquals(List.of("多态"), service.parseJsonArray("多态"));
         assertTrue(service.parseJsonArray(null).isEmpty());
     }
+
+    @Test
+    void bindClass_updatesExistingProfile() {
+        StudentProfile profile = existing();
+        when(profileMapper.findByStudentId(1001L)).thenReturn(profile);
+
+        service.bindClass(1001L, 8L);
+
+        ArgumentCaptor<StudentProfile> captor = ArgumentCaptor.forClass(StudentProfile.class);
+        verify(profileMapper).updateById(captor.capture());
+        assertEquals(8L, captor.getValue().getClassId());
+    }
+
+    @Test
+    void bindClass_createsMinimalProfileWhenMissing() {
+        when(profileMapper.findByStudentId(1001L)).thenReturn(null);
+
+        service.bindClass(1001L, 8L);
+
+        ArgumentCaptor<StudentProfile> captor = ArgumentCaptor.forClass(StudentProfile.class);
+        verify(profileMapper).insert(captor.capture());
+        assertEquals(1001L, captor.getValue().getStudentId());
+        assertEquals(8L, captor.getValue().getClassId());
+        assertEquals(0, captor.getValue().getProfileComplete());
+    }
 }

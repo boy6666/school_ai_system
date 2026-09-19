@@ -23,31 +23,31 @@ public class DashboardController {
 
     @PostMapping("/ai-summary")
     public Result<Map<String, Object>> generateAiSummary() {
-        Long studentId = RoleGuard.currentUserId();
+        Long studentId = RoleGuard.currentStudentId();
         return Result.success(dashboardService.generateAiSummary(studentId));
     }
 
     @GetMapping("/ai-summary")
     public Result<Map<String, Object>> latestAiSummary() {
-        Long studentId = RoleGuard.currentUserId();
+        Long studentId = RoleGuard.currentStudentId();
         return Result.success(dashboardService.getLatestAiSummary(studentId));
     }
 
     @PostMapping("/learning-review")
     public Result<Map<String, Object>> generateLearningReview() {
-        Long studentId = RoleGuard.currentUserId();
+        Long studentId = RoleGuard.currentStudentId();
         return Result.success(dashboardService.generateLearningReview(studentId));
     }
 
     @GetMapping("/learning-review")
     public Result<Map<String, Object>> latestLearningReview() {
-        Long studentId = RoleGuard.currentUserId();
+        Long studentId = RoleGuard.currentStudentId();
         return Result.success(dashboardService.getLatestLearningReview(studentId));
     }
 
     @GetMapping("/evaluation")
     public Result<Map<String, Object>> evaluation() {
-        Long studentId = RoleGuard.currentUserId();
+        Long studentId = RoleGuard.currentStudentId();
         return Result.success(dashboardService.evaluation(studentId));
     }
 }

@@ -29,26 +29,26 @@ public class ReportController {
 
     @PostMapping("/generate")
     public Result<ReportVO> generate(@Valid @RequestBody GenerateReportRequest request) {
-        Long studentId = RoleGuard.currentUserId();
+        Long studentId = RoleGuard.currentStudentId();
         return Result.success(reportService.generateReport(studentId, request));
     }
 
     @GetMapping
-    public Result<PageResult<ReportVO>> list(@RequestParam(defaultValue = "1") long page,
-                                             @RequestParam(defaultValue = "10") long size) {
-        Long studentId = RoleGuard.currentUserId();
+    public Result<PageResult<ReportVO>> list(@RequestParam(name = "page", defaultValue = "1") long page,
+                                             @RequestParam(name = "size", defaultValue = "10") long size) {
+        Long studentId = RoleGuard.currentStudentId();
         return Result.success(reportService.listReports(studentId, page, size));
     }
 
     @GetMapping("/{id}")
-    public Result<ReportVO> detail(@PathVariable Long id) {
-        Long studentId = RoleGuard.currentUserId();
+    public Result<ReportVO> detail(@PathVariable("id") Long id) {
+        Long studentId = RoleGuard.currentStudentId();
         return Result.success(reportService.getReport(studentId, id));
     }
 
     @DeleteMapping("/{id}")
-    public Result<Void> delete(@PathVariable Long id) {
-        Long studentId = RoleGuard.currentUserId();
+    public Result<Void> delete(@PathVariable("id") Long id) {
+        Long studentId = RoleGuard.currentStudentId();
         reportService.deleteReport(studentId, id);
         return Result.success();
     }

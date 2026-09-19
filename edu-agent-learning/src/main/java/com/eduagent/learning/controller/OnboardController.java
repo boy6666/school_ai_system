@@ -5,6 +5,7 @@ import com.eduagent.learning.common.RoleGuard;
 import com.eduagent.learning.dto.OnboardRequest;
 import com.eduagent.learning.service.TutorService;
 import com.eduagent.learning.vo.AiChatResult;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -24,8 +25,8 @@ public class OnboardController {
     private final TutorService tutorService;
 
     @PostMapping("/chat")
-    public Result<AiChatResult> chat(@RequestBody OnboardRequest request) {
-        Long studentId = RoleGuard.currentUserId();
+    public Result<AiChatResult> chat(@Valid @RequestBody OnboardRequest request) {
+        Long studentId = RoleGuard.currentStudentId();
         String sessionId = request.getSessionId() == null || request.getSessionId().isBlank()
                 ? "onboard_" + System.currentTimeMillis()
                 : request.getSessionId();

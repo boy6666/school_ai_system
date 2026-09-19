@@ -29,13 +29,13 @@ public class TutorController {
 
     @GetMapping("/sessions")
     public Result<List<Map<String, Object>>> sessions() {
-        Long studentId = RoleGuard.currentUserId();
+        Long studentId = RoleGuard.currentStudentId();
         return Result.success(tutorService.getSessions(studentId));
     }
 
     @PostMapping("/chat")
     public Result<TutorReplyVO> chat(@Valid @RequestBody TutorRequest request) {
-        Long studentId = RoleGuard.currentUserId();
+        Long studentId = RoleGuard.currentStudentId();
         String sessionId = request.getSessionId() == null || request.getSessionId().isBlank()
                 ? "tutor_" + studentId + "_" + System.currentTimeMillis()
                 : request.getSessionId();
@@ -43,8 +43,9 @@ public class TutorController {
     }
 
     @GetMapping("/history")
-    public Result<List<TutorReplyVO>> history(@RequestParam(required = false) String sessionId) {
-        Long studentId = RoleGuard.currentUserId();
+    public Result<List<TutorReplyVO>> history(
+            @RequestParam(name = "sessionId", required = false) String sessionId) {
+        Long studentId = RoleGuard.currentStudentId();
         return Result.success(tutorService.getHistory(studentId, sessionId));
     }
 }

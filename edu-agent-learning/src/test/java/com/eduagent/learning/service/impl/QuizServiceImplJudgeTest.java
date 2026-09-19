@@ -19,6 +19,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
@@ -115,5 +116,18 @@ class QuizServiceImplJudgeTest {
         ArgumentCaptor<QuizAnswer> captor = ArgumentCaptor.forClass(QuizAnswer.class);
         verify(quizAnswerMapper).insert(captor.capture());
         assertNull(captor.getValue().getIsCorrect());
+    }
+
+    @Test
+    void wrongQuestionDetailRejectsOtherStudentsAnswer() {
+        QuizAnswer answer = new QuizAnswer();
+        answer.setId(7L);
+        answer.setStudentId(2002L);
+        when(quizAnswerMapper.selectById(7L)).thenReturn(answer);
+
+        var ex = assertThrows(com.eduagent.common.result.ApiException.class,
+                () -> service.wrongQuestionDetail(1001L, 7L));
+
+        assertEquals(404, ex.getCode());
     }
 }

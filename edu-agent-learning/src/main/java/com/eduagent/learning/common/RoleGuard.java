@@ -49,6 +49,7 @@ public final class RoleGuard {
 
     /** 要求具备任一角色，否则 403 */
     public static void requireAnyRole(String... allowed) {
+        currentUserId();
         var own = currentRoles();
         for (String role : allowed) {
             if (own.contains(role)) {
@@ -68,5 +69,12 @@ public final class RoleGuard {
     /** 学生（教师/管理员一般不访问学生自助端点，但网关层未限制时放行也无害，按需使用） */
     public static void requireStudent() {
         requireAnyRole(com.eduagent.common.constant.ServiceConstants.ROLE_STUDENT);
+    }
+
+    /** 当前学生 id；同时完成登录态和学生角色校验。 */
+    public static Long currentStudentId() {
+        Long userId = currentUserId();
+        requireStudent();
+        return userId;
     }
 }

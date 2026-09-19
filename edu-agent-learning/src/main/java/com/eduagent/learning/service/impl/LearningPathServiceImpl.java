@@ -1,6 +1,8 @@
 package com.eduagent.learning.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.eduagent.common.result.ApiException;
+import com.eduagent.common.result.ErrorCode;
 import com.eduagent.learning.dto.ai.AiPathRequest;
 import com.eduagent.learning.entity.LearningPath;
 import com.eduagent.learning.entity.LearningPathHistory;
@@ -69,8 +71,14 @@ public class LearningPathServiceImpl implements LearningPathService {
         List<LearningTask> tasks = taskMapper.selectByUserId(studentId);
         LearningPath lp = pathMapper.findActiveByStudentId(studentId);
         if ((tasks == null || tasks.isEmpty()) && lp == null) {
-            log.info("[Path] 无路径数据, 自动生成 studentId={}", studentId);
-            return generatePath(studentId);
+            LearningPathVO empty = new LearningPathVO();
+            empty.setStages(new ArrayList<>());
+            empty.setTotalTasks(0);
+            empty.setCompletedTasks(0);
+            empty.setMasteryRate(0);
+            empty.setLearningRate(0);
+            empty.setUnmasteredRate(0);
+            return empty;
         }
 
         LearningPathVO base = parseStored(lp);
@@ -108,17 +116,22 @@ public class LearningPathServiceImpl implements LearningPathService {
 
     @Override
     @Transactional
-    public LearningPathVO updateTaskStatus(Long studentId, String stageName, String taskTitle, boolean completed) {
+    public LearningPathVO updateTaskStatus(Long studentId, Long taskId, String stageName,
+                                           String taskTitle, boolean completed) {
+        if (taskId == null && (taskTitle == null || taskTitle.isBlank())) {
+            throw new ApiException(ErrorCode.BAD_REQUEST.getCode(), "taskId 和 taskTitle 至少提供一个");
+        }
         List<LearningTask> tasks = taskMapper.selectByUserId(studentId);
         if (tasks == null || tasks.isEmpty()) {
             return getCurrentPath(studentId);
         }
         boolean found = false;
         for (LearningTask t : tasks) {
-            boolean titleMatch = t.getTitle().equals(taskTitle);
+            boolean idMatch = taskId != null && taskId.equals(t.getId());
+            boolean titleMatch = taskId == null && t.getTitle().equals(taskTitle);
             boolean stageMatch = stageName == null || stageName.isBlank()
                     || stageName.equals(t.getStage()) || stageName.equals(STAGE_NAME.get(t.getStage()));
-            if (titleMatch && stageMatch) {
+            if (idMatch || (titleMatch && stageMatch)) {
                 t.setStatus(completed ? "done" : "todo");
                 t.setProgress(completed ? 100 : 0);
                 t.setUpdateTime(LocalDateTime.now());
@@ -128,8 +141,7 @@ public class LearningPathServiceImpl implements LearningPathService {
             }
         }
         if (!found) {
-            log.warn("[Path] 未找到要更新的任务: {}", taskTitle);
-            return getCurrentPath(studentId);
+            throw new ApiException(ErrorCode.NOT_FOUND.getCode(), "学习任务不存在或不属于当前学生");
         }
 
         int total = tasks.size();
@@ -339,6 +351,7 @@ public class LearningPathServiceImpl implements LearningPathService {
             pathMapper.upsert(lp);
         } catch (Exception e) {
             log.error("[Path] 路径落库失败: {}", e.getMessage(), e);
+            throw new IllegalStateException("学习路径保存失败", e);
         }
     }
 
@@ -355,6 +368,7 @@ public class LearningPathServiceImpl implements LearningPathService {
             historyMapper.insert(h);
         } catch (Exception e) {
             log.error("[Path] 历史写入失败: {}", e.getMessage(), e);
+            throw new IllegalStateException("学习路径历史保存失败", e);
         }
     }
 

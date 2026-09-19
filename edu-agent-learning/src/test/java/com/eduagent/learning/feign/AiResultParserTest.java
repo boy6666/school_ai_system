@@ -36,6 +36,18 @@ class AiResultParserTest {
     }
 
     @Test
+    void parseSuggestions_fromAiContentEnvelope() {
+        String raw = "{\"code\":0,\"data\":{\"content\":\"{\\\"suggestions\\\":[\\\"A\\\",\\\"B\\\"]}\"}}";
+        assertEquals(List.of("A", "B"), parser.parseSuggestions(raw));
+    }
+
+    @Test
+    void parseSuggestions_fromAiContentArray() {
+        String raw = "{\"code\":0,\"data\":{\"content\":\"[\\\"A\\\",\\\"B\\\"]\"}}";
+        assertEquals(List.of("A", "B"), parser.parseSuggestions(raw));
+    }
+
+    @Test
     void parseSuggestions_emptyOnGarbage() {
         assertTrue(parser.parseSuggestions("not-json").isEmpty());
         assertTrue(parser.parseSuggestions(null).isEmpty());
@@ -61,6 +73,16 @@ class AiResultParserTest {
     }
 
     @Test
+    void parseJudge_fromAiContentEnvelope() {
+        String raw = "{\"code\":0,\"data\":{\"content\":\"```json\\n"
+                + "{\\\"score\\\":1,\\\"correct\\\":true,\\\"comment\\\":\\\"通过\\\"}\\n```\"}}";
+        AiResultParser.JudgeOutcome o = parser.parseJudge(raw);
+        assertNotNull(o);
+        assertTrue(o.isCorrect());
+        assertEquals("通过", o.getComment());
+    }
+
+    @Test
     void parseJudge_nullOnUnparseable() {
         assertNull(parser.parseJudge("AI 服务熔断"));
     }
@@ -74,6 +96,20 @@ class AiResultParserTest {
         assertEquals("多态是指……", r.getFinalAnswer());
         assertEquals(Boolean.TRUE, r.getProfileComplete());
         assertEquals(Map.of("topic", "面向对象"), r.getProfile());
+    }
+
+    @Test
+    void parseChatResult_unifiedJavaShapeAndReferences() {
+        String raw = "{\"code\":0,\"data\":{\"answer\":\"多态是……\",\"intent\":\"explain\","
+                + "\"references\":{\"profile\":{\"topic\":\"多态\"},\"profile_complete\":true,"
+                + "\"resource_dir\":\"/tmp/r\",\"evaluation_report\":{\"understanding_score\":80}}}}";
+        AiChatResult r = parser.parseChatResult(raw);
+        assertNotNull(r);
+        assertEquals("多态是……", r.getFinalAnswer());
+        assertEquals(Map.of("topic", "多态"), r.getProfile());
+        assertEquals(Boolean.TRUE, r.getProfileComplete());
+        assertEquals("/tmp/r", r.getResourceDir());
+        assertEquals(80, r.getEvaluationReport().get("understanding_score"));
     }
 
     @Test
@@ -98,5 +134,10 @@ class AiResultParserTest {
     @Test
     void parseData_nullWhenCodeNonZeroWithNullData() {
         assertNull(parser.parseData("{\"code\":500,\"message\":\"err\",\"data\":null}"));
+    }
+
+    @Test
+    void parseData_rejectsNonZeroCodeEvenWithData() {
+        assertNull(parser.parseData("{\"code\":500,\"message\":\"err\",\"data\":{\"content\":\"x\"}}"));
     }
 }

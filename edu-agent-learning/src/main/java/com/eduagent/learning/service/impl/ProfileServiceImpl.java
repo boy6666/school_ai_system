@@ -53,6 +53,27 @@ public class ProfileServiceImpl implements ProfileService {
     }
 
     @Override
+    public void bindClass(Long studentId, Long classId) {
+        if (studentId == null || studentId <= 0 || classId == null || classId <= 0) {
+            throw new ApiException(ErrorCode.BAD_REQUEST.getCode(), "studentId 和 classId 必须为正整数");
+        }
+        StudentProfile sp = profileMapper.findByStudentId(studentId);
+        if (sp == null) {
+            sp = new StudentProfile();
+            sp.setStudentId(studentId);
+            sp.setClassId(classId);
+            sp.setProfileComplete(0);
+            sp.setCreateTime(LocalDateTime.now());
+            sp.setUpdateTime(LocalDateTime.now());
+            profileMapper.insert(sp);
+            return;
+        }
+        sp.setClassId(classId);
+        sp.setUpdateTime(LocalDateTime.now());
+        profileMapper.updateById(sp);
+    }
+
+    @Override
     public Map<String, Object> saveProfile(Long studentId, SaveProfileRequest request) {
         StudentProfile sp = profileMapper.findByStudentId(studentId);
         boolean created = false;
@@ -108,10 +129,11 @@ public class ProfileServiceImpl implements ProfileService {
         List<String> suggestions = new ArrayList<>();
         try {
             AiResourceRequest req = AiResourceRequest.builder()
-                    .studentId(String.valueOf(studentId))
-                    .resourceType("suggestion")
                     .mode("suggestion")
-                    .prompt(prompt)
+                    .type("suggestion")
+                    .extra(Map.of(
+                            "studentId", String.valueOf(studentId),
+                            "prompt", prompt))
                     .build();
             suggestions = aiResultParser.parseSuggestions(aiServiceClient.generateResource(req));
         } catch (Exception e) {

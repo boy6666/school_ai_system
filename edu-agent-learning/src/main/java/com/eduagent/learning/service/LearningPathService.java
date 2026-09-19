@@ -11,7 +11,8 @@ public interface LearningPathService {
 
     LearningPathVO generatePath(Long studentId);
 
-    LearningPathVO updateTaskStatus(Long studentId, String stageName, String taskTitle, boolean completed);
+    LearningPathVO updateTaskStatus(Long studentId, Long taskId, String stageName,
+                                    String taskTitle, boolean completed);
 
     List<PathHistoryVO> getHistory(Long studentId);
 }

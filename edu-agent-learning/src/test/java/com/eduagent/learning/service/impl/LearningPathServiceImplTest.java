@@ -24,11 +24,13 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -122,7 +124,7 @@ class LearningPathServiceImplTest {
         lp.setProgress(0);
         when(pathMapper.findActiveByStudentId(1001L)).thenReturn(lp);
 
-        service.updateTaskStatus(1001L, "今日计划", "做 5 题", true);
+        service.updateTaskStatus(1001L, null, "今日计划", "做 5 题", true);
 
         // t2 状态已更新为 done
         ArgumentCaptor<LearningTask> taskCaptor = ArgumentCaptor.forClass(LearningTask.class);
@@ -137,15 +139,51 @@ class LearningPathServiceImplTest {
     }
 
     @Test
-    void updateTaskStatus_noTasks_skipsEvent() {
+    void getCurrentPath_noData_returnsEmptyWithoutCallingAi() {
         when(taskMapper.selectByUserId(1001L)).thenReturn(List.of());
         when(pathMapper.findActiveByStudentId(1001L)).thenReturn(null);
-        when(aiServiceClient.generatePath(any())).thenThrow(new RuntimeException("down"));
-        when(profileMapper.findByStudentId(1001L)).thenReturn(null);
 
-        service.updateTaskStatus(1001L, null, "任意", true);
+        LearningPathVO vo = service.getCurrentPath(1001L);
 
+        assertNotNull(vo);
+        assertTrue(vo.getStages().isEmpty());
+        assertEquals(0, vo.getTotalTasks());
+        assertEquals(0, vo.getUnmasteredRate());
+        verify(aiServiceClient, never()).generatePath(any());
+        verify(taskMapper, never()).insert(any(LearningTask.class));
         verify(progressPublisher, never()).publish(anyLong(), any(), any(), any());
+    }
+
+    @Test
+    void updateTaskStatus_prefersTaskId() {
+        LearningTask t1 = task(1L, "同名任务", "todo");
+        LearningTask t2 = task(2L, "同名任务", "todo");
+        when(taskMapper.selectByUserId(1001L)).thenReturn(List.of(t1, t2), List.of(t1, t2));
+        when(pathMapper.findActiveByStudentId(1001L)).thenReturn(null);
+
+        service.updateTaskStatus(1001L, 2L, null, null, true);
+
+        ArgumentCaptor<LearningTask> captor = ArgumentCaptor.forClass(LearningTask.class);
+        verify(taskMapper).updateById(captor.capture());
+        assertEquals(2L, captor.getValue().getId());
+        assertEquals("done", captor.getValue().getStatus());
+    }
+
+    @Test
+    void updateTaskStatus_rejectsMissingIdentifier() {
+        var ex = assertThrows(com.eduagent.common.result.ApiException.class,
+                () -> service.updateTaskStatus(1001L, null, null, null, true));
+        assertEquals(400, ex.getCode());
+    }
+
+    @Test
+    void generatePath_propagatesPersistenceFailureForRollback() {
+        when(profileMapper.findByStudentId(1001L)).thenReturn(null);
+        when(aiServiceClient.generatePath(any())).thenThrow(new RuntimeException("down"));
+        doThrow(new RuntimeException("db down")).when(pathMapper).upsert(any(LearningPath.class));
+
+        assertThrows(IllegalStateException.class, () -> service.generatePath(1001L));
+        verify(historyMapper, never()).insert(any(LearningPathHistory.class));
     }
 
     private LearningTask task(long id, String title, String status) {
