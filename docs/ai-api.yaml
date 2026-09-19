@@ -1,0 +1,752 @@
+openapi: 3.0.3
+
+info:
+  title: EduAgent AI 服务接口（edu-agent-ai，Python / FastAPI）
+  description: |
+    AI 微服务 **edu-agent-ai**：Python + FastAPI，容器内监听 8001，Nacos 服务名 `edu-agent-ai`，
+    对外统一前缀 `/api/edu-agent-ai`（网关不 StripPrefix，Feign `path`、Python `API_PREFIX`、网关断言三处同名）。
+    本服务只做「大模型中转 + 契约适配」，不含业务库；学生身份由请求体带入，服务自身不解析任何身份头。
+
+    ## 谁在调
+    | 调用方 | 端点 | 入参形态 |
+    |---|---|---|
+    | Java 侧 edu-agent-teacher 的 `AiServiceClient`（Feign，走 Nacos 服务发现） | `/chat`、`/resource/generate` | camelCase，带标志字段 |
+    | 前端 / 脚本直连（历史形态，行为保持不变） | `/chat`、`/resource/generate`、`/path/generate` | snake_case 裸 JSON |
+
+    ## 两套入参形态（同一端点，按标志字段分发）
+    分发规则：**看原始 body 里出现哪个键**——有 `message` → Java/Feign 形态；有 `mode` → Java/Feign 形态；否则直连形态。
+    不使用 header 协商，也没有第二套协议。因此直连调用方不要顺手带上这两个键名。
+
+    ## 响应信封
+    Java/Feign 形态一律包 `Result` 信封 `{code, message, data}`（等价 Java 侧 `Result.success / Result.fail`）；
+    直连形态维持原有裸 JSON，**行为不变**（前端直接读 `final_answer` / `content`）。
+
+    ## 错误语义（重要，与常规 REST 不同）
+    - **业务失败是 HTTP 200 + 非 0 code**：Java 侧 `GlobalExceptionHandler` 是 `@ResponseBody` 且不带
+      `@ResponseStatus`，Python 侧照抄这个语义，Feign 才能正常反序列化出 `code`。
+    - 唯一的真 4xx/5xx：经网关时 JWT 缺失/无效 → **HTTP 401**（网关返回，非本服务）；
+      请求体字段类型不符 → 裸 **HTTP 500**（见下「已知边界」）。
+    - `call_llm` **失败不抛异常**，返回字符串 `"LLM 调用失败: …"`；服务端凭前缀 `LLM 调用失败:` 识别失败。
+      未识别时会把它当成一次「成功的生成」返回，故该前缀是契约的一部分。
+
+    ## 运行前置：必须配真实 LLM key
+    key 的唯一来源是 Nacos 配置 `edu-agent-ai.yaml` 的 `env.OPENAI_API_KEY`
+    （**Nacos 下发的值会覆盖容器环境变量**，改 compose 里的 env 无效）。
+    本服务**没有 mock 模式**：`USE_MOCK_LLM` 在 Python 代码里没有对应分支；
+    key 为空时每个生成类请求都会得到 `code=500` + `"LLM 调用失败: …"`。
+
+    ## 时延
+    `/chat`、`/path/generate`、`/resource/generate` 都是**同步阻塞**调用（FastAPI 用线程池执行同步 `def`，
+    不会占住事件循环），单次耗时随模型而定，**调用方超时应 ≥ 60s**（前端 axios 即为 60s）。
+  version: 1.0.0
+
+servers:
+  - url: http://<网关>:8080/api/edu-agent-ai
+    description: 经网关访问（推荐；除 /health 外需 Bearer JWT）
+  - url: http://localhost:8001/api/edu-agent-ai
+    description: 服务直连（本机 / 容器内；绕过网关与鉴权，仅供联调排障）
+
+tags:
+  - name: 健康检查
+    description: 存活探针（网关白名单，免 JWT）
+  - name: AI助教
+    description: 多轮答疑与画像对话（edu-agent-teacher 的助教问答、成绩解读走这里）
+  - name: 学习路径
+    description: 个性化学习路径规划（仅前端/脚本直连使用）
+  - name: 内容生成
+    description: 出题 / 学习评价 / 各类学习资源生成，按 mode 决定返回结构
+
+security:
+  - bearerAuth: []
+
+paths:
+  /health:
+    get:
+      tags: [健康检查]
+      summary: 存活探针
+      operationId: health
+      description: |
+        网关鉴权白名单已含 `/api/edu-agent-ai/health`，故经网关访问不需要 JWT——
+        否则运维巡检拿不到真实状态。返回**裸 JSON**，不包 `Result` 信封。
+        另有根路径 `GET /health`（无前缀、不进 OpenAPI，供容器 healthcheck 直连 :8001 使用），
+        对外契约只用本条带前缀的路径。
+      security: []
+      responses:
+        '200':
+          description: 服务存活（只要进程在返回 ok；**不代表 LLM 可用**，LLM 不可用仍是 200）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+              example:
+                status: ok
+
+  /chat:
+    post:
+      tags: [AI助教]
+      summary: AI 答疑（双形态）
+      operationId: chat
+      description: |
+        Java/Feign 形态 `{message, context}` → `Result<AiChatResult>`；
+        直连形态 `{user_input, student_id, session_id, profile}` → 裸 JSON（历史行为不变）。
+
+        `context` 的映射：`studentId`（或 `student_id`）→ 记忆线程的 `student_id`；
+        `sessionId`（或 `session_id`）→ `session_id`；其余键（`classId`、`courseName`…）整体并入 `profile`。
+        记忆按 `{student_id}_{session_id}` 隔离，同一 student+session 连续对话才有上下文。
+
+        错误：Feign 形态下 `message` 为空白 → `code=400`（对应 Java DTO 的 `@NotBlank`）。
+        **直连形态不校验空白**（沿历史行为），空 `user_input` 会照常进 graph。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/ChatRequestFeign'
+                - $ref: '#/components/schemas/ChatRequestLegacy'
+            examples:
+              feign:
+                summary: Java/Feign 形态（含 message）
+                value:
+                  message: 什么是多态
+                  context:
+                    studentId: s_1
+                    sessionId: sess_9
+                    classId: c_9
+              legacy:
+                summary: 直连形态（无 message）
+                value:
+                  user_input: 什么是多态
+                  student_id: student_001
+                  session_id: api_session
+                  profile: {}
+      responses:
+        '200':
+          description: |
+            成功或业务失败都走 200。Feign 形态返回 `Result`，直连形态返回裸 JSON。
+            常见失败：`{code:400, message:"参数错误: message 不能为空", data:null}`。
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ResultChat'
+                  - $ref: '#/components/schemas/ChatResponseLegacy'
+              examples:
+                feignSuccess:
+                  summary: Feign 形态成功（data 恰好三个字段）
+                  value:
+                    code: 0
+                    message: success
+                    data:
+                      answer: 多态是同一接口的不同实现，运行时才决定调用哪个重写方法。
+                      intent: explain
+                      references:
+                        weaknesses_focus: 接口与继承的区分
+                        suggestion: 用一个接口写两个实现类，再分别调用
+                feignParamError:
+                  summary: Feign 形态 message 空白
+                  value:
+                    code: 400
+                    message: '参数错误: message 不能为空'
+                    data: null
+                legacySuccess:
+                  summary: 直连形态成功（裸 JSON）
+                  value:
+                    intent: explain
+                    final_answer: 多态是同一接口的不同实现。
+                    profile: {}
+                    resources: null
+                    learning_path: null
+                    safety_report: null
+                    evaluation_report: null
+                    resource_dir: null
+                    profile_complete: null
+        '401':
+          description: 经网关且 JWT 缺失/无效（网关返回，本服务不产生）
+
+  /path/generate:
+    post:
+      tags: [学习路径]
+      summary: 生成学习路径（仅直连）
+      operationId: pathGenerate
+      description: |
+        仅前端/脚本直连使用（Java 侧不调用），**恒返回裸 JSON，永不包 `Result` 信封，也没有失败码路径**。
+        服务端把固定的 system prompt 拼在 `prompt` 前一起发给模型，再尽力从中抽取 JSON 对象。
+
+        ⚠️ **LLM 失败或输出无法解析时不报错**：会静默返回一份写死的兜底计划（示例里的那份），
+        调用方无法区分「模型给的」与「兜底的」——排障时看服务日志的
+        `[路径规划AI] ⚠️ 返回空结果，使用默认数据`。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PathGenRequest'
+            example:
+              student_id: student_001
+              prompt: 该生集合与 IO 薄弱，请给出两周冲刺计划
+              profile:
+                weak_points: [集合, IO]
+      responses:
+        '200':
+          description: 路径计划（结构由模型输出决定；解析失败时为兜底计划）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PathPlan'
+              example:
+                goal: 掌握课程核心知识并完成实践项目
+                targetMastery: '≥85%'
+                estimatedCompletion: '2026-07-06'
+                totalHours: 24
+                masteryRate: 50
+                learningRate: 30
+                unmasteredRate: 20
+                suggestions: 建议从基础概念开始，逐步深入到实践项目
+                applicationAdvice: 完成每章课后练习，并尝试独立完成小项目
+                examAdvice: 每章结束后进行自测，重点复习错题
+                recommendTime: 每天 19:00-21:00
+                stages:
+                  - name: 今日计划
+                    tasks:
+                      - title: 课程基础概念学习
+                        duration: 45
+                        status: 0
+                        progress: 0
+                      - title: 核心知识点梳理
+                        duration: 30
+                        status: 0
+                        progress: 0
+
+  /resource/generate:
+    post:
+      tags: [内容生成]
+      summary: 生成学习资源 / 出题 / 学习评价（双形态，按 mode 分结构）
+      operationId: resourceGenerate
+      description: |
+        Java/Feign 形态 `{mode, chapter, topic, type, difficulty, count, extra}` → `Result`，**按 `mode` 决定 data 结构**；
+        直连形态 `{chapter, topic, resourceType, level, prompt}` → 裸 JSON `{content, resourceType, chapter}`。
+
+        **角色（system prompt）选择**：先看 `type`，再看 `mode`，取第一个命中角色表
+        （`mindmap` / `quiz` / `reading` / `code` / `review` / `summary` / `evaluation` /
+        `learning_path` / `suggestion` / `explain` / `judge`）的值；都没命中则退回 `mode`/`type` 本身，最后是通用兜底。
+        例：`mode=quiz` + `type=choice` → 命中 `quiz`（出题专家）。
+
+        **prompt 拼装**（修掉的关键缺陷：Java 从不发 `prompt`，旧实现把空串发给了模型）：
+        ① `extra.prompt` 存在则直接用它；② 否则按 `章节 / 知识点 / 题型形式 / 难度层级 / 难度 / 数量 / 补充数据`
+        逐行拼；③ 末尾追加 `mode` 对应的任务指令（`quiz` 要求 JSON 数组、`evaluation` 要求含 `analysis` 的 JSON 对象）。
+
+        **失败**：`call_llm` 返回 `"LLM 调用失败: …"` → `code=500`，`message` 即该原文；
+        `mode=quiz` 但模型输出不是合法 JSON 数组 → `code=500` + `"AI 返回内容不是合法的题目 JSON 数组"`
+        （**刻意显式报错**：Java 侧 `data==null` 或 `items` 不是 List 时会静默返回空列表，出题「看着成功却没题」无法定位）。
+        直连形态仍把错误文本原样放进 `content`（历史行为，前端直接展示）。
+
+        注意：`count` 只进 prompt（要求模型出 N 道），**Python 不做截断**，模型多给会原样返回；
+        需要严格数量请由调用方截断。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/ResourceRequestFeign'
+                - $ref: '#/components/schemas/ResourceRequestLegacy'
+            examples:
+              quiz:
+                summary: Feign 形态 —— 出题
+                value:
+                  mode: quiz
+                  chapter: 第3章 集合
+                  topic: HashMap
+                  type: choice
+                  difficulty: easy
+                  count: 5
+                  extra: {}
+              evaluation:
+                summary: Feign 形态 —— 学习成绩解读
+                value:
+                  mode: evaluation
+                  chapter: ''
+                  topic: ''
+                  extra:
+                    studentId: s_1
+                    assignmentId: 12
+              legacy:
+                summary: 直连形态
+                value:
+                  chapter: 第1章
+                  topic: 变量
+                  resourceType: reading
+                  level: basic
+                  prompt: 写一段拓展阅读
+      responses:
+        '200':
+          description: |
+            成功或业务失败都走 200。`mode=quiz` → `QuizData`；`mode=evaluation` → `EvaluationData`；
+            其余 mode（含 `resource`）与直连形态 → `ResourceData`。
+            失败信封：`{code:500, message:"LLM 调用失败: …", data:null}`。
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ResultQuiz'
+                  - $ref: '#/components/schemas/ResultEvaluation'
+                  - $ref: '#/components/schemas/ResultResource'
+                  - $ref: '#/components/schemas/ResourceData'
+                description: |
+                  Feign 形态（有 mode）为 Result 信封，data 结构随 mode 变；直连形态为裸 ResourceData。
+              examples:
+                quizSuccess:
+                  summary: mode=quiz
+                  value:
+                    code: 0
+                    message: success
+                    data:
+                      resourceType: quiz
+                      chapter: 第3章 集合
+                      items:
+                        - type: choice
+                          chapter: 第3章 集合
+                          topic: HashMap
+                          question: HashMap 的默认初始容量是多少？
+                          content: HashMap 的默认初始容量是多少？
+                          options: ['8', '16', '32', '64']
+                          answer: '16'
+                          explanation: HashMap 默认初始容量为 16，负载因子 0.75。
+                          difficulty: easy
+                evaluationSuccess:
+                  summary: mode=evaluation
+                  value:
+                    code: 0
+                    message: success
+                    data:
+                      analysis: 本次作业整体完成度较好，集合部分失分集中在遍历方式选择上……
+                resourceSuccess:
+                  summary: mode=resource / 其它
+                  value:
+                    code: 0
+                    message: success
+                    data:
+                      content: '# 变量\n变量是内存中一块具名存储区……'
+                      resourceType: reading
+                      chapter: 第1章
+                llmFailure:
+                  summary: LLM 不可用（key 缺失最常见）
+                  value:
+                    code: 500
+                    message: 'LLM 调用失败: 未配置 OPENAI_API_KEY'
+                    data: null
+                legacySuccess:
+                  summary: 直连形态（裸 JSON，错误文本也走 content）
+                  value:
+                    content: '# 变量\n变量是内存中一块具名存储区……'
+                    resourceType: reading
+                    chapter: 第1章
+        '401':
+          description: 经网关且 JWT 缺失/无效（网关返回，本服务不产生）
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        网关 `AuthGlobalFilter` 校验的 Bearer JWT（除白名单 `/api/edu-agent-ai/health` 外全部要求）。
+        缺令牌或令牌无效由网关直接返回 HTTP 401 + `{code:401,message:"未认证或令牌无效"}`，请求不会到达 AI 服务。
+        网关会先剥离入站自带的 `X-User-*` 头再按 JWT 重新注入；
+        **但 AI 服务不读这些头**——本服务的身份语义来自请求体（`student_id` / `context.studentId`）。
+
+  schemas:
+    Result:
+      type: object
+      description: 通用响应信封，等价 Java 侧 `Result<T>`。
+      required: [code, message]
+      properties:
+        code:
+          type: integer
+          description: 0 表示成功；非 0 为业务失败码（400 参数错误 / 500 AI 侧失败）
+          example: 0
+        message:
+          type: string
+          example: success
+        data:
+          nullable: true
+          description: 成功时的载荷；失败时为 null
+
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: ok
+
+    ResultChat:
+      allOf:
+        - $ref: '#/components/schemas/Result'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/ChatResultData'
+
+    ResultQuiz:
+      allOf:
+        - $ref: '#/components/schemas/Result'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/QuizData'
+
+    ResultEvaluation:
+      allOf:
+        - $ref: '#/components/schemas/Result'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/EvaluationData'
+
+    ResultResource:
+      allOf:
+        - $ref: '#/components/schemas/Result'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/ResourceData'
+
+    ChatRequestFeign:
+      type: object
+      description: Java 侧 `AiChatRequest` 的镜像。**只要 body 里出现 `message` 键就走这个形态。**
+      required: [message]
+      properties:
+        message:
+          type: string
+          description: 用户提问；空白（对应 Java `@NotBlank`）→ `code=400`
+          example: 什么是多态
+        context:
+          type: object
+          nullable: true
+          additionalProperties: true
+          description: |
+            可选上下文。`studentId`/`student_id`、`sessionId`/`session_id` 被取出单独使用；
+            其余键整体并入 `profile` 传给对话图。
+            `context.profile` 若本身是对象，则与其余键**合并**。
+
+    ChatRequestLegacy:
+      type: object
+      description: 直连（历史）形态。**不含 `message` 键时走这个形态。**
+      properties:
+        user_input:
+          type: string
+          default: ''
+        student_id:
+          type: string
+          default: student_001
+          description: 对话记忆线程的隔离键之一
+        session_id:
+          type: string
+          default: api_session
+          nullable: true
+        profile:
+          type: object
+          nullable: true
+          additionalProperties: true
+
+    ChatResponseLegacy:
+      type: object
+      description: 直连形态响应，字段与历史版本一致（前端直接读 `final_answer`）。
+      properties:
+        intent:
+          type: string
+          nullable: true
+          example: explain
+        final_answer:
+          type: string
+          nullable: true
+          description: 注意：explain 等意图下可能是 JSON 串（Feign 形态已拆出 `content`，直连形态不拆）
+        profile:
+          type: object
+          nullable: true
+          additionalProperties: true
+          description: 对话图回写后的学生画像
+        resources:
+          nullable: true
+        learning_path:
+          nullable: true
+        safety_report:
+          nullable: true
+        evaluation_report:
+          nullable: true
+        resource_dir:
+          type: string
+          nullable: true
+        profile_complete:
+          type: boolean
+          nullable: true
+
+    ChatResultData:
+      type: object
+      description: Feign 形态 `data`，对应 Java `AiChatResult(String answer, String intent, Object references)`，恰好三个字段。
+      properties:
+        answer:
+          type: string
+          description: |
+            取自对话图的 `final_answer`。explain 等意图的 `final_answer` 是 JSON 串
+            （`{"type","content","weaknesses_focus","suggestion"}`），直接给前端会渲染成一坨 JSON，
+            故这里取其中 `content` 作正文，其余字段并入 `references`。
+        intent:
+          type: string
+          nullable: true
+        references:
+          type: object
+          nullable: true
+          additionalProperties: true
+          description: |
+            对话图暂无 `references` 字段，先透传它实际产出的
+            `resources` / `learning_path` / `safety_report` / `evaluation_report` / `resource_dir`，
+            以及上面拆出的 `weaknesses_focus` / `suggestion`。**一项都没有时为 null。**
+
+    ResourceRequestFeign:
+      type: object
+      description: Java 侧 `AiResourceRequest` 的镜像。**只要 body 里出现 `mode` 键就走这个形态。**
+      properties:
+        mode:
+          type: string
+          description: '`quiz` → items；`evaluation` → analysis；`resource`/其它 → content'
+          example: quiz
+        chapter:
+          type: string
+        topic:
+          type: string
+        type:
+          type: string
+          description: 题型/形式（choice、judge、mindmap…），优先用它选角色
+        difficulty:
+          type: string
+        count:
+          type: integer
+          nullable: true
+          description: 只进 prompt，不做截断
+        extra:
+          type: object
+          nullable: true
+          additionalProperties: true
+          description: 扩展参数。`extra.prompt` 若存在则**直接作为 prompt**，不参与拼装
+
+    ResourceRequestLegacy:
+      type: object
+      description: 直连（历史）形态。**不含 `mode` 键时走这个形态。**
+      properties:
+        chapter:
+          type: string
+          default: ''
+        topic:
+          type: string
+          default: ''
+        resourceType:
+          type: string
+          default: mindmap
+          description: 同时作为角色键与响应里的 `resourceType` 回显
+        level:
+          type: string
+          default: basic
+        prompt:
+          type: string
+          default: ''
+          description: 直连形态下**就是最终发给模型的 user prompt**（不拼装）
+
+    ResourceData:
+      type: object
+      description: 通用生成结果（Feign 的 `mode=resource`/其它，与直连形态共用结构）
+      required: [content, resourceType, chapter]
+      properties:
+        content:
+          type: string
+          description: 模型原文（Markdown 或 JSON 串，取决于资源类型）。直连形态下 LLM 失败时这里就是错误文本
+        resourceType:
+          type: string
+          description: |
+            实际使用的角色键。Feign 形态回显的是**解析后的角色**（`mode=quiz`+`type=choice` → `quiz`），
+            直连形态回显请求里的 `resourceType`。
+        chapter:
+          type: string
+
+    QuizData:
+      type: object
+      description: '`mode=quiz` 的 `data`'
+      required: [items, resourceType, chapter]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/QuizItem'
+        resourceType:
+          type: string
+          example: quiz
+        chapter:
+          type: string
+
+    QuizItem:
+      type: object
+      description: |
+        已按 Java `QuestionServiceImpl` 的读键规范化。请求级字段（type/chapter/topic/difficulty）
+        在模型未给时会**回填请求里的同名字段**，便于兜底。
+      properties:
+        type:
+          type: string
+        chapter:
+          type: string
+        topic:
+          type: string
+        question:
+          type: string
+          description: 与 `content` 同值
+        content:
+          type: string
+          description: '**Java 读的是 content，不是 question**，故两个键都给'
+        options:
+          type: array
+          items:
+            type: string
+          description: 非数组会被包成单元素数组；缺省 `[]`
+        answer:
+          type: string
+        explanation:
+          type: string
+          description: 兼容模型返回的 `analysis`
+        difficulty:
+          type: string
+
+    EvaluationData:
+      type: object
+      description: '`mode=evaluation` 的 `data`'
+      properties:
+        analysis:
+          type: string
+          description: 模型返回 JSON 且含 `analysis` 时取该字段，否则为模型原文
+
+    PathGenRequest:
+      type: object
+      properties:
+        student_id:
+          type: string
+          default: ''
+          description: 只用于日志，不参与 prompt 拼装
+        prompt:
+          type: string
+          default: ''
+          description: 会与固定 system prompt 拼接后发给模型
+        profile:
+          type: object
+          nullable: true
+          additionalProperties: true
+          description: 只用于日志，当前**未拼进 prompt**
+
+    PathPlan:
+      type: object
+      description: |
+        学习路径计划。正常由模型输出决定，故保留 `additionalProperties`；
+        解析失败或 LLM 失败时返回**固定兜底对象**（属性与默认值如下）。
+      additionalProperties: true
+      properties:
+        goal:
+          type: string
+          default: 掌握课程核心知识并完成实践项目
+        targetMastery:
+          type: string
+          default: '≥85%'
+        estimatedCompletion:
+          type: string
+          default: '2026-07-06'
+        totalHours:
+          type: integer
+          default: 24
+        masteryRate:
+          type: integer
+          default: 50
+        learningRate:
+          type: integer
+          default: 30
+        unmasteredRate:
+          type: integer
+          default: 20
+        suggestions:
+          type: string
+        applicationAdvice:
+          type: string
+        examAdvice:
+          type: string
+        recommendTime:
+          type: string
+        stages:
+          type: array
+          items:
+            $ref: '#/components/schemas/LearningStage'
+
+    LearningStage:
+      type: object
+      properties:
+        name:
+          type: string
+          example: 今日计划
+        tasks:
+          type: array
+          items:
+            $ref: '#/components/schemas/LearningTask'
+
+    LearningTask:
+      type: object
+      properties:
+        title:
+          type: string
+          example: 课程基础概念学习
+        duration:
+          type: integer
+          description: 分钟
+          example: 45
+        status:
+          type: integer
+          example: 0
+        progress:
+          type: integer
+          example: 0
+
+x-route-table:
+  description: 网关 `edu-agent-gateway` 的 ai 路由是**逐条枚举、无通配**（契约 C5），与本文路径一一对应。
+  predicates:
+    - /api/edu-agent-ai/health
+    - /api/edu-agent-ai/chat
+    - /api/edu-agent-ai/path/generate
+    - /api/edu-agent-ai/resource/generate
+    - /api/edu-agent-ai/kb/rebuild
+
+x-known-gaps:
+  description: |
+    联调前需要知道的落差。均为**已知且有意保留**，不是配置错误。
+  items:
+    - id: kb-rebuild
+      detail: |
+        网关按任务表白名单放行了 `/api/edu-agent-ai/kb/rebuild`（契约 C6），但**本服务未实现**：
+        `school_agent/kb/` 只有一个空 `__init__.py`，全服务也无任何代码读取 `CHROMA_HOST`/`CHROMA_PORT`。
+        经网关访问是下游 404。这是预期缺口，**不要用「删网关枚举」的方式消掉它**（违反 C6）；
+        实现归 AI 服务侧（拉 resource 的 `kb/corpus?status=0` → embed → 写 Chroma → 回调 `mark-indexed`）。
+    - id: code-analyze
+      detail: |
+        `/code/analyze`（Java 内网调用，代码审查建议）**在本分支不存在**：Python 无路由、Java 无调用；
+        它在 `feat/code` 分支已完整实现（`school_agent/services/code_review.py` + `/api/ai/code/analyze`）。
+        并入时需对齐前缀（挪到 `/api/edu-agent-ai` 下）、服务名（`edu-agent-ai`，走 Nacos）、
+        失败语义（analyze 建议 `code=0` + 空 suggestions，与本文 chat/resource 的 500 语义属**有意差异**）。
+        网关侧因断言是枚举而非 `/**` 通配，该端点**过网关仍 404**——这是设计意图（内网端点不对学生开放）。
+    - id: explain-grade
+      detail: |
+        教师端成绩解读（`mode=evaluation`）目前只发 `extra={studentId, assignmentId}`，**没有任何成绩/答题明细**，
+        故 `analysis` 只能是泛泛评价。需要实质解读须由 Java 侧补传成绩数据。
+    - id: mock-llm
+      detail: 无 mock 模式；`USE_MOCK_LLM` 环境变量在 Python 代码中无对应分支，不要指望它降级。
+    - id: type-mismatch-500
+      detail: |
+        请求体字段类型不符（如把 `message` 传成数组）会在处理函数内抛 Pydantic `ValidationError`，
+        表现为**裸 HTTP 500 `Internal Server Error` —— 不是 Result 信封**（该异常发生在路由函数内部，
+        不经过 FastAPI 的请求校验通道，故也不会是 422），Feign 侧只能看到 500。
+        已在 FastAPI 0.136 / Pydantic 2.13 实测复现；未做包裹，属已知边界。
+    - id: count-not-enforced
+      detail: '`count` 只约束模型，不截断返回；需要严格数量由调用方处理。'
