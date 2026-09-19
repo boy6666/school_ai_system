@@ -104,6 +104,9 @@ docker compose -f docker-compose.deploy.yml logs -f <服务名>                 
 
 教师端接口契约：`docs/teacher-api.yaml`（六模块 30 操作）。
 
+AI 服务接口契约：`docs/ai-api.yaml`（4 端点；双入参形态、`Result` 信封、HTTP 200 + 非 0 code 的错误语义、
+网关逐条枚举与已知缺口都在里面）。字段级对接细节另见 `edu-agent-ai/docs/java-python-contract.md`。
+
 **给前端（曾姿妍）**：nginx 代理指向服务器网关 `:8080`；确认网关 CORS；
 前端地址是 web profile，需 `docker compose -f docker-compose.deploy.yml --profile web up -d web`。
 
